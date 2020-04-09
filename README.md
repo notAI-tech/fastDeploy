@@ -1,2 +1,2 @@
 # fastDeploy
-Production ready deployment and APIs for your Deep Learning models.
+Production ready deployment and APIs for Deep Learning models.

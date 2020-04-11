@@ -1,0 +1,17 @@
+FROM python:3.6.7-slim
+
+MAINTAINER Bedapudi Praneeth "praneeth@bpraneeth.com"
+
+RUN apt-get update && apt-get install -y build-essential gcc watch
+
+RUN pip3 install Cython==0.29.15
+
+RUN pip3 install gevent==1.4.0
+RUN pip3 install falcon==2.0.0
+RUN pip3 install gunicorn==20.0.4
+
+WORKDIR /app
+
+ADD . /app
+
+CMD ["bash", "_run.sh"]

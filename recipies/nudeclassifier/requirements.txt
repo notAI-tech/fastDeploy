@@ -1,0 +1,4 @@
+numpy==1.16
+tensorflow==1.12
+keras==2.2.4
+NudeNet==1.1.0

@@ -2,7 +2,7 @@ FROM python:3.6.7-slim
 
 MAINTAINER Bedapudi Praneeth "praneeth@bpraneeth.com"
 
-RUN apt-get update && apt-get install -y build-essential gcc watch
+RUN apt-get update && apt-get install -y build-essential gcc
 
 RUN pip3 install Cython==0.29.15
 

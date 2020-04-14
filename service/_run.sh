@@ -11,6 +11,7 @@ if [ -f  ".batch_size" ]; then
 fi
 
 python3 -u _loop.py&
+python3 -u _manager_loop.py&
 
 until [ -f ".batch_size" ]
 do

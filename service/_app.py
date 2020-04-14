@@ -32,12 +32,15 @@ def wait_and_read_pred(res_path):
     response, status = json.dumps({'success': False, 'reason': 'timeout'}), falcon.HTTP_503
     while True:
         try:
+            # if pickle doesn't exist,  while loop continues/
             pred = pickle.load(open(res_path, 'rb'))
             try: response = json.dumps({'prediction': pred, 'success': True})
+            # if return dict has any non json serializable values, this might help.
             except: response = json.dumps({'prediction': ast.literal_eval(str(pred)), 'success': True})
             status = falcon.HTTP_200
             break
         except:
+            # stop in case of timeout
             if time.time() - start_time >= _utils.TIMEOUT:
                 break
 

@@ -1,3 +1,7 @@
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.info('Importing libraries..')
+
 import os
 import time
 import glob
@@ -8,6 +12,7 @@ import _utils
 
 while True:
     webhooks_left = glob.glob(os.path.join(_utils.RAM_DIR, '*webhook'))
+    logging.info(f'{len(webhooks_left)} webhooks found')
     for webhook_f in webhooks_left:
         unique_id = os.path.basename(webhook_f).split('.')[0]
         res_path = glob.glob(os.path.join(_utils.RAM_DIR, f'{unique_id}*res'))

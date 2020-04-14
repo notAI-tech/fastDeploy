@@ -40,7 +40,7 @@ def _build(args, docker='docker', log=False):
         print('{code_dir} does not exist')
         return False
 
-    base_image = f'notaitech/fastserve-core:{args.base}'
+    base_image = f'notaitech/fastdeploy-core:{args.base}'
 
     _run_cmd(f'{docker} rm {args.name}')
     

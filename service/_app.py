@@ -132,15 +132,21 @@ class Async(object):
         try:
             unique_id = _utils.get_uuid()
 
-            if isinstance(req.media, list):
+            webhook = req.media.get('webhook')
+
+            _utils.write_webhook(unique_id, webhook)
+
+            if isinstance(req.media['data'], list):
                 handle_json_request(unique_id, req.media)
                 req.media.clear()
                 resp.body = json.dumps({'success': True, 'unique_id': unique_id})
+                resp.status = falcon.HTTP_200
 
-            elif isinstance(req.media, dict):
+            elif isinstance(req.media['data'], dict):
                 handle_file_dict_request(unique_id, req.media)
                 req.media.clear()
                 resp.body = json.dumps({'success': True, 'unique_id': unique_id})
+                resp.status = falcon.HTTP_200
                 
             else:
                 resp.body, resp.status = json.dumps({'success': False, 'reason': 'invalid request'}), falcon.HTTP_400

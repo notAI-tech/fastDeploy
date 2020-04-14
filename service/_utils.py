@@ -193,4 +193,8 @@ def cleanup(unique_id):
 
 def in_path_to_res_path(in_path):
     return in_path[:-3] + 'res'
+
+def write_webhook(unique_id, webhook):
+    if webhook and isinstance(webhook, str):
+        open(os.path.join(RAM_DIR, unique_id + '.webhook'), 'w').write(webhook)
     

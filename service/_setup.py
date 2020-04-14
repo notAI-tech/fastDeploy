@@ -39,7 +39,7 @@ for line in open('requirements.txt', 'r'):
     line = line.strip()
     if line[0] == '#': continue
     print(f'\t {yellow} Installing {line} {black}')
-    success = not os.system(f'pip3 install {line} > /dev/null 2>&1')
+    success = not os.system(f'pip3 install {line}')
     if not success:
         print(f'{red} Could not install {line} {black}\n')
         quit()

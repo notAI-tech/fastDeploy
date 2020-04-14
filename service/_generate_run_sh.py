@@ -18,4 +18,4 @@ else:
     n_workers = _utils.WORKERS
     logging.info(f'WORKERS={n_workers} from supplied config.')
 
-f_run.write(f'gunicorn --preload --timeout={int(_utils.TIMEOUT * 4)} -b 0.0.0.0:{_utils.PORT} _app:app --workers={n_workers} --worker-connections=1000 --worker-class=gevent' + '\n')
+f_run.write(f'gunicorn --preload --timeout={int(_utils.TIMEOUT * 4)} -b 0.0.0.0:8080 _app:app --workers={n_workers} --worker-connections=1000 --worker-class=gevent' + '\n')

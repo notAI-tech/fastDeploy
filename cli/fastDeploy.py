@@ -33,6 +33,13 @@ def _get_docker_command(log=False):
     return docker
 
 
+version = 'alpha'
+
+base_images = {
+    'core': 'Python-3.6.7',
+    'tf_1.14_cpu': 'Python-3.6.8 | Tensorflow 1.14'
+}
+
 def _build(args, docker='docker', log=False):
     code_dir = os.path.abspath(args.build)
 
@@ -40,7 +47,23 @@ def _build(args, docker='docker', log=False):
         print('{code_dir} does not exist')
         return False
 
-    base_image = f'notaitech/fastdeploy-core:{args.base}'
+    if not args.base:
+        print('Available base images list.\n')
+        row_format ="{:>20}" * 5
+        print()
+        print(row_format.format('|', 'name', '|', 'description', '|'))
+        print('-'.join(['' for _ in range(100)]))
+        for k, v in base_images.items():
+            print(row_format.format('|', k, '|', v, '|'))
+
+        print()
+        print('Enter the name of the base you want to use')
+        args.base = input()
+        if args.base not in base_images:
+            print('base not found')
+            exit()
+
+    base_image = f'notaitech/fastdeploy:{args.base}-{version}'
 
     _run_cmd(f'{docker} rm {args.name}')
     
@@ -89,10 +112,6 @@ if __name__ == '__main__':
     except:
         print('\n port defaulting to 8080 \n')
         args.port = 8080
-
-    if not args.base:
-        args.base = 'latest-base'
-
     
     docker = _get_docker_command()
     

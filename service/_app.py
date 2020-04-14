@@ -107,11 +107,11 @@ class Sync(object):
             unique_id = _utils.get_uuid()
 
             res_path = None
-            if isinstance(req.media, list):
-                res_path = handle_json_request(unique_id, req.media)
+            if isinstance(req.media['data'], list):
+                res_path = handle_json_request(unique_id, req.media['data'])
 
-            elif isinstance(req.media, dict):
-                res_path = handle_file_dict_request(unique_id, req.media)
+            elif isinstance(req.media['data'], dict):
+                res_path = handle_file_dict_request(unique_id, req.media['data'])
 
             else:
                 resp.body, resp.status = json.dumps({'success': False, 'reason': 'invalid request'}), falcon.HTTP_400

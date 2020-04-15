@@ -1,4 +1,5 @@
-
+import os
+import time
 '''
 
 Your function should take list of items as input
@@ -6,7 +7,10 @@ This makes batching possible
 
 '''
 
+SLEEP_TIME = float(os.getenv('SLEEP_TIME', '0.01'))
+
 def predictor(in_sents=[], batch_size=32):
+    time.sleep(SLEEP_TIME)
     return ['sucess' for _ in in_sents]
 
 

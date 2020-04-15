@@ -1,7 +1,3 @@
-import logging
-logging.basicConfig(level=logging.INFO)
-logging.info('Importing libraries..')
-
 import os
 import glob
 import json
@@ -30,7 +26,7 @@ def start_loop(predictor, example):
 
     to_process = None
 
-    logging.info('Starting prediction loop')
+    _utils.logger.info('Starting prediction loop')
 
     while True:
         to_process = _utils.get_to_process_list(FILE_MODE)

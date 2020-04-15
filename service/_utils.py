@@ -1,5 +1,10 @@
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+    datefmt='%Y-%m-%d:%H:%M:%S',
+    level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+
 
 import os
 import uuid
@@ -49,17 +54,17 @@ if CACHE >= 1:
 
 # if set CACHE value is lower than available memory, set cache to default value
 if CACHE >= free:
-    logging.error(f'\n AVAILABLE FREE MEMORY: {free/MB}; CACHE: {CACHE/MB} NOT POSSIBLE. USING DEFAULT.')
+    logger.error(f'\n AVAILABLE FREE MEMORY: {free/MB}; CACHE: {CACHE/MB} NOT POSSIBLE. USING DEFAULT.')
     CACHE = 0.05
 
 # if CACHE < 1, it's taken as a fraction of available free memory
 if CACHE < 1:
     if CACHE > 0.3:
-        logging.warn(f'\n {CACHE} might be too high than required for CACHE.')
+        logger.warn(f'\n {CACHE} might be too high than required for CACHE.')
 
     CACHE = CACHE * free
 
-    logging.info(f'AVAILABLE FREE MEMORY: {free/MB}; CACHE: {CACHE/MB} MB')
+    logger.info(f'AVAILABLE FREE MEMORY: {free/MB}; CACHE: {CACHE/MB} MB')
 
 # keeping track of amount of original free mmeory available
 o_used = used
@@ -96,7 +101,7 @@ def warmup(predictor, example_input, n=3):
 
         :param n: number of warmup predictions to be run. defaults to 3
     '''
-    logging.info('Warming up .. ')
+    logger.info('Warming up .. ')
     for _ in range(n):
         predictor(example_input)
 
@@ -124,17 +129,17 @@ def find_optimum_batch_sizes(predictor, example_input):
             for _ in range(3):
                 predictor(example_input * batch_size, batch_size=batch_size)
         except Exception as ex:
-            logging.exception(ex, exc_info=True)
-            logging.warn('Batch size set to 1 because of above exception')
+            logger.exception(ex, exc_info=True)
+            logger.warn('Batch size set to 1 because of above exception')
             break
             
         time_per_example = (time.time() - start)/(3 * batch_size)
         
-        logging.info(f'Time per sample for batch_size: {batch_size} is {time_per_example}')
+        logger.info(f'Time per sample for batch_size: {batch_size} is {time_per_example}')
 
         # determine which batch size yields the least time per example.
 
-        if time_per_example > previous_time_per_example:
+        if time_per_example > previous_time_per_example * 0.95:
             break
         else:
             previous_time_per_example = time_per_example
@@ -144,7 +149,7 @@ def find_optimum_batch_sizes(predictor, example_input):
     else:
         batch_size = BATCH_SIZE
 
-    logging.info(f'optimum batch size is {batch_size}')
+    logger.info(f'optimum batch size is {batch_size}')
 
     return batch_size, time_per_example
 
@@ -172,7 +177,8 @@ def create_symlink_in_ram(f):
         Given a file path f, creates symlink in RAM_DIR with the same basename as f.
     '''
     sym_link_path = os.path.join(RAM_DIR, os.path.basename(f))
-    os.system(f'ln -s {shlex.quote(sym_link_path)} {shlex.quote(f)}')
+    if not os.path.exists(sym_link_path):
+        os.system(f'ln -s {shlex.quote(sym_link_path)} {shlex.quote(f)}')
 
 def cleanup(unique_id):
     '''
@@ -182,14 +188,9 @@ def cleanup(unique_id):
     '''
     for _dir in (RAM_DIR, DISK_DIR):
         for f in glob.glob(os.path.join(_dir, unique_id) + '*'):
-            try:
-                os.remove(f)
-            except:
-                pass
-            try:
-                shutil.rmtree(f)
-            except:
-                pass
+            if not os.path.exists(f): continue
+            if f[-3:] == 'dir': shutil.rmtree(f)
+            else: os.remove(f)
 
 def in_path_to_res_path(in_path):
     return in_path[:-3] + 'res'
@@ -197,4 +198,6 @@ def in_path_to_res_path(in_path):
 def write_webhook(unique_id, webhook):
     if webhook and isinstance(webhook, str):
         open(os.path.join(RAM_DIR, unique_id + '.webhook'), 'w').write(webhook)
+    else:
+        logger.warn(f'id: {unique_id}, webhook: {webhook} is not valid.')
     

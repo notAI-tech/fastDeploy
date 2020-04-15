@@ -14,12 +14,10 @@ import shutil
 import datetime
 
 import falcon
-import logging
-logging.basicConfig(level=logging.INFO)
 
 import _utils
 
-def wait_and_read_pred(res_path):
+def wait_and_read_pred(res_path, unique_id):
     '''
         Waits for res_path and reads it.
 
@@ -43,6 +41,8 @@ def wait_and_read_pred(res_path):
             # stop in case of timeout
             if time.time() - start_time >= _utils.TIMEOUT:
                 break
+
+    _utils.cleanup(unique_id)
 
     return response, status
 
@@ -121,12 +121,12 @@ class Sync(object):
 
             if res_path:
                 req.media.clear()
-                resp.body, resp.status = wait_and_read_pred(res_path)
+                resp.body, resp.status = wait_and_read_pred(res_path, unique_id)
                 
         except Exception as ex:
             try: _utils.cleanup(unique_id)
             except: pass
-            logging.exception(ex, exc_info=True)
+            _utils.logger.exception(ex, exc_info=True)
             resp.body = json.dumps({'success': False, 'reason': str(ex)})
             resp.status = falcon.HTTP_400
 
@@ -140,13 +140,13 @@ class Async(object):
             _utils.write_webhook(unique_id, webhook)
 
             if isinstance(req.media['data'], list):
-                handle_json_request(unique_id, req.media)
+                handle_json_request(unique_id, req.media['data'])
                 req.media.clear()
                 resp.body = json.dumps({'success': True, 'unique_id': unique_id})
                 resp.status = falcon.HTTP_200
 
             elif isinstance(req.media['data'], dict):
-                handle_file_dict_request(unique_id, req.media)
+                handle_file_dict_request(unique_id, req.media['data'])
                 req.media.clear()
                 resp.body = json.dumps({'success': True, 'unique_id': unique_id})
                 resp.status = falcon.HTTP_200
@@ -157,7 +157,7 @@ class Async(object):
         except Exception as ex:
             try: _utils.cleanup(unique_id)
             except: pass
-            logging.exception(ex, exc_info=True)
+            _utils.logger.exception(ex, exc_info=True)
             resp.body = json.dumps({'success': False, 'reason': str(ex)})
             resp.status = falcon.HTTP_400
 
@@ -187,7 +187,7 @@ class Res(object):
         except Exception as ex:
             try: _utils.cleanup(unique_id)
             except: pass
-            logging.exception(ex, exc_info=True)
+            _utils.logger.exception(ex, exc_info=True)
             resp.body = json.dumps({'success': False, 'reason': str(ex)})
             resp.status = falcon.HTTP_400
 

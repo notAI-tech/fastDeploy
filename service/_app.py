@@ -21,14 +21,17 @@ import _utils
 
 def wait_and_read_pred(res_path, unique_id):
     """
-        Waits for res_path and reads it.
+        Waits for and reads pickle file at res_path.
 
-        :param res_path: the result file path to watch.
+        :param res_path: the result pickle file path to watch.
+        :param unique_id: unique_id used in cleanup 
 
         :return response: python dict with keys "success" and "prediction"/ "reason"
         :return status: HTTP status code
     """
+    # Keeping track of start_time for TIMEOUT implementation
     start_time = time.time()
+    # Default response and status
     response, status = (
         json.dumps({"success": False, "reason": "timeout"}),
         falcon.HTTP_503,
@@ -51,6 +54,7 @@ def wait_and_read_pred(res_path, unique_id):
             if time.time() - start_time >= _utils.TIMEOUT:
                 break
 
+    # Since this is the last step in /sync, we delete all files related to this unique_id
     _utils.cleanup(unique_id)
 
     return response, status
@@ -59,7 +63,7 @@ def wait_and_read_pred(res_path, unique_id):
 def get_write_res_paths(unique_id, in_size=0):
     """
         :param unique_id: unique id
-        :param in_size: size of the input data
+        :param in_size: size of the input data in bytes
 
         :return write_path: input file/dir path
         :return res_path: result file path
@@ -79,12 +83,16 @@ def handle_json_request(unique_id, in_json):
 
         :return res_path: result file path
     """
+    # protocol 2 is faster than 3
     in_json = pickle.dumps(in_json, protocol=2)
 
     write_path, res_path = get_write_res_paths(unique_id, sys.getsizeof(in_json))
 
     open(write_path, "wb").write(in_json)
 
+    # If an input is more in size (than MAX_RAM_FILE_SIZE) or if CACHE is full, it is written to disk.
+    # in these cases, for faster glob and other file ops, we symlink them in RAM.
+    # This helps _loop.py to be optimal
     _utils.create_symlink_in_ram(write_path)
 
     return res_path
@@ -99,10 +107,14 @@ def handle_file_dict_request(unique_id, in_dict):
 
         :return res_path: result file path
     """
+    # file_size = 0.75 * len(base64 string of the file)
     _write_dir, res_path = get_write_res_paths(
         unique_id, 0.75 * sum([len(v) for v in in_dict.items()])
     )
 
+    # since we write files sequentially, we don't want loop to pickup truncated inputs.
+    # _write_dir is a temporary location which will be moved to write_dir when all files are written.
+    # Since _write_dir and write_dir exist in same disk, mv is instantaneous
     write_dir = _write_dir + ".dir"
 
     os.mkdir(_write_dir)
@@ -122,11 +134,13 @@ def handle_file_dict_request(unique_id, in_dict):
 
 
 class Sync(object):
+    # Class for dealing with sync requests
     def on_post(self, req, resp):
         try:
             unique_id = _utils.get_uuid()
 
             res_path = None
+          
             if isinstance(req.media["data"], list):
                 res_path = handle_json_request(unique_id, req.media["data"])
 

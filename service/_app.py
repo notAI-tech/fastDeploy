@@ -140,7 +140,7 @@ class Sync(object):
             unique_id = _utils.get_uuid()
 
             res_path = None
-          
+
             if isinstance(req.media["data"], list):
                 res_path = handle_json_request(unique_id, req.media["data"])
 

@@ -5,7 +5,6 @@ monkey.patch_all()
 
 import os
 import sys
-import ast
 import uuid
 import glob
 import time
@@ -42,10 +41,10 @@ def wait_and_read_pred(res_path, unique_id):
             pred = pickle.load(open(res_path, "rb"))
             try:
                 response = json.dumps({"prediction": pred, "success": True})
-            # if return dict has any non json serializable values, this might help.
+            # if return dict has any non json serializable values, we str() it
             except:
                 response = json.dumps(
-                    {"prediction": ast.literal_eval(str(pred)), "success": True}
+                    {"prediction": str(pred), "success": True}
                 )
             status = falcon.HTTP_200
             break
@@ -221,7 +220,7 @@ class Res(object):
                     response = json.dumps({"prediction": pred, "success": True})
                 except:
                     response = json.dumps(
-                        {"prediction": ast.literal_eval(str(pred)), "success": True}
+                        {"prediction": str(pred), "success": True}
                     )
                 _utils.cleanup(unique_id)
                 resp.body = response

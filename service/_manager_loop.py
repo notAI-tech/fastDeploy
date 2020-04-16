@@ -1,5 +1,4 @@
 import os
-import ast
 import time
 import glob
 import json
@@ -33,7 +32,7 @@ def process_webhooks():
                 json.dumps(pred)
             # if return dict has any non json serializable values, this might help.
             except:
-                pred = ast.literal_eval(str(pred))
+                pred = str(pred)
             pred = {"prediction": pred, "success": True, "unique_id": unique_id}
 
             webhook_url = open(webhook_f).read().strip()

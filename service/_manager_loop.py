@@ -10,6 +10,10 @@ import _utils
 
 
 def process_webhooks():
+    """
+        Searches for webhook files, and sends the result if completed.
+    """
+    # list of webhooks left to send.
     webhooks_left = glob.glob(os.path.join(_utils.RAM_DIR, "*webhook"))
     if not webhooks_left:
         return
@@ -17,6 +21,7 @@ def process_webhooks():
     _utils.logger.info(f"{len(webhooks_left)} webhooks found")
     for webhook_f in webhooks_left:
         try:
+            # check if res exists
             unique_id = os.path.basename(webhook_f).split(".")[0]
             res_path = glob.glob(os.path.join(_utils.RAM_DIR, f"{unique_id}*res"))
             if not res_path:
@@ -32,6 +37,7 @@ def process_webhooks():
             pred = {"prediction": pred, "success": True, "unique_id": unique_id}
 
             webhook_url = open(webhook_f).read().strip()
+            # try 3 times with timeout=5 seconds.
             for _ in range(3):
                 try:
                     requests.post(webhook_url, json=pred, timeout=5)
@@ -44,12 +50,15 @@ def process_webhooks():
                     )
                     pass
 
+            # will be deleted after succes or after 3 fails
             _utils.cleanup(unique_id)
         except Exception as exc:
             _utils.logger.exception(exc, exc_info=True)
 
 
 while True:
+    # This is the loop where non cpu heavy, managerial stuff happens.
+    #
     process_webhooks()
 
     time.sleep(15)

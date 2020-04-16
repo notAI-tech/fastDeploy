@@ -216,10 +216,23 @@ def cleanup(unique_id):
 
 
 def in_path_to_res_path(in_path):
+    """
+        converts in_path to res_path
+
+        :param in_path: in_path
+
+        :return: res_path
+    """
     return in_path[:-3] + "res"
 
 
 def write_webhook(unique_id, webhook):
+    """
+        writes webhook string (url) to corresponding file.
+
+        :param unique_id: unique_id
+        :param webhook: webhook string
+    """
     if webhook and isinstance(webhook, str):
         open(os.path.join(RAM_DIR, unique_id + ".webhook"), "w").write(webhook)
     else:

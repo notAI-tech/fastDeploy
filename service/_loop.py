@@ -19,23 +19,41 @@ def start_loop(predictor, example):
 
         This function starts a loop. Does not return anything.
     """
+
+    # warmup
     _utils.warmup(predictor, example)
 
+    # find optimal batch size
     batch_size, time_per_example = _utils.find_optimum_batch_sizes(predictor, example)
 
+    # write batch size to temp file for use in generating _run.sh
     os.system(f"echo {batch_size} > {_utils.batch_size_file_path}")
 
+    # list of files/data to be processed is tracked here.
     to_process = None
 
     _utils.logger.info("Starting prediction loop")
 
     while True:
+        # Get the latest list of to process data
         to_process = _utils.get_to_process_list(FILE_MODE)
 
         if not to_process:
             continue
 
+        # The "batch" here is a batch of inputs.
+        # since, each input might contain more than one example (client side batching)
+        # we pass the batch_size paramter to predictor
+        # this is especially helpfull for most of the major deep learning libraries
+        # that accept batch_size as a parameter to predict call
+        # TLDR; predictor function should respect a parameter named batch_size
         for batch in _utils.get_batch(to_process, batch_size):
+            # in_data will contain flattened list of user inputs.
+            # batch = [['1', '2'], ['3'], ['4,5,6']] will result in
+            # in_data = [1, 2, 3, 4, 5, 6]
+            # n_per_file = [2, 1, 3]
+            # This way, we can pass the in_data to predictor function with above calculated batch_size
+            # later, we can use n_per_file to re-order preds in to batches.
             in_data = []
             n_per_file = []
             for i, in_path in enumerate(batch):
@@ -62,6 +80,7 @@ def start_loop(predictor, example):
                 results = [str(ex) for _ in in_data]
 
             for i, in_path in enumerate(batch):
+                # we use n_per_file to re-order preds in to batches.
                 result = results[: n_per_file[i]]
                 results = results[n_per_file[i] :]
 

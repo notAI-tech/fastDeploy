@@ -1,3 +1,4 @@
+import falcon
 from gevent import monkey
 
 monkey.patch_all()
@@ -14,7 +15,6 @@ import pickle
 import shutil
 import datetime
 
-import falcon
 
 import _utils
 

@@ -1,1 +1,1 @@
-flair
+https://github.com/flairNLP/flair/archive/master.zip

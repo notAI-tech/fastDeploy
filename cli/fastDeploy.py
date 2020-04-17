@@ -37,7 +37,8 @@ version = 'alpha'
 
 base_images = {
     'core': 'Python-3.6.7',
-    'tf_1.14_cpu': 'Python-3.6.8 | Tensorflow 1.14'
+    'tf_1.14_cpu': 'Python-3.6.8 | Tensorflow 1.14',
+    'pytorch_1.4_cpu': 'Python-3.6.7 | Pytorch 1.4'
 }
 
 def _build(args, docker='docker', log=False):

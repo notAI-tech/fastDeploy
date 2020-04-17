@@ -16,7 +16,8 @@ def predictor(in_sents=[], batch_size=4):
 
         tagger.predict(batch)
 
-        preds += [s.to_dict(tag_type=tag_type) for s in batch]
+        [s.to_dict(tag_type=tag_type) for s in batch]
+        preds += batch
 
         in_sents = in_sents[batch_size:]
 

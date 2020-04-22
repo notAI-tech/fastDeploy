@@ -237,3 +237,9 @@ def write_webhook(unique_id, webhook):
         open(os.path.join(RAM_DIR, unique_id + ".webhook"), "w").write(webhook)
     else:
         logger.warn(f"id: {unique_id}, webhook: {webhook} is not valid.")
+
+log_data_path = os.path.join(RAM_DIR, 'log_data.pkl')
+def write_loop_log_data(data):
+    data['average_batch_size_per_prediction'] = (data['processed'] + data['failed'])/data['number_of_predictions']
+    data['up_time'] = time.time() - data['start_time']
+    pickle.dump(data, open(log_data_path, 'wb'), protocol=2)

@@ -239,6 +239,16 @@ class Res(object):
             resp.status = falcon.HTTP_400
 
 
+class Status(object):
+    def on_get(self, req, resp):
+        try:
+            resp.body = json.dumps({"status": pickle.load(open(_utils.log_data_path, 'rb')), "success": True})
+            resp.status = falcon.HTTP_200
+        except Exception as ex:
+            _utils.logger.exception(ex, exc_info=True)
+            resp.body = json.dumps({"success": False, "reason": str(ex)})
+            resp.status = falcon.HTTP_400       
+
 app = falcon.API()
 app.req_options.auto_parse_form_urlencoded = True
 

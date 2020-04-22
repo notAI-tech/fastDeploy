@@ -19,12 +19,23 @@ def start_loop(predictor, example):
 
         This function starts a loop. Does not return anything.
     """
+    log_data = {
+                    'start_time': time.time(),
+                    'batch_size': 0,
+                    'time_per_example': 0,
+                    'processed': 0,
+                    'failed': 0,
+                    'number_of_predictions': 0,
+                }
 
     # warmup
     _utils.warmup(predictor, example)
 
     # find optimal batch size
     batch_size, time_per_example = _utils.find_optimum_batch_sizes(predictor, example)
+
+    log_data['batch_size'] = batch_size
+    log_data['time_per_example'] = time_per_example
 
     # write batch size to temp file for use in generating _run.sh
     os.system(f"echo {batch_size} > {_utils.batch_size_file_path}")
@@ -35,6 +46,7 @@ def start_loop(predictor, example):
     _utils.logger.info("Starting prediction loop")
 
     while True:
+        _utils.write_log_data(log_data)
         # Get the latest list of to process data
         to_process = _utils.get_to_process_list(FILE_MODE)
 
@@ -76,8 +88,12 @@ def start_loop(predictor, example):
 
             try:
                 results = predictor(in_data, batch_size=batch_size)
+                log_data['processed'] += len(results)
             except Exception as ex:
                 results = [str(ex) for _ in in_data]
+                log_data['failed'] += len(results)
+
+            log_data['number_of_predictions'] += 1
 
             for i, in_path in enumerate(batch):
                 # we use n_per_file to re-order preds in to batches.

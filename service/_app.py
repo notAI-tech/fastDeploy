@@ -43,9 +43,7 @@ def wait_and_read_pred(res_path, unique_id):
                 response = json.dumps({"prediction": pred, "success": True})
             # if return dict has any non json serializable values, we str() it
             except:
-                response = json.dumps(
-                    {"prediction": str(pred), "success": True}
-                )
+                response = json.dumps({"prediction": str(pred), "success": True})
             status = falcon.HTTP_200
             break
         except:
@@ -219,9 +217,7 @@ class Res(object):
                 try:
                     response = json.dumps({"prediction": pred, "success": True})
                 except:
-                    response = json.dumps(
-                        {"prediction": str(pred), "success": True}
-                    )
+                    response = json.dumps({"prediction": str(pred), "success": True})
                 _utils.cleanup(unique_id)
                 resp.body = response
                 resp.status = falcon.HTTP_200

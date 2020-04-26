@@ -60,9 +60,9 @@ def _build(args, docker='docker', log=False):
 
     base_image = f'notaitech/fastdeploy:{args.base}-{VERSION}'
 
-    _docker_rm(docker, args.name)
+    _docker_rm(docker, args.build)
 
-    _docker_build(docker, args.name, code_dir, args.port, base_image, log)
+    _docker_build(docker, args.build, code_dir, args.port, base_image, log)
 
     
 def parse_args(args):
@@ -76,9 +76,6 @@ def parse_args(args):
         exit()
     
     if args.build:
-        if not args.name:
-            print('--name must be supplied for building.')
-            exit()
         if not args.source_dir or not os.path.exists(args.source_dir):
             print('--source_dir must be supplied and must exist for building')
             exit()
@@ -97,7 +94,7 @@ def parse_args(args):
                 break
         
         if not args.port:
-            print('\n --port defaults to 8080')
+            print('\n --port defaults to 8080 \n')
             args.port = '8080'
         
         _build(args, docker, log=args.verbose)

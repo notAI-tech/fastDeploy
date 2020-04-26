@@ -134,7 +134,14 @@ class Sync(object):
     # Class for dealing with sync requests
     def on_post(self, req, resp):
         try:
-            unique_id = _utils.get_uuid()
+            priority = 8
+
+            try:
+                priority = int(req.media['priority'])
+            except:
+                pass
+                
+            unique_id = _utils.get_uuid(priority=8)
 
             res_path = None
 

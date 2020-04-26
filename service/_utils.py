@@ -94,14 +94,15 @@ def get_write_dir(file_size_in_bytes=0):
     return DISK_DIR
 
 
-def get_uuid():
+def get_uuid(priority=9):
     """
         Generate a unique id.
 
         :return: unique id generated using uuid4 and current time.
     """
     return (
-        datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
+        priority
+        + datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
         + "-"
         + str(uuid.uuid4())
     )

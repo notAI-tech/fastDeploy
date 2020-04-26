@@ -101,7 +101,7 @@ def get_uuid(priority=9):
         :return: unique id generated using uuid4 and current time.
     """
     return (
-        priority
+        str(priority)
         + datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
         + "-"
         + str(uuid.uuid4())

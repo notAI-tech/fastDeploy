@@ -2,6 +2,15 @@ import os
 import shlex
 import argparse
 
+VERSION = 'v0.1'
+
+BASE_IMAGES = {
+    'base': 'Python-3.6.7',
+    'tf_1.14_cpu': 'Python-3.6.8 | Tensorflow 1.14',
+    'pytorch_1.4_cpu': 'Python-3.6.7 | Pytorch 1.4'
+}
+
+
 def _run_cmd(cmd, log=False):
     if log:
         print('\n', cmd, '\n')
@@ -16,8 +25,11 @@ def _run_cmd(cmd, log=False):
 def _get_docker_command(log=False):
     docker = 'docker'
 
+    if not _run_cmd('which docker > /dev/null'):
+        print('\n Docker not found. \n')
+
     if _run_cmd('docker -v > /dev/null', log):
-        print('docker installation found')
+        print('Docker installation found')
     else:
         print('Install docker from https://docs.docker.com/install/')
         return False
@@ -32,99 +44,78 @@ def _get_docker_command(log=False):
 
     return docker
 
+def _docker_build(docker, name, code_dir, port, base_image, log):
+    name = shlex.quote(name)
+    code_dir = shlex.quote(code_dir)
+    cmd = docker + ' run --name ' + name + ' -v ' + code_dir + ':/to_setup_data --tmpfs /ramdisk -p' + port + ':8080 -it ' + base_image
+    _run_cmd(cmd, log)
 
-version = 'alpha'
+def _docker_rm(docker, name):
+    name = shlex.quote(name)
+    _run_cmd(docker + ' rm ' + name, log=False)
 
-base_images = {
-    'core': 'Python-3.6.7',
-    'tf_1.14_cpu': 'Python-3.6.8 | Tensorflow 1.14',
-    'pytorch_1.4_cpu': 'Python-3.6.7 | Pytorch 1.4'
-}
 
 def _build(args, docker='docker', log=False):
-    code_dir = os.path.abspath(args.build)
+    code_dir = os.path.abspath(args.source_dir)
 
-    if not os.path.exists(code_dir):
-        print('{code_dir} does not exist')
-        return False
+    base_image = f'notaitech/fastdeploy:{args.base}-{VERSION}'
 
-    if not args.base:
-        print('Available base images list.\n')
-        row_format ="{:>20}" * 5
-        print()
-        print(row_format.format('|', 'name', '|', 'description', '|'))
-        print('-'.join(['' for _ in range(100)]))
-        for k, v in base_images.items():
-            print(row_format.format('|', k, '|', v, '|'))
+    _docker_rm(docker, args.name)
 
-        print()
-        print('Enter the name of the base you want to use')
-        args.base = input()
-        if args.base not in base_images:
-            print('base not found')
-            exit()
+    _docker_build(docker, args.name, code_dir, args.port, base_image, log)
 
-    base_image = f'notaitech/fastdeploy:{args.base}-{version}'
-
-    _run_cmd(f'{docker} rm {args.name}')
     
-    _run_cmd(f'{docker} run --name {args.name} -v {shlex.quote(code_dir)}:/to_setup_data --tmpfs /ramdisk -p{args.port}:8080 -it {base_image}', log)
+def parse_args(args):
+    docker = _get_docker_command()
+    if not docker:
+        print("\n Error in running docker. \n")
+        exit()
 
-def _save(args, docker='docker'):
-    res = _run_cmd(f'{docker} commit {args.name} {args.save}')
-    if not res:
-        print('\n Could not save the image. Please make sure the build is still running. \n')
-        return False
-
-    print('\n The build will be stopped now. \n')
-    _run_cmd(f'{docker} kill {args.name}')
-
-    _run_cmd(f'{docker} rm {args.name}')
-
-    print('Attempting to push the image to docker hub.')
-    _run_cmd(f'{docker} push {args.save}')
-
-def _run(args, docker='docker'):
-    _run_cmd(f'{docker} run --name {args.name} --tmpfs /ramdisk -p{args.port}:8080 -d {args.run}')
-
+    if len([v for v in (args.build, args.commit, args.run) if v]) != 1:
+        print("\n One of --build --commit --run must be specified \n")
+        exit()
+    
+    if args.build:
+        if not args.name:
+            print('--name must be supplied for building.')
+            exit()
+        if not args.source_dir or not os.path.exists(args.source_dir):
+            print('--source_dir must be supplied and must exist for building')
+            exit()
+        
+        if not args.base:
+            print('\nList of available base images\n')
+            for k, v in BASE_IMAGES.items():
+                print('NAME:', k, '\t Description:', v, '\n')
+            
+            print('Enter the name of the base you want to use')
+            while True:
+                args.base = input()
+                if args.base not in BASE_IMAGES:
+                    print('input must be on of the above list. ctrl/cmd + c to quit.')
+                    continue
+                break
+        
+        if not args.port:
+            print('\n --port defaults to 8080')
+            args.port = '8080'
+        
+        _build(args, docker, log=args.verbose)
+    
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='CLI for fastDeploy. https://fastDeploy.notAI.tech/cli')
-
-    parser.add_argument('--name', type=str, help='Name of the build', )
-    parser.add_argument('--build', type=str, help='Path to your recipie.')
-    parser.add_argument('--save', type=str, help='Pass the version of a build name.')
-    parser.add_argument('--run', type=str, help='Pass the version of a build name.')
-    parser.add_argument('--args', type=str, help='optional arguments for run')
-    parser.add_argument('--port',type=str, help='Port to run on.')
-    parser.add_argument('--gpu', type=str, help='Id(s) of the gpu to run on.')
-    parser.add_argument('--base', type=str, help='Version of fastServe-core to use')
-    parser.add_argument('--verbose', action='store_true', help='display docker commands used internally.')
+    # parser.add_argument('--gpu', type=str, help='Id(s) of the gpu to run on.')
+    parser.add_argument('--build', type=str, help='Name of the build eg: resnet_v1')
+    parser.add_argument('--source_dir', type=str, help='Path to your recipie directory. eg: ./resnet_dir')
+    parser.add_argument('--commit', type=str, help='Name of the build to commit. eg: same name you used in build.')
+    parser.add_argument('--run', type=str, help='local or cloud name of build to run. eg: resnet_v1 or notaitech/craft_text_detection-v0.1')
+    parser.add_argument('--port',type=str, help='Port to run on. eg: 8080')
+    parser.add_argument('--base',type=str, help='Optionsl base image name for the build.')
+    parser.add_argument('--extra_config',type=str, help='a json with variable name and value as key value pairs. eg: --extra_config \'{"ENV_1": "VAL"}\'')
+    parser.add_argument('--verbose', action='store_true', help='displays the docker commands used.')
 
     args = parser.parse_args()
 
-    log = False
-    if args.verbose:
-        log = True
-
-    try:
-        args.port = int(args.port)
-    except:
-        print('\n port defaulting to 8080 \n')
-        args.port = 8080
-    
-    docker = _get_docker_command()
-    
-    if not docker:
-        exit()
-
-    if args.build and args.name:
-        _build(args, docker, log)
-    
-    if args.save and args.name:
-        _save(args, docker, log)
-    
-    if args.run and args.name:
-        _run(args, docker, log)
-    
+    parse_args(args)

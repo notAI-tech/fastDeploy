@@ -80,6 +80,10 @@ def _build(args, docker="docker", log=False):
 
 def parse_args(args):
     docker = _get_docker_command()
+    
+    if os.getenv('VERBOSE'):
+        args.verbose = True
+
     if not docker:
         print(os.linesep, "Error in running docker.")
         exit()

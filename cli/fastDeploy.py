@@ -1,5 +1,7 @@
 import os
+import time
 import shlex
+import random
 import argparse
 
 VERSION = "v0.1"
@@ -88,8 +90,8 @@ def parse_args(args):
         print(os.linesep, "Error in running docker.")
         exit()
 
-    if len([v for v in (args.build, args.commit, args.run) if v]) != 1:
-        print(os.linesep, "One of --build --commit --run must be specified.")
+    if len([v for v in (args.build, args.run) if v]) != 1:
+        print(os.linesep, "One of --build --run must be specified.")
         exit()
 
     if args.build:
@@ -118,6 +120,32 @@ def parse_args(args):
             args.port = "8080"
 
         _build(args, docker, log=args.verbose)
+    
+    if args.run:
+        if not args.port:
+            print(os.linesep, "--port defaults to 8080")
+            args.port = "8080"
+
+        if not args.name:
+            print(os.linesep, "You can also use --name along with run for giving your container a memorable name.")
+            args.name = 'fastDeploy' + '.' + str(random.randint(0, 9)) + '.' + str(time.time())
+            print(os.linesep, "Attempting to start a container with the name", args.name, os.linesep)
+
+        cmd = (
+                docker
+                + " run --name "
+                + args.name
+                + " --tmpfs /ramdisk -p"
+                + args.port
+                + ":8080 "
+                + args.run
+            )
+        
+        if _run_cmd(cmd, args.verbose):
+            print(os.linesep, 'Succesfully started the container', args.name)
+        else:
+            _docker_rm(docker, args.name)
+            print(os.linesep, 'Unsuccesfull attempt to start container with name', args.name)
 
 
 if __name__ == "__main__":
@@ -132,14 +160,14 @@ if __name__ == "__main__":
         help="Path to your recipie directory. eg: ./resnet_dir",
     )
     parser.add_argument(
-        "--commit",
-        type=str,
-        help="Name of the build to commit. eg: same name you used in build.",
-    )
-    parser.add_argument(
         "--run",
         type=str,
         help="local or cloud name of build to run. eg: resnet_v1 or notaitech/craft_text_detection-v0.1",
+    )
+    parser.add_argument(
+        "--name",
+        type=str,
+        help="To be used along with run. Sets a name for the container.",
     )
     parser.add_argument("--port", type=str, help="Port to run on. eg: 8080")
     parser.add_argument(

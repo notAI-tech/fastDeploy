@@ -8,8 +8,8 @@ VERSION = "v0.1"
 
 BASE_IMAGES = {
     "base": "Python-3.6.7",
-    "tf_1.14_cpu": "Python-3.6.8 | Tensorflow 1.14",
-    "pytorch_1.4_cpu": "Python-3.6.7 | Pytorch 1.4",
+    "tf_1.14_cpu": "Python-3.6.8 | Tensorflow 1.14 | CPU",
+    "pytorch_1.5_cpu": "Python-3.6.7 | Pytorch 1.5 | CPU",
 }
 
 

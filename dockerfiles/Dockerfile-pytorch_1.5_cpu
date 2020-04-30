@@ -4,14 +4,14 @@ MAINTAINER Bedapudi Praneeth "praneeth@bpraneeth.com"
 
 RUN apt-get update && apt-get install -y build-essential gcc
 
-RUN pip3 install Cython==0.29.15
+RUN pip3 install Cython
 
-RUN pip3 install gevent==1.4.0
-RUN pip3 install falcon==2.0.0
-RUN pip3 install gunicorn==20.0.4
+RUN pip3 install requests
+RUN pip3 install gevent
+RUN pip3 install falcon
+RUN pip3 install gunicorn
 
-
-RUN pip3 install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+RUN pip3 install torch==1.5.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 RUN pip3 install --global-option="--pyprof" --global-option="--cpp_ext" https://github.com/NVIDIA/apex/archive/master.zip
 
 WORKDIR /app

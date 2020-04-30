@@ -137,10 +137,10 @@ class Sync(object):
             priority = 8
 
             try:
-                priority = int(req.media['priority'])
+                priority = int(req.media["priority"])
             except:
                 pass
-                
+
             unique_id = _utils.get_uuid(priority=8)
 
             res_path = None

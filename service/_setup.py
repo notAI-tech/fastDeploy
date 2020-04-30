@@ -20,7 +20,7 @@ current_file_names = {f for f in current_file_names if f[0] == "_"}
 if os.path.exists(f"{setup_dir}"):
     for f in glob.glob(f"{setup_dir}/*"):
         f = os.path.basename(f)
-        if f in current_file_names:
+        if f in current_file_names and f not in {'__pycache__'}:
             print(f"{red} file or folder name cannot be one of {current_file_names}")
             quit()
 

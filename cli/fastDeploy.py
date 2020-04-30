@@ -82,8 +82,8 @@ def _build(args, docker="docker", log=False):
 
 def parse_args(args):
     docker = _get_docker_command()
-    
-    if os.getenv('VERBOSE'):
+
+    if os.getenv("VERBOSE"):
         args.verbose = True
 
     if not docker:
@@ -120,32 +120,46 @@ def parse_args(args):
             args.port = "8080"
 
         _build(args, docker, log=args.verbose)
-    
+
     if args.run:
         if not args.port:
             print(os.linesep, "--port defaults to 8080")
             args.port = "8080"
 
         if not args.name:
-            print(os.linesep, "You can also use --name along with run for giving your container a memorable name.")
-            args.name = 'fastDeploy' + '.' + str(random.randint(0, 9)) + '.' + str(time.time())
-            print(os.linesep, "Attempting to start a container with the name", args.name, os.linesep)
+            print(
+                os.linesep,
+                "You can also use --name along with run for giving your container a memorable name.",
+            )
+            args.name = (
+                "fastDeploy" + "." + str(random.randint(0, 9)) + "." + str(time.time())
+            )
+            print(
+                os.linesep,
+                "Attempting to start a container with the name",
+                args.name,
+                os.linesep,
+            )
 
         cmd = (
-                docker
-                + " run --name "
-                + args.name
-                + " --tmpfs /ramdisk -p"
-                + args.port
-                + ":8080 "
-                + args.run
-            )
-        
+            docker
+            + " run --name "
+            + args.name
+            + " --tmpfs /ramdisk -p"
+            + args.port
+            + ":8080 "
+            + args.run
+        )
+
         if _run_cmd(cmd, args.verbose):
-            print(os.linesep, 'Succesfully started the container', args.name)
+            print(os.linesep, "Succesfully started the container", args.name)
         else:
             _docker_rm(docker, args.name)
-            print(os.linesep, 'Unsuccesfull attempt to start container with name', args.name)
+            print(
+                os.linesep,
+                "Unsuccesfull attempt to start container with name",
+                args.name,
+            )
 
 
 if __name__ == "__main__":

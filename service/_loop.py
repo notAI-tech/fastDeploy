@@ -26,8 +26,7 @@ def start_loop(predictor, example):
     # find optimal batch size and get_time_per example
     batch_size, time_per_example = _utils.find_optimum_batch_sizes(predictor, example)
 
-    time_per_batch = batch_size * time_per_example
-    max_wait_time = time_per_batch * _utils.MAX_WAIT
+    max_wait_time = time_per_example * _utils.MAX_WAIT
 
     # write batch size to temp file for use in generating _run.sh
     os.system(f"echo {batch_size} > {_utils.batch_size_file_path}")

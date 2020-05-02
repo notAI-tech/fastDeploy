@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import shlex
 import random
@@ -48,13 +49,14 @@ def _get_docker_command(log=False):
     return docker
 
 
-def _docker_build(docker, name, code_dir, port, base_image, log):
+def _docker_build(docker, name, code_dir, port, base_image, log, extra_config):
     name = shlex.quote(name)
     code_dir = shlex.quote(code_dir)
     cmd = (
         docker
         + " run --name "
         + name
+        + extra_config
         + " -v "
         + code_dir
         + ":/to_setup_data --tmpfs /ramdisk -p"
@@ -70,14 +72,43 @@ def _docker_rm(docker, name):
     _run_cmd(docker + " rm " + name, log=False)
 
 
-def _build(args, docker="docker", log=False):
+def _build(args, docker="docker", log=False, extra_config=""):
     code_dir = os.path.abspath(args.source_dir)
 
     base_image = f"notaitech/fastdeploy:{args.base}-{VERSION}"
 
     _docker_rm(docker, args.build)
 
-    _docker_build(docker, args.build, code_dir, args.port, base_image, log)
+    if not extra_config:
+        extra_config = ""
+
+    _docker_build(
+        docker,
+        args.build,
+        code_dir,
+        args.port,
+        base_image,
+        log,
+        extra_config=extra_config,
+    )
+
+
+def _parse_extra_config(extra_config):
+    if not extra_config:
+        return ""
+    try:
+        extra_config = json.loads(extra_config)
+        extra_config = "".join(
+            [
+                " -e " + key + "=" + shlex.quote(val) + " "
+                for key, val in extra_config.items()
+            ]
+        )
+        return extra_config
+    except Exception as ex:
+        print(os.linesep, ex)
+        print(os.linesep, "Extra config must be a json.")
+    return ""
 
 
 def parse_args(args):
@@ -93,6 +124,8 @@ def parse_args(args):
     if len([v for v in (args.build, args.run) if v]) != 1:
         print(os.linesep, "One of --build --run must be specified.")
         exit()
+
+    extra_config = _parse_extra_config(args.extra_config)
 
     if args.build:
         if not args.source_dir or not os.path.exists(args.source_dir):
@@ -119,7 +152,7 @@ def parse_args(args):
             print(os.linesep, "--port defaults to 8080")
             args.port = "8080"
 
-        _build(args, docker, log=args.verbose)
+        _build(args, docker, log=args.verbose, extra_config=extra_config)
 
     if args.run:
         if not args.port:
@@ -148,6 +181,7 @@ def parse_args(args):
             + " --tmpfs /ramdisk -p"
             + args.port
             + ":8080 "
+            + extra_config
             + args.run
         )
 

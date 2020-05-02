@@ -43,8 +43,14 @@ CACHE = float(os.getenv("CACHE", "0.05"))
 # Maximum size of a file in MB allowed to be in ram disk.
 MAX_RAM_FILE_SIZE = float(os.getenv("MAX_RAM_FILE_SIZE", "2")) * 1024 * 1024
 
-# if BATCH_SIZE is not 0, find_optimum_batch_size is not used.
+# if BATCH_SIZE is not 0, will be used as default batch size.
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", 0))
+
+# The loop will wait for time_per_batch * MAX_WAIT 
+# This helps control the number of requests you can batch
+# If you are focused on Sync, <=0.2 is reccomended,
+# If async, closer to 0.5 is reccomended.
+MAX_WAIT = float(os.getenv("MAX_WAIT", 0.1))
 
 # reading the availbale storage (ram) on RAM_DIR
 _, used, free = shutil.disk_usage(RAM_DIR)
@@ -132,7 +138,7 @@ def find_optimum_batch_sizes(predictor, example_input):
     time_per_example = None
     previous_time_per_example = pow(2, 64)
 
-    possible_batch_sizes = range(32)
+    possible_batch_sizes = range(16)
     if BATCH_SIZE:
         possible_batch_sizes = [BATCH_SIZE]
 

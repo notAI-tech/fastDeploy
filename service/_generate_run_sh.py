@@ -9,7 +9,7 @@ f_run = open("_run_utils.sh", "w")
 # f_run.write(f'watch -n{_delete_older_than} "find /ramdisk -not -newermt {delete_older_than} -delete"* &' + '\n')
 
 if not _utils.WORKERS:
-    n_workers = max(3, int((multiprocessing.cpu_count() / 4) + 1))
+    n_workers = max(3, int((multiprocessing.cpu_count()) + 1))
     batch_size = int(open(_utils.batch_size_file_path).read().strip())
     n_workers = min(n_workers, batch_size + 1)
     _utils.logger.info(

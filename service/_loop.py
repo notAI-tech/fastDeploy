@@ -23,8 +23,11 @@ def start_loop(predictor, example):
     # warmup
     _utils.warmup(predictor, example)
 
-    # find optimal batch size
+    # find optimal batch size and get_time_per example
     batch_size, time_per_example = _utils.find_optimum_batch_sizes(predictor, example)
+
+    time_per_batch = batch_size * time_per_example
+    max_wait_time = time_per_batch * _utils.MAX_WAIT
 
     # write batch size to temp file for use in generating _run.sh
     os.system(f"echo {batch_size} > {_utils.batch_size_file_path}")
@@ -34,12 +37,25 @@ def start_loop(predictor, example):
 
     _utils.logger.info("Starting prediction loop")
 
+    last_paused_time = -1
     while True:
         # Get the latest list of to process data
         to_process = _utils.get_to_process_list(FILE_MODE)
 
         if not to_process:
             continue
+
+        if len(to_process) < batch_size - 1:
+            # start the wait
+            if not last_paused_time:
+                last_paused_time = time.time()
+                continue
+            # if waiting for less than max_wait_time, continue waiting
+            if time.time() - last_paused_time < max_wait_time:
+                continue
+
+        # waiting completed
+        last_paused_time = -1
 
         # The "batch" here is a batch of inputs.
         # since, each input might contain more than one example (client side batching)

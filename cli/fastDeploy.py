@@ -13,6 +13,9 @@ BASE_IMAGES = {
     "pytorch_1.5_cpu": "Python-3.6.7 | Pytorch 1.5 | CPU",
 }
 
+RECIPIES = [
+    'craft_text_detection'
+]
 
 def _run_cmd(cmd, log=False):
     if log:
@@ -75,7 +78,7 @@ def _docker_rm(docker, name):
 def _build(args, docker="docker", log=False, extra_config=""):
     code_dir = os.path.abspath(args.source_dir)
 
-    base_image = f"notaitech/fastdeploy:{args.base}-{VERSION}"
+    base_image = "notaitech/fastdeploy:" + args.base + "-" + VERSION
 
     _docker_rm(docker, args.build)
 
@@ -112,6 +115,11 @@ def _parse_extra_config(extra_config):
 
 
 def parse_args(args):
+    if args.list_recipies:
+        for recipie in RECIPIES:
+            print(recipie)
+        exit()
+
     docker = _get_docker_command()
 
     if os.getenv("VERBOSE"):
@@ -155,6 +163,9 @@ def parse_args(args):
         _build(args, docker, log=args.verbose, extra_config=extra_config)
 
     if args.run:
+        if args.run in RECIPIES:
+            args.run = 'notaitech/fastdeploy-recipie:' + args.run + "-" + VERSION
+
         if not args.port:
             print(os.linesep, "--port defaults to 8080")
             args.port = "8080"
@@ -210,7 +221,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--run",
         type=str,
-        help="local or cloud name of build to run. eg: resnet_v1 or notaitech/craft_text_detection-v0.1",
+        help="local or cloud name of built recipie to run.",
     )
     parser.add_argument(
         "--name",
@@ -228,6 +239,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--verbose", action="store_true", help="displays the docker commands used."
+    )
+    parser.add_argument(
+        "--list_recipies", action="store_true", help="Lists available fastDeploy recipies."
     )
 
     args = parser.parse_args()

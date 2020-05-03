@@ -140,7 +140,9 @@ def find_optimum_batch_sizes(predictor, example_input):
         possible_batch_sizes = [BATCH_SIZE]
 
     if len(possible_batch_sizes) > 1:
-        possible_batch_sizes = [pow(2, batch_size) for batch_size in possible_batch_sizes]
+        possible_batch_sizes = [
+            pow(2, batch_size) for batch_size in possible_batch_sizes
+        ]
 
     for batch_size in possible_batch_sizes:
         start = time.time()

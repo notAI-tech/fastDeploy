@@ -3,7 +3,7 @@ import base64
 import argparse
 from requests import post
 from pickle import load
-from glob import glob   
+from glob import glob
 
 parser = argparse.ArgumentParser(description="CLI for testing fastDeploy FILE input.")
 parser.add_argument("--file", type=str, help="Path to file. For prediction on dir.")
@@ -30,9 +30,13 @@ if not args.host_url:
 
 
 if args.result:
-    print(post(os.path.join(args.host_url, 'result'), json={'unique_id': args.result}).json())
+    print(
+        post(
+            os.path.join(args.host_url, "result"), json={"unique_id": args.result}
+        ).json()
+    )
     exit()
-    
+
 if not args.file and not args.dir:
     print("--file or --dir should be supplied")
     exit()
@@ -43,13 +47,11 @@ if args.file:
     data = {args.file: b64_file}
 if args.dir:
     if not args.ext:
-        print('--ext must be supplied along with --dir')
+        print("--ext must be supplied along with --dir")
         exit()
-    files = (
-        glob(os.path.join(args.dir, '*' + args.ext))
-    )
+    files = glob(os.path.join(args.dir, "*" + args.ext))
     if not files:
-        print('No files found in', args.dir, 'with extension', args.ext)
+        print("No files found in", args.dir, "with extension", args.ext)
         exit()
     data = {f: base64.b64encode(open(f, "rb").read()).decode("utf-8") for f in files}
 

@@ -96,7 +96,9 @@ def start_loop(predictor, example):
 
             for i, in_path in enumerate(batch):
                 # we use number_of_examples_per_req to re-order preds in to batches.
+                # result is the list of preds for the current batch
                 result = results[: number_of_examples_per_req[i]]
+                # remove current batch from list of all predictions
                 results = results[number_of_examples_per_req[i] :]
 
                 _in_data = in_data[: number_of_examples_per_req[i]]

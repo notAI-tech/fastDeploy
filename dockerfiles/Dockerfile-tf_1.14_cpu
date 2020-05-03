@@ -6,10 +6,7 @@ RUN apt-get update && apt-get install -y build-essential gcc
 
 RUN pip3 install Cython
 
-RUN pip3 install requests
-RUN pip3 install gevent
-RUN pip3 install falcon
-RUN pip3 install gunicorn
+RUN pip3 install requests gevent falcon gunicorn
 
 WORKDIR /app
 

@@ -174,7 +174,7 @@ def parse_args(args):
         if not args.name:
             print(
                 os.linesep,
-                "You can also use --name along with run for giving your container a memorable name.",
+                "You can also use --name along with run for giving your container a meaningful name.",
             )
             args.name = (
                 "fastDeploy" + "." + str(random.randint(0, 9)) + "." + str(time.time())

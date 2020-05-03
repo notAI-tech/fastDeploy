@@ -34,7 +34,7 @@ if (
     or not os.path.exists("./example.pkl")
 ):
     print(
-        f"{red} Your folder must contain a file called requirements.txt and predictor.py {black}"
+        f"{red} Your folder must contain a file called requirements.txt, predictor.py and example.pkl {black}"
     )
     quit()
 

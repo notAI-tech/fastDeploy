@@ -40,7 +40,7 @@ if (
 
 if os.path.exists("extras.sh"):
     print(f"{yellow }Installing Extras {black}")
-    os.system("chmod 777 extras.sh")
+    os.system("chmod +x extras.sh")
     os.system("bash extras.sh")
 
 

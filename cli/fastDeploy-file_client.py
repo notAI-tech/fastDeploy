@@ -1,9 +1,8 @@
 import os
+import glob
 import base64
+import requests
 import argparse
-from requests import post
-from pickle import load
-from glob import glob
 
 parser = argparse.ArgumentParser(description="CLI for testing fastDeploy FILE input.")
 parser.add_argument("--file", type=str, help="Path to file. For prediction on dir.")
@@ -49,18 +48,18 @@ if args.dir:
     if not args.ext:
         print("--ext must be supplied along with --dir")
         exit()
-    files = glob(os.path.join(args.dir, "*" + args.ext))
+    files = glob.glob(os.path.join(args.dir, "*." + args.ext))
     if not files:
         print("No files found in", args.dir, "with extension", args.ext)
         exit()
     data = {f: base64.b64encode(open(f, "rb").read()).decode("utf-8") for f in files}
 
 if not args.async:
-    print(post(os.path.join(args.host_url, "sync"), json={"data": data}).json())
+    print(requests.post(os.path.join(args.host_url, "sync"), json={"data": data}).json())
 
 else:
     print(
-        post(
+        requests.post(
             os.path.join(args.host_url, "async"),
             json={"data": data, "webhook": args.webhook},
         ).json()

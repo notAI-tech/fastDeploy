@@ -20,6 +20,6 @@ do
 done
 
 python3 -u _generate_run_sh.py
-chmod 777 _run_utils.sh
+chmod +x _run_utils.sh
 
 bash _run_utils.sh

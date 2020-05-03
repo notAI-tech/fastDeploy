@@ -13,7 +13,9 @@ BASE_IMAGES = {
     "pytorch_1.5_cpu": "Python-3.6.7 | Pytorch 1.5 | CPU",
 }
 
-RECIPIES = ["craft_text_detection"]
+RECIPIES = {
+            "craft_text_detection": "description link <to-be-updated-before-release>"
+        }
 
 
 def _run_cmd(cmd, log=False):
@@ -115,8 +117,8 @@ def _parse_extra_config(extra_config):
 
 def parse_args(args):
     if args.list_recipies:
-        for recipie in RECIPIES:
-            print(recipie)
+        for recipie, desc in RECIPIES.items():
+            print(recipie, desc)
         exit()
 
     docker = _get_docker_command()

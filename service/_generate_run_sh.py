@@ -3,11 +3,6 @@ import multiprocessing
 
 f_run = open("_run_utils.sh", "w")
 
-# _delete_older_than = int(_utils.TIMEOUT) + 2
-# delete_older_than = f"'-{_delete_older_than} seconds'"
-
-# f_run.write(f'watch -n{_delete_older_than} "find /ramdisk -not -newermt {delete_older_than} -delete"* &' + '\n')
-
 if not _utils.WORKERS:
     n_workers = max(3, int((multiprocessing.cpu_count()) + 1))
     batch_size = int(open(_utils.batch_size_file_path).read().strip())

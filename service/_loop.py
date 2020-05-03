@@ -66,11 +66,11 @@ def start_loop(predictor, example):
             # in_data will contain flattened list of user inputs.
             # batch = [['1', '2'], ['3'], ['4,5,6']] will result in
             # in_data = [1, 2, 3, 4, 5, 6]
-            # n_per_file = [2, 1, 3]
+            # number_of_examples_in_req = [2, 1, 3]
             # This way, we can pass the in_data to predictor function with above calculated batch_size
-            # later, we can use n_per_file to re-order preds in to batches.
+            # later, we can use number_of_examples_in_req to re-order preds in to batches.
             in_data = []
-            n_per_file = []
+            number_of_examples_in_req = []
             for i, in_path in enumerate(batch):
                 try:
                     if FILE_MODE:
@@ -79,7 +79,7 @@ def start_loop(predictor, example):
                         in_list = pickle.load(open(in_path, "rb"))
 
                     in_data += in_list
-                    n_per_file.append(len(in_list))
+                    number_of_examples_in_req.append(len(in_list))
 
                 except Exception as ex:
                     batch[i] = None
@@ -95,12 +95,12 @@ def start_loop(predictor, example):
                 results = [str(ex) for _ in in_data]
 
             for i, in_path in enumerate(batch):
-                # we use n_per_file to re-order preds in to batches.
-                result = results[: n_per_file[i]]
-                results = results[n_per_file[i] :]
+                # we use number_of_examples_in_req to re-order preds in to batches.
+                result = results[: number_of_examples_in_req[i]]
+                results = results[number_of_examples_in_req[i] :]
 
-                _in_data = in_data[: n_per_file[i]]
-                in_data = in_data[n_per_file[i] :]
+                _in_data = in_data[: number_of_examples_in_req[i]]
+                in_data = in_data[number_of_examples_in_req[i] :]
 
                 if FILE_MODE:
                     _in_data = [os.path.basename(j) for j in _in_data]

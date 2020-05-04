@@ -17,6 +17,8 @@ import datetime
 
 import _utils
 
+ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
+
 
 def wait_and_read_pred(res_path, unique_id):
     """
@@ -134,32 +136,44 @@ class Sync(object):
     # Class for dealing with sync requests
     def on_post(self, req, resp):
         try:
-            priority = 8
-
-            try:
-                priority = int(req.media["priority"])
-            except:
-                pass
-
-            unique_id = _utils.get_uuid(priority=8)
-
-            res_path = None
-
-            if isinstance(req.media["data"], list):
-                res_path = handle_json_request(unique_id, req.media["data"])
-
-            elif isinstance(req.media["data"], dict):
-                res_path = handle_file_dict_request(unique_id, req.media["data"])
-
-            else:
+            if ONLY_ASYNC:
                 resp.body, resp.status = (
-                    json.dumps({"success": False, "reason": "invalid request"}),
-                    falcon.HTTP_400,
+                    json.dumps(
+                        {
+                            "success": False,
+                            "reason": "ONLY_ASYNC is set to True on this server.",
+                        }
+                    ),
+                    falcon.HTTP_200,
                 )
 
-            if res_path:
-                req.media.clear()
-                resp.body, resp.status = wait_and_read_pred(res_path, unique_id)
+            else:
+                priority = 8
+
+                try:
+                    priority = int(req.media["priority"])
+                except:
+                    pass
+
+                unique_id = _utils.get_uuid(priority=8)
+
+                res_path = None
+
+                if isinstance(req.media["data"], list):
+                    res_path = handle_json_request(unique_id, req.media["data"])
+
+                elif isinstance(req.media["data"], dict):
+                    res_path = handle_file_dict_request(unique_id, req.media["data"])
+
+                else:
+                    resp.body, resp.status = (
+                        json.dumps({"success": False, "reason": "invalid request"}),
+                        falcon.HTTP_400,
+                    )
+
+                if res_path:
+                    req.media.clear()
+                    resp.body, resp.status = wait_and_read_pred(res_path, unique_id)
 
         except Exception as ex:
             try:

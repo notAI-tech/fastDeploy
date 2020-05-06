@@ -1,1 +1,0 @@
-# docker build -t notaitech/fastDeploy:base-v0.1 -f dockerfiles/Dockerfile-base service/

@@ -10,7 +10,10 @@ def predictor(in_lines, batch_size=4):
     while in_lines:
         preds += nlp(in_lines[:batch_size], pad_to_max_length=True)
         in_lines = in_lines[batch_size:]
-    
+
+    for i, pred in enumerate(preds):
+        preds[i]['score'] = float(pred['score'])
+        
     return preds
 
 if __name__ == '__main__':

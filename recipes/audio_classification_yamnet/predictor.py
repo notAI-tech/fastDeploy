@@ -2,7 +2,6 @@ import os
 import pydload
 
 if not os.path.exists('checkpoint'):
-    # pydload.dload('https://github.com/notAI-tech/fastDeploy/releases/download/v1.0-beta/yamnet.h5', save_to_path='checkpoint', max_time=None)
     pydload.dload('https://storage.googleapis.com/audioset/yamnet.h5', save_to_path='checkpoint', max_time=None)
 
 import numpy as np

@@ -12,3 +12,6 @@ docker push notaitech/fastdeploy:tf_1.14_cpu-v0.1
 
 docker build -t notaitech/fastdeploy:tf_1.14_gpu-v0.1 -f Dockerfile-tf_1.14_gpu ../service/
 docker push notaitech/fastdeploy:tf_1.14_gpu-v0.1
+
+docker build -t notaitech/fastdeploy:tf_2.1_cpu-v0.1 -f Dockerfile-tf_2.1_cpu ../service/
+docker push notaitech/fastdeploy:tf_2.1_cpu-v0.1

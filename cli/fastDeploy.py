@@ -14,14 +14,10 @@ BASE_IMAGES = {
     "base": "Python-3.6.7",
     "tf_1.14_cpu": "Python-3.6.8 | Tensorflow 1.14 | CPU",
     "tf_2.1_cpu": "Python-3.6.9 | Tensorflow 2.1 | CPU",
-
     "pytorch_1.5_cpu": "Python-3.6.7 | Pytorch 1.5 | CPU",
-    
 }
 
-RECIPIES = {
-            "craft_text_detection": "description link <to-be-updated-before-release>"
-        }
+RECIPIES = {"craft_text_detection": "description link <to-be-updated-before-release>"}
 
 
 def _run_cmd(cmd, log=False):

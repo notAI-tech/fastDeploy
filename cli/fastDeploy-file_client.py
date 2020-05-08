@@ -58,7 +58,9 @@ if args.dir:
     data = {f: base64.b64encode(open(f, "rb").read()).decode("utf-8") for f in files}
 
 if not args.async:
-    print(requests.post(os.path.join(args.host_url, "sync"), json={"data": data}).json())
+    print(
+        requests.post(os.path.join(args.host_url, "sync"), json={"data": data}).json()
+    )
 
 else:
     print(

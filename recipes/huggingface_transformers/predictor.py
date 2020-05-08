@@ -39,7 +39,7 @@ def predictor(in_lines, batch_size=4):
     return preds
 
 if __name__ == '__main__':
-    example = ['We are very happy to include pipeline into the transformers repository. My name is John Smith.']
+    example = ['We are very happy to include pipeline into the transformers repository. My name is John Smith. We are very happy to include pipeline into the transformers repository. My name is John Smith. We are very happy to include pipeline into the transformers repository. My name is John Smith. We are very happy to include pipeline into the transformers repository. My name is John Smith. We are very happy to include pipeline into the transformers repository. My name is John Smith. We are very happy to include pipeline into the transformers repository. My name is John Smith. We are very happy to include pipeline into the transformers repository. My name is John Smith.']
 
     import json
     import pickle

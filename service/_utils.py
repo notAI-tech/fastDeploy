@@ -53,9 +53,8 @@ MAX_RAM_FILE_SIZE = float(os.getenv("MAX_RAM_FILE_SIZE", "2")) * 1024 * 1024
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "0"))
 
 # Maximum examples allowed in client batch.
-# -1 or 0 means unlimited
-MAX_PER_CLIENT_BATCH = int(os.getenv("MAX_PER_CLIENT_BATCH", "-1"))
-
+# 0 means unlimited
+MAX_PER_CLIENT_BATCH = int(os.getenv("MAX_PER_CLIENT_BATCH", "0"))
 
 # The loop will wait for time_per_example * MAX_WAIT for batching.
 MAX_WAIT = float(os.getenv("MAX_WAIT", 0.2))

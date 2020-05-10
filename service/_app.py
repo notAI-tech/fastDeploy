@@ -159,21 +159,37 @@ class Sync(object):
 
                 res_path = None
 
-                if isinstance(req.media["data"], list):
-                    res_path = handle_json_request(unique_id, req.media["data"])
-
-                elif isinstance(req.media["data"], dict):
-                    res_path = handle_file_dict_request(unique_id, req.media["data"])
-
-                else:
+                if _utils.MAX_PER_CLIENT_BATCH and (
+                    len(req.media["data"]) > _utils.MAX_PER_CLIENT_BATCH
+                ):
                     resp.body, resp.status = (
-                        json.dumps({"success": False, "reason": "invalid request"}),
-                        falcon.HTTP_400,
+                        json.dumps(
+                            {
+                                "success": False,
+                                "reason": f"Maximum number of examples allowed in client batch is {_utils.MAX_PER_CLIENT_BATCH}",
+                            }
+                        ),
+                        falcon.HTTP_200,
                     )
 
-                if res_path:
-                    req.media.clear()
-                    resp.body, resp.status = wait_and_read_pred(res_path, unique_id)
+                else:
+                    if isinstance(req.media["data"], list):
+                        res_path = handle_json_request(unique_id, req.media["data"])
+
+                    elif isinstance(req.media["data"], dict):
+                        res_path = handle_file_dict_request(
+                            unique_id, req.media["data"]
+                        )
+
+                    else:
+                        resp.body, resp.status = (
+                            json.dumps({"success": False, "reason": "invalid request"}),
+                            falcon.HTTP_400,
+                        )
+
+                    if res_path:
+                        req.media.clear()
+                        resp.body, resp.status = wait_and_read_pred(res_path, unique_id)
 
         except Exception as ex:
             try:
@@ -194,23 +210,37 @@ class Async(object):
 
             _utils.write_webhook(unique_id, webhook)
 
-            if isinstance(req.media["data"], list):
-                handle_json_request(unique_id, req.media["data"])
-                req.media.clear()
-                resp.body = json.dumps({"success": True, "unique_id": unique_id})
-                resp.status = falcon.HTTP_200
-
-            elif isinstance(req.media["data"], dict):
-                handle_file_dict_request(unique_id, req.media["data"])
-                req.media.clear()
-                resp.body = json.dumps({"success": True, "unique_id": unique_id})
-                resp.status = falcon.HTTP_200
+            if _utils.MAX_PER_CLIENT_BATCH and (
+                len(req.media["data"]) > _utils.MAX_PER_CLIENT_BATCH
+            ):
+                resp.body, resp.status = (
+                    json.dumps(
+                        {
+                            "success": False,
+                            "reason": f"Maximum number of examples allowed in client batch is {_utils.MAX_PER_CLIENT_BATCH}",
+                        }
+                    ),
+                    falcon.HTTP_200,
+                )
 
             else:
-                resp.body, resp.status = (
-                    json.dumps({"success": False, "reason": "invalid request"}),
-                    falcon.HTTP_400,
-                )
+                if isinstance(req.media["data"], list):
+                    handle_json_request(unique_id, req.media["data"])
+                    req.media.clear()
+                    resp.body = json.dumps({"success": True, "unique_id": unique_id})
+                    resp.status = falcon.HTTP_200
+
+                elif isinstance(req.media["data"], dict):
+                    handle_file_dict_request(unique_id, req.media["data"])
+                    req.media.clear()
+                    resp.body = json.dumps({"success": True, "unique_id": unique_id})
+                    resp.status = falcon.HTTP_200
+
+                else:
+                    resp.body, resp.status = (
+                        json.dumps({"success": False, "reason": "invalid request"}),
+                        falcon.HTTP_400,
+                    )
 
         except Exception as ex:
             try:
@@ -243,8 +273,18 @@ class Res(object):
                 resp.body = response
                 resp.status = falcon.HTTP_200
             except:
-                resp.body = json.dumps({"success": None, "reason": "processing"})
-                resp.status = falcon.HTTP_200
+                if not glob.glob(os.path.join(_utils.RAM_DIR, unique_id + ".inp*")):
+                    resp.body = json.dumps(
+                        {
+                            "success": None,
+                            "reason": f"{unique_id} does not exist. You might have already accessed its result.",
+                        }
+                    )
+                    resp.status = falcon.HTTP_200
+
+                else:
+                    resp.body = json.dumps({"success": None, "reason": "processing"})
+                    resp.status = falcon.HTTP_200
 
         except Exception as ex:
             try:

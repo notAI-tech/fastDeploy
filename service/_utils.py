@@ -23,6 +23,12 @@ from datetime import datetime
 # No real use in making these configurable.
 batch_size_file_path = ".batch_size"
 RAM_DIR = "/ramdisk/"
+
+if not os.path.exists(RAM_DIR):
+    RAM_DIR = "./ramdisk/"
+    if not os.path.exists(RAM_DIR):
+        os.mkdir(RAM_DIR)
+
 DISK_DIR = "./diskdisk/"
 
 if not os.path.exists(DISK_DIR):

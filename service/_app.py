@@ -51,6 +51,7 @@ def wait_and_read_pred(res_path, unique_id):
         except:
             # stop in case of timeout
             if time.time() - start_time >= _utils.TIMEOUT:
+                _utils.logger.warn(f'{unique_id} timedout.')
                 break
 
     # Since this is the last step in /sync, we delete all files related to this unique_id

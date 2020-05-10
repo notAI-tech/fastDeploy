@@ -249,4 +249,5 @@ def write_webhook(unique_id, webhook):
     if webhook and isinstance(webhook, str):
         open(os.path.join(RAM_DIR, unique_id + ".webhook"), "w").write(webhook)
     else:
-        logger.warn(f"id: {unique_id}, webhook: {webhook} is not valid.")
+        if webhook is not None:
+            logger.warn(f"id: {unique_id}, webhook: {webhook} is not valid.")

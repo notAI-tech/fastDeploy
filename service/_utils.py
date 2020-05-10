@@ -48,7 +48,7 @@ BATCH_SIZE = int(os.getenv("BATCH_SIZE", "0"))
 
 # Maximum examples allowed in client batch.
 # -1 or 0 means unlimited
-MAX_PER_CLIENT_BATCH = int(os.getenv("BATCH_SIZE", "-1"))
+MAX_PER_CLIENT_BATCH = int(os.getenv("MAX_PER_CLIENT_BATCH", "-1"))
 
 
 # The loop will wait for time_per_example * MAX_WAIT for batching.

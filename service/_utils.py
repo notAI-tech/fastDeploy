@@ -37,6 +37,10 @@ if not os.path.exists(DISK_DIR):
 # TIMEOUT for Sync api in seconds.
 TIMEOUT = float(os.getenv("TIMEOUT", "120"))
 
+# if USE_PRIORITY: priority will be used if provided in request
+# By default, this is enabled.
+USE_PRIORITY = os.getenv("USE_PRIORITY", "True")
+
 # Number of gunicorn workers to use
 # Keep 0 for auto selection
 WORKERS = int(os.getenv("WORKERS", "0"))
@@ -113,6 +117,9 @@ def get_uuid(priority=9):
 
         :return: unique id generated using uuid4 and current time.
     """
+    if not USE_PRIORITY:
+        priority = 9
+
     return (
         str(priority)
         + datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]

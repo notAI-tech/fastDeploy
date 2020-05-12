@@ -15,7 +15,13 @@ BASE_IMAGES = {
     "pyt_1_5_cpu": "Python-3.6.7 | Pytorch 1.5 | CPU",
 }
 
-RECIPES = {"craft_text_detection": "description link <to-be-updated-before-release>"}
+RECIPES = {
+    "deepsegment_en": "https://fastdeploy.notai.tech/recipes#deepsegment_enfrit",
+    "deepsegment_fr": "https://fastdeploy.notai.tech/recipes#deepsegment_enfrit",
+    "deepsegment_it": "https://fastdeploy.notai.tech/recipes#deepsegment_enfrit",
+    "craft_text_detection": "https://fastdeploy.notai.tech/recipes#craft-text-detection",
+    "nudeclassifier": "https://fastdeploy.notai.tech/recipes#nudeclassifier",
+}
 
 
 def _run_cmd(cmd, log=False):
@@ -118,7 +124,8 @@ def _parse_extra_config(extra_config):
 def parse_args(args):
     if args.list_recipes:
         for recipe, desc in RECIPES.items():
-            print(recipe, desc)
+            print(os.linesep, 'NAME:', recipe, '  DESCRIPTION:', desc)
+        print(os.linesep)
         exit()
 
     docker = _get_docker_command()

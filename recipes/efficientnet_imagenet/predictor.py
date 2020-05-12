@@ -42,7 +42,7 @@ image_size = model.input_shape[1]
 
 def read_image(path):
     try:
-        return preprocess_input(center_crop_and_resize(imread(path), image_size=image_size))
+        return preprocess_input(center_crop_and_resize(imread(path)[:,:,:3], image_size=image_size))
     except:
         return None
         

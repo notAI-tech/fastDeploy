@@ -21,6 +21,7 @@ RECIPES = {
     "deepsegment_it": "https://fastdeploy.notai.tech/recipes#deepsegment_enfrit",
     "craft_text_detection": "https://fastdeploy.notai.tech/recipes#craft-text-detection",
     "nudeclassifier": "https://fastdeploy.notai.tech/recipes#nudeclassifier",
+    "efficientnet_b2": "https://fastdeploy.notai.tech/recipes#efficientnet"
 }
 
 

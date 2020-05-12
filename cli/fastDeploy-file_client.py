@@ -33,7 +33,7 @@ if not args.host_url:
 
 if args.result:
     print(
-        post(
+        requests.post(
             os.path.join(args.host_url, "result"), json={"unique_id": args.result}
         ).json()
     )

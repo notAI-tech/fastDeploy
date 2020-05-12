@@ -1,6 +1,6 @@
 <p align="center">
     <h1 align="center">fastDeploy</h1>
-    <p align="center">fastDeploy provides a convenient way to serve DL/ ML models with minimal extra code.</p>
+    <p align="center">fastDeploy provides a convenient way to serve DL/ ML inference pipelines with minimal extra code.</p>
 </p>
 
 **CLI Usage:** [https://fastdeploy.notai.tech/cli](https://fastdeploy.notai.tech/cli)

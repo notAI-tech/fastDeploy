@@ -8,16 +8,14 @@ import shlex
 import random
 import argparse
 
-VERSION = "v0.1"
-
 BASE_IMAGES = {
-    "base": "Python-3.6.7",
-    "tf_1.14_cpu": "Python-3.6.8 | Tensorflow 1.14 | CPU",
-    "tf_2.1_cpu": "Python-3.6.9 | Tensorflow 2.1 | CPU",
-    "pytorch_1.5_cpu": "Python-3.6.7 | Pytorch 1.5 | CPU",
+    "base-v0.1": "Python-3.6.7 | Only fastDeploy",
+    "tf_1_14_cpu": "Python-3.6.8 | Tensorflow 1.14 | CPU",
+    "tf_2_1_cpu": "Python-3.6.9 | Tensorflow 2.1 | CPU",
+    "pyt_1_5_cpu": "Python-3.6.7 | Pytorch 1.5 | CPU",
 }
 
-RECIPIES = {"craft_text_detection": "description link <to-be-updated-before-release>"}
+RECIPES = {"craft_text_detection": "description link <to-be-updated-before-release>"}
 
 
 def _run_cmd(cmd, log=False):
@@ -81,7 +79,7 @@ def _docker_rm(docker, name):
 def _build(args, docker="docker", log=False, extra_config=""):
     code_dir = os.path.abspath(args.source_dir)
 
-    base_image = "notaitech/fastdeploy:" + args.base + "-" + VERSION
+    base_image = "notaitech/fastdeploy:" + args.base
 
     _docker_rm(docker, args.build)
 
@@ -118,9 +116,9 @@ def _parse_extra_config(extra_config):
 
 
 def parse_args(args):
-    if args.list_recipies:
-        for recipie, desc in RECIPIES.items():
-            print(recipie, desc)
+    if args.list_recipes:
+        for recipe, desc in RECIPES.items():
+            print(recipe, desc)
         exit()
 
     docker = _get_docker_command()
@@ -166,8 +164,8 @@ def parse_args(args):
         _build(args, docker, log=args.verbose, extra_config=extra_config)
 
     if args.run:
-        if args.run in RECIPIES:
-            args.run = "notaitech/fastdeploy-recipie:" + args.run + "-" + VERSION
+        if args.run in RECIPES:
+            args.run = "notaitech/fastdeploy-recipe:" + args.run
 
         if not args.port:
             print(os.linesep, "--port defaults to 8080")
@@ -219,10 +217,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--source_dir",
         type=str,
-        help="Path to your recipie directory. eg: ./resnet_dir",
+        help="Path to your recipe directory. eg: ./resnet_dir",
     )
     parser.add_argument(
-        "--run", type=str, help="local or cloud name of built recipie to run.",
+        "--run", type=str, help="local or cloud name of built recipe to run.",
     )
     parser.add_argument(
         "--name",
@@ -242,9 +240,9 @@ if __name__ == "__main__":
         "--verbose", action="store_true", help="displays the docker commands used."
     )
     parser.add_argument(
-        "--list_recipies",
+        "--list_recipes",
         action="store_true",
-        help="Lists available fastDeploy recipies.",
+        help="Lists available fastDeploy recipes.",
     )
 
     args = parser.parse_args()

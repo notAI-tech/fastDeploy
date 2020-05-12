@@ -124,7 +124,7 @@ def _parse_extra_config(extra_config):
 def parse_args(args):
     if args.list_recipes:
         for recipe, desc in RECIPES.items():
-            print(os.linesep, 'NAME:', recipe, '  DESCRIPTION:', desc)
+            print(os.linesep, "NAME:", recipe, "  DESCRIPTION:", desc)
         print(os.linesep)
         exit()
 

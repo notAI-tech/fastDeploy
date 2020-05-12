@@ -18,7 +18,7 @@ chmod +x fastDeploy.py
 ```
 
 # Quick Start
-```python
+```bash
 # See all the arguments supported.
 ./fastDeploy.py --help
 

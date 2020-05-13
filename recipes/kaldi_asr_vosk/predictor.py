@@ -18,12 +18,13 @@ SAMPLE_RATE = int(os.getenv('SAMPLE_RATE', '0'))
 
 model_zip_url = os.getenv('MODEL_ZIP_URL', 'http://alphacephei.com/kaldi/models/vosk-model-en-us-aspire-0.2.zip')
 
-pydload.dload(model_zip_url, save_to_path='./model.zip', max_time=None)
+if not os.path.exists('./model'):
+    pydload.dload(model_zip_url, save_to_path='./model.zip', max_time=None)
+    
+    with zipfile.ZipFile('./model.zip', 'r') as zip_ref:
+        zip_ref.extractall('./model')
 
-with zipfile.ZipFile('./model.zip', 'r') as zip_ref:
-    zip_ref.extractall('./model')
-
-os.remove('./model.zip')
+    os.remove('./model.zip')
 
 files_in_model_dir = glob.glob('./model/*')
 

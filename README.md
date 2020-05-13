@@ -7,7 +7,9 @@
 
 **API interface:** [https://fastdeploy.notai.tech/api](https://fastdeploy.notai.tech/api)
 
-**Recipies:** [https://fastdeploy.notai.tech/recipes](https://fastdeploy.notai.tech/recipes)
+**pre-built Recipies:** [https://fastdeploy.notai.tech/recipes](https://fastdeploy.notai.tech/recipes)
+
+**Deploying your code:** [https://fastdeploy.notai.tech/recipes#building-your-own-recipe-deployment](https://fastdeploy.notai.tech/recipes#building-your-own-recipe-deployment)
 
 We provide **free to use APIs** for some recipes. Documentation: [**https://fastdeploy.notai.tech/free_apis**](https://fastdeploy.notai.tech/free_apis)
 

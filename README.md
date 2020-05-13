@@ -9,7 +9,7 @@
 
 **Recipies:** [https://fastdeploy.notai.tech/recipes](https://fastdeploy.notai.tech/recipes)
 
-We alo provide **free to use APIs** for most of our recipes; **Signup for API key** at [**https://tech.notai.tech/signup/**](https://tech.notai.tech/signup/)
+We provide **free to use APIs** for some recipes. Documentation: [**https://fastdeploy.notai.tech/free_apis**](https://fastdeploy.notai.tech/free_apis)
 
 # Download CLI
 ```bash

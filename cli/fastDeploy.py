@@ -16,12 +16,14 @@ BASE_IMAGES = {
 }
 
 RECIPES = {
-    "deepsegment_en": "https://fastdeploy.notai.tech/recipes#deepsegment_enfrit",
-    "deepsegment_fr": "https://fastdeploy.notai.tech/recipes#deepsegment_enfrit",
-    "deepsegment_it": "https://fastdeploy.notai.tech/recipes#deepsegment_enfrit",
-    "craft_text_detection": "https://fastdeploy.notai.tech/recipes#craft-text-detection",
-    "nudeclassifier": "https://fastdeploy.notai.tech/recipes#nudeclassifier",
-    "efficientnet_b2": "https://fastdeploy.notai.tech/recipes#efficientnet",
+    "deepsegment_en": "https://github.com/bedapudi6788/deepsegment",
+    "deepsegment_fr": "https://github.com/bedapudi6788/deepsegment",
+    "deepsegment_it": "https://github.com/bedapudi6788/deepsegment",
+    "craft_text_detection": "https://github.com/notAI-tech/keras-craft",
+    "nudeclassifier": "https://github.com/bedapudi6788/NudeNet",
+    "efficientnet_b2": "https://github.com/qubvel/efficientnet",
+    "kaldi_vosk-en_us-small": "https://github.com/alphacep/vosk-api/blob/master/doc/models.md",
+    "kaldi_vosk-en_us-aspire": "https://github.com/alphacep/vosk-api/blob/master/doc/models.md",
 }
 
 

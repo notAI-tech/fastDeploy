@@ -14,7 +14,7 @@ SetLogLevel(0)
 
 MAX_WAV_LEN = int(os.getenv('MAX_WAV_LEN', '0'))
 
-SAMPLE_RATE = int(os.getenv('SAMPLE_RATE', '16000'))
+SAMPLE_RATE = int(os.getenv('SAMPLE_RATE', '0'))
 
 model_zip_url = os.getenv('MODEL_ZIP_URL', 'http://alphacephei.com/kaldi/models/vosk-model-en-us-aspire-0.2.zip')
 
@@ -29,9 +29,13 @@ files_in_model_dir = glob.glob('./model/*')
 
 if len(files_in_model_dir) == 1:
     model = Model(files_in_model_dir[0])
+
+    if not SAMPLE_RATE:
+        SAMPLE_RATE = [int(l.split('=')[1].strip()) for l in open(os.path.join(files_in_model_dir[0], 'mfcc.conf')).readlines() if '--sample-frequency=' in l]
 else:
     model = Model("./model")
-
+    if not SAMPLE_RATE:
+        SAMPLE_RATE = [int(l.split('=')[1].strip()) for l in open(os.path.join(files_in_model_dir[0], 'mfcc.conf')).readlines() if '--sample-frequency=' in l]
 
 def run_asr(f):
     try:

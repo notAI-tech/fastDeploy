@@ -30,12 +30,19 @@ files_in_model_dir = glob.glob('./model/*')
 if len(files_in_model_dir) == 1:
     model = Model(files_in_model_dir[0])
 
-    if not SAMPLE_RATE:
-        SAMPLE_RATE = [int(l.split('=')[1].strip()) for l in open(os.path.join(files_in_model_dir[0], 'mfcc.conf')).readlines() if '--sample-frequency=' in l]
 else:
     model = Model("./model")
-    if not SAMPLE_RATE:
-        SAMPLE_RATE = [int(l.split('=')[1].strip()) for l in open(os.path.join(files_in_model_dir[0], 'mfcc.conf')).readlines() if '--sample-frequency=' in l]
+
+if not SAMPLE_RATE:
+    for mfcc_conf_f in glob.glob('./model/mfcc.conf') + glob.glob('./model/*/mfcc.conf') + glob.glob('./model/*/*/mfcc.conf'):
+        sample_rates = [int(l.split('=')[1].strip()) for l in open(mfcc_conf_f).readlines() if '--sample-frequency=' in l]
+        if sample_rates:
+            if sample_rates[0] in {16000, 8000}:
+                SAMPLE_RATE = sample_rates[0]
+
+if not SAMPLE_RATE:
+    print('SAMPLE_RATE should be specified.')
+    exit()
 
 def run_asr(f):
     try:

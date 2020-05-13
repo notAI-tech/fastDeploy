@@ -9,6 +9,13 @@ import shlex
 import random
 import argparse
 
+red, green, yellow, black = (
+    "\x1b[38;5;1m",
+    "\x1b[38;5;2m",
+    "\x1b[38;5;3m",
+    "\x1b[38;5;0m",
+)
+
 BASE_IMAGES = {
     "base-v0.1": "Python-3.6.7 | Only fastDeploy",
     "tf_1_14_cpu": "Python-3.6.8 | Tensorflow 1.14 | CPU",
@@ -30,7 +37,7 @@ RECIPES = {
 
 def _run_cmd(cmd, log=False):
     if log:
-        print(os.linesep, cmd)
+        print(os.linesep, yellow, cmd, black)
 
     res = os.system(cmd)
 
@@ -44,20 +51,25 @@ def _get_docker_command(log=False):
     docker = "docker"
 
     if not _run_cmd("which docker > /dev/null"):
-        print(os.linesep, "Docker not found.")
+        print(os.linesep, red, "Docker not found.", black)
 
     if _run_cmd("docker -v > /dev/null", log):
-        print(os.linesep, "Docker installation found")
+        print(os.linesep, green, "Docker installation found", black)
     else:
-        print(os.linesep, "Install docker from https://docs.docker.com/install/")
+        print(
+            os.linesep,
+            yellow,
+            "Install docker from https://docs.docker.com/install/",
+            black,
+        )
         return False
 
     if not _run_cmd("docker ps > /dev/null", log):
         if _run_cmd("sudo docker ps > /dev/null"):
-            print(os.linesep, "Using sudo to run docker.")
+            print(os.linesep, yellow, "Using sudo to run docker.", black)
             docker = "sudo docker"
         else:
-            print(os.linesep, "Error in running docker")
+            print(os.linesep, red, "Error in running docker", black)
             return False
 
     return docker
@@ -121,14 +133,25 @@ def _parse_extra_config(extra_config):
         return extra_config
     except Exception as ex:
         print(os.linesep, ex)
-        print(os.linesep, "Extra config must be a json.")
+        print(os.linesep, red, "Extra config must be a json.", black)
     return ""
 
 
 def parse_args(args):
     if args.list_recipes:
+        max_recipe_name_len = len(max(RECIPES.keys(), key=len))
         for recipe, desc in RECIPES.items():
-            print(os.linesep, "NAME:", recipe, "  DESCRIPTION:", desc)
+            print(
+                os.linesep,
+                green,
+                recipe
+                + "".join([" " for _ in range(max_recipe_name_len - len(recipe))]),
+                black,
+                ":",
+                yellow,
+                desc,
+                black,
+            )
         print(os.linesep)
         exit()
 
@@ -138,38 +161,48 @@ def parse_args(args):
         args.verbose = True
 
     if not docker:
-        print(os.linesep, "Error in running docker.")
+        print(os.linesep, red, "Error in running docker.", black)
         exit()
 
     if len([v for v in (args.build, args.run) if v]) != 1:
-        print(os.linesep, "One of --build --run must be specified.")
+        print(os.linesep, red, "One of --build --run must be specified.", black)
         exit()
 
     extra_config = _parse_extra_config(args.extra_config)
 
     if args.build:
         if not args.source_dir or not os.path.exists(args.source_dir):
-            print("--source_dir must be supplied and must exist for building")
+            print(
+                red, "--source_dir must be supplied and must exist for building", black
+            )
             exit()
 
         if not args.base:
-            print(os.linesep, "List of available base images.")
+            print(os.linesep, yellow, "List of available base images.", black)
             for k, v in BASE_IMAGES.items():
-                print(os.linesep, "NAME:", k, "  Description:", v)
+                print(
+                    os.linesep, red, "NAME:", black, k, red, "  Description:", black, v
+                )
 
-            print(os.linesep, "Enter the name of the base you want to use")
+            print(
+                os.linesep, yellow, "Enter the name of the base you want to use", black
+            )
             while True:
                 args.base = input()
                 if args.base not in BASE_IMAGES:
                     print(
                         os.linesep,
+                        red,
                         "input must be on of the above list. ctrl/cmd + c to quit.",
+                        black,
                     )
                     continue
                 break
 
+        os.system(docker + " pull " + args.base)
+
         if not args.port:
-            print(os.linesep, "--port defaults to 8080")
+            print(os.linesep, yellow, "--port defaults to 8080", black)
             args.port = "8080"
 
         _build(args, docker, log=args.verbose, extra_config=extra_config)
@@ -179,27 +212,33 @@ def parse_args(args):
             args.run = "notaitech/fastdeploy-recipe:" + args.run
 
         if not args.port:
-            print(os.linesep, "--port defaults to 8080")
+            print(os.linesep, yellow, "--port defaults to 8080", black)
             args.port = "8080"
 
         if not args.name:
             print(
                 os.linesep,
+                yellow,
                 "You can also use --name along with run for giving your container a meaningful name.",
+                black,
             )
             args.name = (
                 "fastDeploy" + "." + str(random.randint(0, 9)) + "." + str(time.time())
             )
             print(
                 os.linesep,
+                yellow,
                 "Attempting to start a container with the name",
+                black,
                 args.name,
                 os.linesep,
             )
 
+        os.system(docker + " pull " + args.run)
+
         cmd = (
             docker
-            + " run --name "
+            + " run -d --name "
             + args.name
             + " --tmpfs /ramdisk -p"
             + args.port
@@ -209,12 +248,36 @@ def parse_args(args):
         )
 
         if _run_cmd(cmd, args.verbose):
-            print(os.linesep, "Succesfully started the container", args.name)
+            print(os.linesep, "======================================", os.linesep)
+            print(
+                os.linesep,
+                green,
+                "Succesfully started the container",
+                black,
+                args.name,
+                green,
+                "in background.",
+                black,
+            )
+            print(os.linesep, "You can exit the logs by pressing Ctrl + C")
+            print(
+                os.linesep,
+                "To view logs of this container in future, run:",
+                yellow,
+                docker,
+                "logs -f",
+                args.name,
+                black,
+            )
+            print(os.linesep, "======================================", os.linesep)
+            os.system(docker + " logs -f " + args.name)
         else:
             _docker_rm(docker, args.name)
             print(
                 os.linesep,
+                red,
                 "Unsuccesfull attempt to start container with name",
+                black,
                 args.name,
             )
 
@@ -256,6 +319,18 @@ if __name__ == "__main__":
         help="Lists available fastDeploy recipes.",
     )
 
+    parser.add_argument(
+        "--no_colors", action="store_true", help="Disable colored output from CLI.",
+    )
+
     args = parser.parse_args()
+
+    if args.no_colors:
+        red, green, yellow, black = (
+            "",
+            "",
+            "",
+            "",
+        )
 
     parse_args(args)

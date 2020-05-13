@@ -287,33 +287,39 @@ if __name__ == "__main__":
         description="CLI for fastDeploy. https://fastDeploy.notAI.tech/cli"
     )
     # parser.add_argument('--gpu', type=str, help='Id(s) of the gpu to run on.')
-    parser.add_argument("--build", type=str, help="Name of the build eg: resnet_v1")
+    parser.add_argument("-b", "--build", type=str, help="Name of the build eg: resnet_v1")
     parser.add_argument(
+        "-s",
         "--source_dir",
         type=str,
         help="Path to your recipe directory. eg: ./resnet_dir",
     )
     parser.add_argument(
+        "-r",
         "--run", type=str, help="local or cloud name of built recipe to run.",
     )
     parser.add_argument(
+        "-n",
         "--name",
         type=str,
         help="To be used along with run. Sets a name for the container.",
     )
-    parser.add_argument("--port", type=str, help="Port to run on. eg: 8080")
+    parser.add_argument("-p", "--port", type=str, help="Port to run on. eg: 8080")
     parser.add_argument(
         "--base", type=str, help="Optionsl base image name for the build."
     )
     parser.add_argument(
+        "-e",
         "--extra_config",
         type=str,
         help='a json with variable name and value as key value pairs. eg: --extra_config \'{"ENV_1": "VAL"}\'',
     )
     parser.add_argument(
+        "-v",
         "--verbose", action="store_true", help="displays the docker commands used."
     )
     parser.add_argument(
+        "-l",
         "--list_recipes",
         action="store_true",
         help="Lists available fastDeploy recipes.",

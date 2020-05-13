@@ -1,6 +1,7 @@
 import os
 import wave
 import json
+import uuid
 import glob
 import shlex
 import zipfile
@@ -34,7 +35,7 @@ else:
 
 def run_asr(f):
     try:
-        wf = f + '.wav'
+        wf = f + str(uuid.uuid4()) + '.wav'
         if MAX_WAV_LEN:
             os.system(f'ffmpeg -hide_banner -loglevel panic -n -i {shlex.quote(f)} -ss 0 -t {MAX_WAV_LEN}  -ar {SAMPLE_RATE} -ac 1 {shlex.quote(wf)}')
         else:

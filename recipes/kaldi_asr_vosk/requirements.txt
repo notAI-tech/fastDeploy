@@ -1,2 +1,3 @@
-keras==2.2.4
-NudeNet==1.1.0
+--upgrade pip
+vosk==0.3.7
+pydload

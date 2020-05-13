@@ -1,27 +1,67 @@
-import base64
-from nudenet import NudeClassifier
+import os
+import wave
+import json
+import glob
+import shlex
+import zipfile
+import pydload
+import multiprocessing
 
-classifier = NudeClassifier()
+from vosk import Model, KaldiRecognizer, SetLogLevel
+
+SetLogLevel(0)
+
+MAX_WAV_LEN = int(os.getenv('MAX_WAV_LEN', '0'))
+
+SAMPLE_RATE = int(os.getenv('SAMPLE_RATE', '16000'))
+
+model_zip_url = os.getenv('MODEL_ZIP_URL', 'http://alphacephei.com/kaldi/models/vosk-model-en-us-aspire-0.2.zip')
+
+pydload.dload(model_zip_url, save_to_path='./model.zip', max_time=None)
+
+with zipfile.ZipFile('./model.zip', 'r') as zip_ref:
+    zip_ref.extractall('./model')
+
+os.remove('./model.zip')
+
+files_in_model_dir = glob.glob('./model/*')
+
+if len(files_in_model_dir) == 1:
+    model = Model(files_in_model_dir[0])
+else:
+    model = Model("./model")
 
 
-"""
+def run_asr(f):
+    try:
+        wf = f + '.wav'
+        if MAX_WAV_LEN:
+            os.system(f'ffmpeg -hide_banner -loglevel warning -n -i {shlex.quote(f)} -ss 0 -t {MAX_WAV_LEN}  -ar {SAMPLE_RATE} -ac 1 {shlex.quote(wf)}')
+        else:
+            os.system(f'ffmpeg -hide_banner -loglevel warning -n -i {shlex.quote(f)} -ar {SAMPLE_RATE} -ac 1 {shlex.quote(wf)}')
+        
+        o_wf = wave.open(wf, "rb")
+        data = o_wf.readframes(o_wf.getnframes())
+        o_wf.close()
+        os.remove(wf)
+        
+        rec = KaldiRecognizer(model, SAMPLE_RATE)
 
-Your function should take list of items as input
-This makes batching possible
+        rec.AcceptWaveform(data)
 
-"""
+        return json.loads(rec.FinalResult())
+    except Exception as ex:
+        return {'error': str(ex)}
 
 
-def predictor(in_images=[], batch_size=32):
-    if not in_images:
+def predictor(in_audios=[], batch_size=2):
+    if not in_audios:
         return []
-    preds = classifier.classify(in_images, batch_size=batch_size)
-
-    preds = [preds.get(in_image) for in_image in in_images]
-
-    preds = [{k: float(v) for k, v in pred.items()} if pred else pred for pred in preds]
-
-    return preds
+    
+    with multiprocessing.Pool(batch_size) as pool:
+        transcripts = pool.map(run_asr, in_audios)
+    
+    return transcripts
 
 
 if __name__ == "__main__":
@@ -29,7 +69,7 @@ if __name__ == "__main__":
     import pickle
     import base64
 
-    example = ["example.jpg"]
+    example = ["example.wav"]
 
     print(json.dumps(predictor(example)))
 

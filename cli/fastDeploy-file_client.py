@@ -18,25 +18,22 @@ parser.add_argument(
 
 parser.add_argument("--ext", type=str, help="extension name. to be used with --dir.")
 
-parser.add_argument("--async", action="store_true", help="Make an async request")
-parser.add_argument("--webhook", type=str, help="webhook url (only works with async)")
 parser.add_argument(
-    "--host_url", type=str, help="Host url. defaults to http://localhost:8080"
+    "--webhook", type=str, help="webhook url (only works with async url.)"
+)
+parser.add_argument(
+    "--url", type=str, help="url. defaults to http://localhost:8080/sync"
 )
 parser.add_argument("--result", type=str, help="Get the result for a given unique_id")
 
 args = parser.parse_args()
 
-if not args.host_url:
-    args.host_url = "http://localhost:8080"
+if not args.url:
+    args.url = "http://localhost:8080/sync"
 
 
 if args.result:
-    print(
-        requests.post(
-            os.path.join(args.host_url, "result"), json={"unique_id": args.result}
-        ).json()
-    )
+    print(requests.post(args.url, json={"unique_id": args.result}).json())
     exit()
 
 if not args.file and not args.dir:
@@ -57,15 +54,4 @@ if args.dir:
         exit()
     data = {f: base64.b64encode(open(f, "rb").read()).decode("utf-8") for f in files}
 
-if not args.async:
-    print(
-        requests.post(os.path.join(args.host_url, "sync"), json={"data": data}).json()
-    )
-
-else:
-    print(
-        requests.post(
-            os.path.join(args.host_url, "async"),
-            json={"data": data, "webhook": args.webhook},
-        ).json()
-    )
+print(requests.post(args.url, json={"data": data, "webhook": args.webhook},).json())

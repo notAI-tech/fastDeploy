@@ -36,9 +36,9 @@ def run_asr(f):
     try:
         wf = f + '.wav'
         if MAX_WAV_LEN:
-            os.system(f'ffmpeg -hide_banner -loglevel warning -n -i {shlex.quote(f)} -ss 0 -t {MAX_WAV_LEN}  -ar {SAMPLE_RATE} -ac 1 {shlex.quote(wf)}')
+            os.system(f'ffmpeg -hide_banner -loglevel panic -n -i {shlex.quote(f)} -ss 0 -t {MAX_WAV_LEN}  -ar {SAMPLE_RATE} -ac 1 {shlex.quote(wf)}')
         else:
-            os.system(f'ffmpeg -hide_banner -loglevel warning -n -i {shlex.quote(f)} -ar {SAMPLE_RATE} -ac 1 {shlex.quote(wf)}')
+            os.system(f'ffmpeg -hide_banner -loglevel panic -n -i {shlex.quote(f)} -ar {SAMPLE_RATE} -ac 1 {shlex.quote(wf)}')
         
         o_wf = wave.open(wf, "rb")
         data = o_wf.readframes(o_wf.getnframes())

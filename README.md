@@ -9,6 +9,9 @@
 
 **Recipies:** [https://fastdeploy.notai.tech/recipes](https://fastdeploy.notai.tech/recipes)
 
+**We alo provide free to use APIs for most of our recipes**
+
+**signup for API key** [https://tech.notai.tech/signup/](https://tech.notai.tech/signup/)
 
 # Download CLI
 ```bash
@@ -28,3 +31,4 @@ chmod +x fastDeploy.py
 # Run a recipe (eg: craft_text_detection).
 ./fastDeploy.py --run craft_text_detection --name craft_text_detection_test_run
 ```
+

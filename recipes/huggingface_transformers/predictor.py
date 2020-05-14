@@ -3,12 +3,17 @@ from transformers import pipeline
 
 pipeline_name = os.getenv("PIPELINE", "sentiment-analysis")
 
+MAX_LEN = int(os.getenv('MAX_LEN', '-1'))
+
 nlp = pipeline(pipeline_name)
 
 
 def predictor(in_lines, batch_size=4):
     # For sentiment analysic, hugging face transformers throws error when batch_size > 2
     # https://github.com/huggingface/transformers/issues/2941
+
+    in_lines = [l[:MAX_LEN] for l in in_lines]
+    
     pad = False
     if pipeline_name in {"sentiment-analysis"}:
         pad = True

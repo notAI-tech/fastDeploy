@@ -36,7 +36,7 @@ def start_loop(predictor, example):
 
     _utils.logger.info("Starting prediction loop")
 
-    last_paused_time = -1
+    last_paused_time = 0
     while True:
         # Get the latest list of to process data
         to_process = _utils.get_to_process_list(FILE_MODE)
@@ -54,7 +54,7 @@ def start_loop(predictor, example):
                 continue
 
         # waiting completed
-        last_paused_time = -1
+        last_paused_time = 0
 
         # The "batch" here is a batch of inputs.
         # since, each input might contain more than one example (client side batching)

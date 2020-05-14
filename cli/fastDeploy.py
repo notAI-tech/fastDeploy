@@ -199,7 +199,7 @@ def parse_args(args):
                     continue
                 break
 
-        os.system(docker + " pull " + args.base)
+        os.system(docker + " pull notaitech/fastdeploy:" + args.base)
 
         if not args.port:
             print(os.linesep, yellow, "--port defaults to 8080", black)

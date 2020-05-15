@@ -55,7 +55,7 @@ docker push notaitech/fastdeploy-recipe:transformer_ner
 
 docker rmi notaitech/fastdeploy-recipe:transformer_sentiment
 docker rm temp
-python3 ../cli/fastDeploy.py --build temp --source_dir huggingface_transformers/ --verbose --base pyt_1_5_cpu --extra_config '{"PIPELINE": "sentiment"}' --port 127.0.0.1:6788
+python3 ../cli/fastDeploy.py --build temp --source_dir huggingface_transformers/ --verbose --base pyt_1_5_cpu --extra_config '{"PIPELINE": "sentiment-analysis"}' --port 127.0.0.1:6788
 docker commit temp notaitech/fastdeploy-recipe:transformer_sentiment
 docker push notaitech/fastdeploy-recipe:transformer_sentiment
 

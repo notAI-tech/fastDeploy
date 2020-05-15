@@ -38,3 +38,33 @@ docker rm temp
 python3 ../cli/fastDeploy.py --build temp --source_dir craft_text_detection/ --verbose --base tf_1_14_cpu --extra_config '{}' --port 127.0.0.1:6788
 docker commit temp notaitech/fastdeploy-recipe:craft_text_detection
 docker push notaitech/fastdeploy-recipe:craft_text_detection
+
+
+
+docker rmi notaitech/fastdeploy-recipe:transformer_ner
+docker rm temp
+python3 ../cli/fastDeploy.py --build temp --source_dir huggingface_transformers/ --verbose --base pyt_1_5_cpu --extra_config '{"PIPELINE": "ner"}' --port 127.0.0.1:6788
+docker commit temp notaitech/fastdeploy-recipe:transformer_ner
+docker push notaitech/fastdeploy-recipe:transformer_ner
+
+
+docker rmi notaitech/fastdeploy-recipe:transformer_sentiment
+docker rm temp
+python3 ../cli/fastDeploy.py --build temp --source_dir huggingface_transformers/ --verbose --base pyt_1_5_cpu --extra_config '{"PIPELINE": "sentiment"}' --port 127.0.0.1:6788
+docker commit temp notaitech/fastdeploy-recipe:transformer_sentiment
+docker push notaitech/fastdeploy-recipe:transformer_sentiment
+
+
+docker rmi notaitech/fastdeploy-recipe:transformer_summarization
+docker rm temp
+python3 ../cli/fastDeploy.py --build temp --source_dir huggingface_transformers/ --verbose --base pyt_1_5_cpu --extra_config '{"PIPELINE": "summarization"}' --port 127.0.0.1:6788
+docker commit temp notaitech/fastdeploy-recipe:transformer_summarization
+docker push notaitech/fastdeploy-recipe:transformer_summarization
+
+
+docker rmi notaitech/fastdeploy-recipe:transformer_translation_en_to_fr
+docker rm temp
+python3 ../cli/fastDeploy.py --build temp --source_dir huggingface_transformers/ --verbose --base pyt_1_5_cpu --extra_config '{"PIPELINE": "translation_en_to_fr"}' --port 127.0.0.1:6788
+docker commit temp notaitech/fastdeploy-recipe:transformer_translation_en_to_fr
+docker push notaitech/fastdeploy-recipe:transformer_translation_en_to_fr
+

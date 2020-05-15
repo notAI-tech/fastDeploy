@@ -22,7 +22,10 @@ def predictor(in_lines, batch_size=4):
 
     preds = []
     while in_lines:
-        pred = nlp(in_lines[:batch_size], pad_to_max_length=pad)
+        if pad:
+            pred = nlp(in_lines[:batch_size], pad_to_max_length=pad)
+        else:
+            pred = nlp(in_lines[:batch_size])
 
         if len(in_lines[:batch_size]) == 1 and pipeline_name in {"ner"}:
             pred = [pred]

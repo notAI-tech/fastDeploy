@@ -9,23 +9,12 @@ nlp = pipeline(pipeline_name)
 
 
 def predictor(in_lines, batch_size=4):
-    # For sentiment analysic, hugging face transformers throws error when batch_size > 2
-    # https://github.com/huggingface/transformers/issues/2941
-
     if MAX_LEN:
         in_lines = [l[:MAX_LEN] for l in in_lines]
     
-    pad = False
-    if pipeline_name in {"sentiment-analysis"}:
-        pad = True
-        batch_size = min(batch_size, 2)
-
     preds = []
     while in_lines:
-        if pad:
-            pred = nlp(in_lines[:batch_size], pad_to_max_length=pad)
-        else:
-            pred = nlp(in_lines[:batch_size])
+        pred = nlp(in_lines[:batch_size])
 
         if len(in_lines[:batch_size]) == 1 and pipeline_name in {"ner"}:
             pred = [pred]

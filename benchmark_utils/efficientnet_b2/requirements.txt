@@ -1,3 +1,0 @@
-efficientnet==1.1.0
-tensorflow==1.14
-keras==2.2.4

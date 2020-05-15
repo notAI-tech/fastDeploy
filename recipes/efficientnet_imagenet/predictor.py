@@ -6,7 +6,7 @@ from skimage.io import imread
 from efficientnet.keras import center_crop_and_resize, preprocess_input
 from keras.applications.imagenet_utils import decode_predictions
 
-import multiprocessing
+#import multiprocessing
 
 weights = os.getenv("WEIGHTS", "noisy-student")
 
@@ -51,10 +51,12 @@ def read_image(path):
 
 
 def predictor(in_paths=[], batch_size=2):
-    with multiprocessing.Pool(batch_size) as pool:
-        in_images = pool.map(read_image, in_paths)
-        pool.close()
+    #with multiprocessing.Pool(batch_size) as pool:
+    #    in_images = pool.map(read_image, in_paths)
+    #    pool.close()
 
+    in_images = [read_image(in_path) for in_path in in_paths]
+    
     bad_indices = {i for i, in_image in enumerate(in_images) if in_image is None}
     in_images = [in_image for in_image in in_images if in_image is not None]
 

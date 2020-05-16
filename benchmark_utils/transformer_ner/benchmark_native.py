@@ -11,10 +11,10 @@ nlp = pipeline(pipeline_name)
 
 
 def predictor(in_lines, batch_size=4):
-    
+
     if MAX_LEN:
         in_lines = [l[:MAX_LEN] for l in in_lines]
-    
+
     preds = []
     total_time = 0
 
@@ -54,17 +54,20 @@ if __name__ == "__main__":
     for _ in range(3):
         predictor(example)
 
+    import os
     import json
+
+    PORT = os.getenv('PORT', '8080')
 
     in_data = example * 1024
 
     f = open('benchmark_fastDeploy.sh', 'w')
 
     for batch_size in [1, 2, 4, 8, 16]:
-        json.dump({'data': example * batch_size, open(f'{batch_size}.json', 'w'))
+        json.dump({'data': example * batch_size}, open(f'{batch_size}.json', 'w'))
 
         for c in [1, 8, 16, 64, 128]:
             f.write(f"autocannon -c {c} -t 1000 -a {512//batch_size}  -m POST -i {batch_size}.json -H 'Content-Type: application/json' http://localhost:{PORT}/sync\n")
 
 
-        print(f'batch_size: {batch_size}, total_time: {predictor(in_images, batch_size)} for 512 examples.')
+        print(f'batch_size: {batch_size}, total_time: {predictor(in_data, batch_size)} for 1024 examples.')

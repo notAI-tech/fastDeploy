@@ -45,6 +45,7 @@ RECIPES = {
     "kaldi_vosk-en_us-small": "https://github.com/alphacep/vosk-api/blob/master/doc/models.md",
     "kaldi_vosk-en_us-aspire": "https://github.com/alphacep/vosk-api/blob/master/doc/models.md",
 
+    "audio_classification_yamnet": "https://github.com/tensorflow/models/blob/master/research/audioset/yamnet/",
 }
 
 

@@ -87,3 +87,8 @@ python3 ../cli/fastDeploy.py --build temp --source_dir huggingface_transformers/
 docker commit temp notaitech/fastdeploy-recipe:transformer_translation_en_to_fr
 docker push notaitech/fastdeploy-recipe:transformer_translation_en_to_fr
 
+docker rmi notaitech/fastdeploy-recipe:audio_classification_yamnet
+docker rm temp
+python3 ../cli/fastDeploy.py --build temp --source_dir audio_classification_yamnet/ --verbose --base tf_2_1_cpu --extra_config '{}' --port 127.0.0.1:6788
+docker commit temp notaitech/fastdeploy-recipe:audio_classification_yamnet
+docker push notaitech/fastdeploy-recipe:audio_classification_yamnet

@@ -1,0 +1,16 @@
+autocannon -c 1 -t 1000 -a 512  -m POST -i 1.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 8 -t 1000 -a 512  -m POST -i 1.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 16 -t 1000 -a 512  -m POST -i 1.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 64 -t 1000 -a 512  -m POST -i 1.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 1 -t 1000 -a 256  -m POST -i 2.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 8 -t 1000 -a 256  -m POST -i 2.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 16 -t 1000 -a 256  -m POST -i 2.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 64 -t 1000 -a 256  -m POST -i 2.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 1 -t 1000 -a 128  -m POST -i 4.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 8 -t 1000 -a 128  -m POST -i 4.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 16 -t 1000 -a 128  -m POST -i 4.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 64 -t 1000 -a 128  -m POST -i 4.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 1 -t 1000 -a 64  -m POST -i 8.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 8 -t 1000 -a 64  -m POST -i 8.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 16 -t 1000 -a 64  -m POST -i 8.json -H 'Content-Type: application/json' http://localhost:6788/sync
+autocannon -c 64 -t 1000 -a 64  -m POST -i 8.json -H 'Content-Type: application/json' http://localhost:6788/sync

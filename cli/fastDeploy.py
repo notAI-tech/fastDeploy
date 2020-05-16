@@ -27,11 +27,24 @@ RECIPES = {
     "deepsegment_en": "https://github.com/bedapudi6788/deepsegment",
     "deepsegment_fr": "https://github.com/bedapudi6788/deepsegment",
     "deepsegment_it": "https://github.com/bedapudi6788/deepsegment",
-    "craft_text_detection": "https://github.com/notAI-tech/keras-craft",
+    
     "nudeclassifier": "https://github.com/bedapudi6788/NudeNet",
+
+    "efficientnet_b0": "https://github.com/qubvel/efficientnet",
     "efficientnet_b2": "https://github.com/qubvel/efficientnet",
+    "efficientnet_b4": "https://github.com/qubvel/efficientnet",
+    "efficientnet_b7": "https://github.com/qubvel/efficientnet",
+
+    "craft_text_detection": "https://github.com/notAI-tech/keras-craft",
+
+    "transformer_ner": "https://github.com/huggingface/transformers",
+    "transformer_sentiment": "https://github.com/huggingface/transformers",
+    "transformer_summarization": "https://github.com/huggingface/transformers",
+    "transformer_translation_en_to_fr": "https://github.com/huggingface/transformers",
+
     "kaldi_vosk-en_us-small": "https://github.com/alphacep/vosk-api/blob/master/doc/models.md",
     "kaldi_vosk-en_us-aspire": "https://github.com/alphacep/vosk-api/blob/master/doc/models.md",
+
 }
 
 

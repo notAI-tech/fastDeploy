@@ -80,8 +80,9 @@ if __name__ == "__main__":
     for batch_size in [1, 2, 4, 8]:
         json.dump({'data': {f'{i}.jpg': base64.b64encode(open("example.jpg", "rb").read()).decode("utf-8") for i in range(batch_size)}}, open(f'{batch_size}.json', 'w'))
 
-        for c in [1, 2, 4, 8]:
+        for c in [1, 8, 16, 64]:
             f.write(f"autocannon -c {c} -t 1000 -a {512//batch_size}  -m POST -i {batch_size}.json -H 'Content-Type: application/json' http://localhost:{PORT}/sync\n")
 
 
-        print(f'batch_size: {batch_size}, total_time: {predictor(in_images, batch_size)} for 512 examples.')
+        #print(f'batch_size: {batch_size}, total_time: {predictor(in_images, batch_size)} for 512 examples.')
+

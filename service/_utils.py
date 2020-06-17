@@ -19,6 +19,28 @@ import shutil
 import pickle
 from datetime import datetime
 
+example = pickle.load(open("example.pkl", "rb"))
+
+if isinstance(example, dict):
+    FILE_MODE = True
+
+    import base64
+
+    write_dir = "./example_test"
+    try:
+        os.mkdir(write_dir)
+    except:
+        pass
+
+    for i, (file_name, b64_string) in enumerate(example.items()):
+        file_extension = file_name.split(".")[-1]
+        file_path = os.path.join(
+            write_dir, f"{str(i).zfill(len(example) + 1)}.{file_extension}"
+        )
+        open(file_path, "wb").write(base64.b64decode(b64_string.encode("utf-8")))
+
+    example = glob.glob(write_dir + "/*")
+
 
 # No real use in making these configurable.
 batch_size_file_path = ".batch_size"

@@ -7,9 +7,6 @@ import pickle
 
 import _utils
 
-FILE_MODE = False
-
-
 def start_loop(predictor, example):
     """
         The Prediction loop. This is where the logic happens.
@@ -39,7 +36,7 @@ def start_loop(predictor, example):
     last_paused_time = 0
     while True:
         # Get the latest list of to process data
-        to_process = _utils.get_to_process_list(FILE_MODE)
+        to_process = _utils.get_to_process_list(_utils.FILE_MODE)
 
         if not to_process:
             continue
@@ -73,7 +70,7 @@ def start_loop(predictor, example):
             number_of_examples_per_req = []
             for i, in_path in enumerate(batch):
                 try:
-                    if FILE_MODE:
+                    if _utils.FILE_MODE:
                         in_list = glob.glob(in_path + "/*")
                     else:
                         in_list = pickle.load(open(in_path, "rb"))
@@ -104,7 +101,7 @@ def start_loop(predictor, example):
                 _in_data = in_data[: number_of_examples_per_req[i]]
                 in_data = in_data[number_of_examples_per_req[i] :]
 
-                if FILE_MODE:
+                if _utils.FILE_MODE:
                     _in_data = [os.path.basename(j) for j in _in_data]
                     remove_till = _in_data[0].index(".") + 1
                     _in_data = [j[remove_till:] for j in _in_data]
@@ -128,26 +125,4 @@ def start_loop(predictor, example):
 if __name__ == "__main__":
     from predictor import predictor
 
-    example = pickle.load(open("example.pkl", "rb"))
-
-    if isinstance(example, dict):
-        FILE_MODE = True
-
-        import base64
-
-        write_dir = "./example_test"
-        try:
-            os.mkdir(write_dir)
-        except:
-            pass
-
-        for i, (file_name, b64_string) in enumerate(example.items()):
-            file_extension = file_name.split(".")[-1]
-            file_path = os.path.join(
-                write_dir, f"{str(i).zfill(len(example) + 1)}.{file_extension}"
-            )
-            open(file_path, "wb").write(base64.b64decode(b64_string.encode("utf-8")))
-
-        example = glob.glob(write_dir + "/*")
-
-    start_loop(predictor, example)
+    start_loop(predictor, _utils.example)

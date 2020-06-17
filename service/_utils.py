@@ -253,13 +253,7 @@ def cleanup(unique_id):
         :param unique_id: unique_id
     """
     for _dir in (RAM_DIR, DISK_DIR):
-        for f in glob.glob(os.path.join(_dir, unique_id) + "*"):
-            if not os.path.exists(f):
-                continue
-            if f[-3:] == "dir":
-                shutil.rmtree(f)
-            else:
-                os.remove(f)
+        os.system(f"rm -rf {shlex.quote(os.path.join(_dir, unique_id + '*'))}")
 
 
 def in_path_to_res_path(in_path):

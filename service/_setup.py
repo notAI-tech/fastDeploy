@@ -48,7 +48,8 @@ print(f"{yellow} STEP 1: {green} Installing requirements... {black} \n")
 
 for line in open("requirements.txt", "r"):
     line = line.strip()
-    if not line: continue
+    if not line:
+        continue
     if line[0] == "#":
         continue
     print(f"\t {yellow} Installing {line} {black}")

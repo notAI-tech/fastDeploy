@@ -55,9 +55,9 @@ def process_webhooks():
             try:
                 unique_id = os.path.basename(webhook_f).split(".")[0]
                 _utils.cleanup(unique_id)
-            except as exx:
+            except Exception as exx:
                 _utils.logger.warn(exx, exc_info=True)
-                _utils.logger.warn(f'Failed to cleanup {webhook_f}')
+                _utils.logger.warn(f"Failed to cleanup {webhook_f}")
 
             _utils.logger.exception(exc, exc_info=True)
 

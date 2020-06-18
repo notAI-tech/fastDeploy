@@ -44,6 +44,9 @@ if isinstance(example, dict):
 
 # No real use in making these configurable.
 batch_size_file_path = ".batch_size"
+# Delete batch_size_file is exists
+os.remove(batch_size_file_path)
+
 RAM_DIR = "/ramdisk/"
 
 if not os.path.exists(RAM_DIR):

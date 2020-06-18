@@ -49,9 +49,11 @@ def process_webhooks():
                     )
                     pass
 
-            # will be deleted after succes or after 3 fails
+            # will be deleted after success or after 3 fails
             _utils.cleanup(unique_id)
         except Exception as exc:
+            unique_id = os.path.basename(webhook_f).split(".")[0]
+            _utils.cleanup(unique_id)
             _utils.logger.exception(exc, exc_info=True)
 
 

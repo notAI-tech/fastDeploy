@@ -52,8 +52,13 @@ def process_webhooks():
             # will be deleted after success or after 3 fails
             _utils.cleanup(unique_id)
         except Exception as exc:
-            unique_id = os.path.basename(webhook_f).split(".")[0]
-            _utils.cleanup(unique_id)
+            try:
+                unique_id = os.path.basename(webhook_f).split(".")[0]
+                _utils.cleanup(unique_id)
+            except as exx:
+                _utils.logger.warn(exx, exc_info=True)
+                _utils.logger.warn(f'Failed to cleanup {webhook_f}')
+
             _utils.logger.exception(exc, exc_info=True)
 
 
@@ -62,4 +67,4 @@ while True:
     #
     process_webhooks()
 
-    time.sleep(15)
+    # time.sleep(15)

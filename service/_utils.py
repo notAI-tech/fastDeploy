@@ -45,8 +45,6 @@ if isinstance(example, dict):
 # No real use in making these configurable.
 batch_size_file_path = ".batch_size"
 # Delete batch_size_file is exists
-if os.path.exists(batch_size_file_path):
-    os.remove(batch_size_file_path)
 
 RAM_DIR = "/ramdisk/"
 
@@ -88,6 +86,10 @@ MAX_PER_CLIENT_BATCH = int(os.getenv("MAX_PER_CLIENT_BATCH", "0"))
 
 # The loop will wait for time_per_example * MAX_WAIT for batching.
 MAX_WAIT = float(os.getenv("MAX_WAIT", 0.2))
+
+# number of hash to prediction mapping to keep in cache
+MAX_WAIT = float(os.getenv("MAX_WAIT", 0.2))
+
 
 # reading the availbale storage (ram) on RAM_DIR
 _, used, free = shutil.disk_usage(RAM_DIR)

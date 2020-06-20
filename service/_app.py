@@ -111,7 +111,7 @@ def handle_file_dict_request(unique_id, in_dict):
     """
     # file_size = 0.75 * len(base64 string of the file)
     _write_dir, res_path = get_write_res_paths(
-        unique_id, 0.75 * sum([len(v) for v in in_dict.items()])
+        unique_id, 0.75 * sum([len(v) for v in in_dict.values()])
     )
 
     # since we write files sequentially, we don't want loop to pickup truncated inputs.

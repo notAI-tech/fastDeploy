@@ -259,7 +259,7 @@ def cleanup(unique_id):
         :param unique_id: unique_id
     """
     for _dir in (RAM_DIR, DISK_DIR):
-        os.system(f"rm -rf {shlex.quote(os.path.join(_dir, unique_id + '*'))}")
+        os.system(f"rm -rf {shlex.quote(os.path.join(_dir, unique_id))}*")
 
 
 def in_path_to_res_path(in_path):

@@ -17,7 +17,7 @@ def process_webhooks():
     if not webhooks_left:
         return
 
-    _utils.logger.info(f"{len(webhooks_left)} webhooks found")
+    _utils.logger.info(f"{len(webhooks_left)} webhooks to be processed.")
     for webhook_f in webhooks_left:
         try:
             # check if res exists
@@ -41,6 +41,7 @@ def process_webhooks():
                 try:
                     requests.post(webhook_url, json=pred, timeout=5)
                     _utils.logger.info(f"webhook success: {unique_id}")
+                    _utils.logger.info(f"{unique_id} with url {webhook_url} processed.")
                     break
                 except Exception as ex:
                     _utils.logger.warn(ex)

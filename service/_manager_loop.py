@@ -17,7 +17,6 @@ def process_webhooks():
     if not webhooks_left:
         return
 
-    _utils.logger.info(f"{len(webhooks_left)} webhooks to be processed.")
     for webhook_f in webhooks_left:
         try:
             # check if res exists
@@ -27,7 +26,12 @@ def process_webhooks():
                 continue
             res_path = res_path[0]
 
-            pred = pickle.load(open(res_path, "rb"))
+            try:
+                pred = pickle.load(open(res_path, "rb"))
+            except:
+                # This means, preds are not written yet.
+                continue
+            
             try:
                 json.dumps(pred)
             # if return dict has any non json serializable values, this might help.

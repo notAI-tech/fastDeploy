@@ -31,7 +31,7 @@ def process_webhooks():
             except:
                 # This means, preds are not written yet.
                 continue
-            
+
             try:
                 json.dumps(pred)
             # if return dict has any non json serializable values, this might help.

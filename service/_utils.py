@@ -249,7 +249,7 @@ def create_symlink_in_ram(f):
     """
     sym_link_path = os.path.join(RAM_DIR, os.path.basename(f))
     if not os.path.exists(sym_link_path):
-        os.system(f"ln -s {shlex.quote(sym_link_path)} {shlex.quote(f)}")
+        os.system(f"ln -s {shlex.quote(f)} {shlex.quote(sym_link_path)}")
 
 
 def cleanup(unique_id):

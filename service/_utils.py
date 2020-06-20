@@ -21,6 +21,8 @@ from datetime import datetime
 
 example = pickle.load(open("example.pkl", "rb"))
 
+FILE_MODE = False
+
 if isinstance(example, dict):
     FILE_MODE = True
 

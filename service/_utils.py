@@ -58,6 +58,8 @@ DISK_DIR = "./diskdisk/"
 if not os.path.exists(DISK_DIR):
     os.mkdir(DISK_DIR)
 
+DISK_DIR = os.path.abspath(DISK_DIR)
+
 # TIMEOUT for Sync api in seconds.
 TIMEOUT = float(os.getenv("TIMEOUT", "120"))
 

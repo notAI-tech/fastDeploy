@@ -183,7 +183,8 @@ class Sync(object):
                             )
                             resp.status = falcon.HTTP_400
 
-                        res_path = handle_json_request(unique_id, req.media["data"])
+                        else:
+                            res_path = handle_json_request(unique_id, req.media["data"])
 
                     elif isinstance(req.media["data"], dict):
                         if not _utils.FILE_MODE:
@@ -192,9 +193,10 @@ class Sync(object):
                             )
                             resp.status = falcon.HTTP_400
 
-                        res_path = handle_file_dict_request(
-                            unique_id, req.media["data"]
-                        )
+                        else:
+                            res_path = handle_file_dict_request(
+                                unique_id, req.media["data"]
+                            )
 
                     else:
                         resp.body, resp.status = (
@@ -246,10 +248,13 @@ class Async(object):
                         )
                         resp.status = falcon.HTTP_400
 
-                    handle_json_request(unique_id, req.media["data"])
-                    req.media.clear()
-                    resp.body = json.dumps({"success": True, "unique_id": unique_id})
-                    resp.status = falcon.HTTP_200
+                    else:
+                        handle_json_request(unique_id, req.media["data"])
+                        req.media.clear()
+                        resp.body = json.dumps(
+                            {"success": True, "unique_id": unique_id}
+                        )
+                        resp.status = falcon.HTTP_200
 
                 elif isinstance(req.media["data"], dict):
                     if not _utils.FILE_MODE:
@@ -257,11 +262,13 @@ class Async(object):
                             {"success": False, "reason": "Expecting JSON input"}
                         )
                         resp.status = falcon.HTTP_400
-
-                    handle_file_dict_request(unique_id, req.media["data"])
-                    req.media.clear()
-                    resp.body = json.dumps({"success": True, "unique_id": unique_id})
-                    resp.status = falcon.HTTP_200
+                    else:
+                        handle_file_dict_request(unique_id, req.media["data"])
+                        req.media.clear()
+                        resp.body = json.dumps(
+                            {"success": True, "unique_id": unique_id}
+                        )
+                        resp.status = falcon.HTTP_200
 
                 else:
                     resp.body, resp.status = (

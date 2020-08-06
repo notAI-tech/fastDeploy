@@ -36,7 +36,7 @@ def start_loop(predictor, example):
 
     last_paused_time = 0
     while True:
-        time.sleep(0.03)
+        time.sleep(_utils.PREDICTION_LOOP_SLEEP)
         # Get the latest list of to process data
         to_process = _utils.get_to_process_list(_utils.FILE_MODE)
 

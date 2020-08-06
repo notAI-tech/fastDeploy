@@ -72,4 +72,4 @@ while True:
     #
     process_webhooks()
 
-    time.sleep(5)
+    time.sleep(_utils.MANAGER_LOOP_SLEEP)

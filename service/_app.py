@@ -55,6 +55,8 @@ def wait_and_read_pred(res_path, unique_id):
                     f"{unique_id} timedout, with timeout {_utils.TIMEOUT}"
                 )
                 break
+            
+            time.sleep(0.03)
 
     # Since this is the last step in /sync, we delete all files related to this unique_id
     _utils.cleanup(unique_id)

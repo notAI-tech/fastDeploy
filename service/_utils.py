@@ -46,7 +46,7 @@ if isinstance(example, dict):
 
 SYNC_RESULT_POLING_SLEEP = float(os.getenv('SYNC_RESULT_POLING_SLEEP', '0.06'))
 PREDICTION_LOOP_SLEEP = float(os.getenv('PREDICTION_LOOP_SLEEP', '0.06'))
-MANAGER_LOOP_SLEEP = float(os.getenv('MANAGER_LOOP_SLEEP', '5'))
+MANAGER_LOOP_SLEEP = float(os.getenv('MANAGER_LOOP_SLEEP', '8'))
 
 
 # No real use in making these configurable.
@@ -69,6 +69,9 @@ DISK_DIR = os.path.abspath(DISK_DIR)
 
 # TIMEOUT for Sync api in seconds.
 TIMEOUT = float(os.getenv("TIMEOUT", "120"))
+
+# DELETE_OLDER_THAN files older than this will be deleted (in seconds)
+DELETE_OLDER_THAN = int(os.getenv("DELETE_OLDER_THAN", "21600"))
 
 # if USE_PRIORITY: priority will be used if provided in request
 # By default, this is enabled.

@@ -63,6 +63,6 @@ print(f"{yellow} STEP 2: {green} importing predictor {black}\n")
 from predictor import predictor
 
 print(f"{green} ALL DONE!\n")
-print(f"{green} serving will start in a few seconds {black} \n")
+print(f"{green} You can now commit your container using docker commit. {black} \n")
 
 open("_success", "w").write("")

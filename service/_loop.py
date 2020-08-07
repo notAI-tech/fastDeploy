@@ -112,11 +112,11 @@ def start_loop(predictor, example):
                         in_sub_path: sub_result
                         for in_sub_path, sub_result in zip(_in_data, result)
                     }
-                    os.system(f'rm -rf {in_path}')
-                    
+                    os.system(f"rm -rf {in_path}")
+
                     in_path = in_path[:-4]
                 else:
-                    os.system(f'rm -rf {in_path}')
+                    os.system(f"rm -rf {in_path}")
 
                 res_path = _utils.in_path_to_res_path(in_path)
 

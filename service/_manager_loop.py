@@ -66,9 +66,14 @@ def process_webhooks():
 
             _utils.logger.exception(exc, exc_info=True)
 
+
 def remove_older_files():
-    os.system(f"find {_utils.DISK_DIR} -mindepth 1 -not -newermt '-{_utils.DELETE_OLDER_THAN} seconds' -delete")
-    os.system(f"find {_utils.RAM_DIR} -mindepth 1 -not -newermt '-{_utils.DELETE_OLDER_THAN} seconds' -delete")
+    os.system(
+        f"find {_utils.DISK_DIR} -mindepth 1 -not -newermt '-{_utils.DELETE_OLDER_THAN} seconds' -delete"
+    )
+    os.system(
+        f"find {_utils.RAM_DIR} -mindepth 1 -not -newermt '-{_utils.DELETE_OLDER_THAN} seconds' -delete"
+    )
 
 
 while True:

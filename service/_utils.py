@@ -44,9 +44,9 @@ if isinstance(example, dict):
     example = glob.glob(write_dir + "/*")
 
 
-SYNC_RESULT_POLING_SLEEP = float(os.getenv('SYNC_RESULT_POLING_SLEEP', '0.06'))
-PREDICTION_LOOP_SLEEP = float(os.getenv('PREDICTION_LOOP_SLEEP', '0.06'))
-MANAGER_LOOP_SLEEP = float(os.getenv('MANAGER_LOOP_SLEEP', '8'))
+SYNC_RESULT_POLING_SLEEP = float(os.getenv("SYNC_RESULT_POLING_SLEEP", "0.06"))
+PREDICTION_LOOP_SLEEP = float(os.getenv("PREDICTION_LOOP_SLEEP", "0.06"))
+MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
 
 
 # No real use in making these configurable.

@@ -39,6 +39,7 @@ def start_loop(predictor, example):
         time.sleep(_utils.PREDICTION_LOOP_SLEEP)
         # Get the latest list of to process data
         to_process = _utils.get_to_process_list(_utils.FILE_MODE)
+        _utils.logger.info(f"{len(to_process)} inputs left in queue.")
 
         if not to_process:
             continue
@@ -62,6 +63,8 @@ def start_loop(predictor, example):
         # that accept batch_size as a parameter to predict call
         # TLDR; predictor function should respect a parameter named batch_size
         for batch in _utils.get_batch(to_process, batch_size):
+            _utils.logger.info(f"Processing batch with unique_ids: {batch}")
+
             # in_data will contain flattened list of user inputs.
             # batch = [['1', '2'], ['3'], ['4,5,6']] will result in
             # in_data = [1, 2, 3, 4, 5, 6]
@@ -122,6 +125,7 @@ def start_loop(predictor, example):
 
                 pickle.dump(result, open(res_path, "wb"), protocol=2)
 
+                _utils.logger.info(f"result written for {res_path}")
                 _utils.create_symlink_in_ram(res_path)
 
 

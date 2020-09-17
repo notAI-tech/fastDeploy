@@ -31,6 +31,8 @@ def wait_and_read_pred(res_path, unique_id):
         :return status: HTTP status code
     """
     # Keeping track of start_time for TIMEOUT implementation
+    _utils.logger.info(f"unique_id: {unique_id} waiting for {res_path}")
+
     start_time = time.time()
     # Default response and status
     response, status = (
@@ -45,6 +47,9 @@ def wait_and_read_pred(res_path, unique_id):
                 response = json.dumps({"prediction": pred, "success": True})
             # if return dict has any non json serializable values, we str() it
             except:
+                _utils.logger.info(
+                    f"unique_id: {unique_id} could not json serialize the result."
+                )
                 response = json.dumps({"prediction": str(pred), "success": True})
             status = falcon.HTTP_200
             break
@@ -52,7 +57,7 @@ def wait_and_read_pred(res_path, unique_id):
             # stop in case of timeout
             if time.time() - start_time >= _utils.TIMEOUT:
                 _utils.logger.warn(
-                    f"{unique_id} timedout, with timeout {_utils.TIMEOUT}"
+                    f"unique_id: {unique_id} timedout, with timeout {_utils.TIMEOUT}"
                 )
                 break
 
@@ -60,6 +65,7 @@ def wait_and_read_pred(res_path, unique_id):
 
     # Since this is the last step in /sync, we delete all files related to this unique_id
     _utils.cleanup(unique_id)
+    f"unique_id: {unique_id} cleaned up."
 
     return response, status
 
@@ -93,6 +99,8 @@ def handle_json_request(unique_id, in_json):
     write_path, res_path = get_write_res_paths(unique_id, sys.getsizeof(in_json))
 
     open(write_path, "wb").write(in_json)
+
+    _utils.logger.info(f"unique_id: {unique_id} added to queue as {write_path}")
 
     # If an input is more in size (than MAX_RAM_FILE_SIZE) or if CACHE is full, it is written to disk.
     # in these cases, for faster glob and other file ops, we symlink them in RAM.
@@ -132,6 +140,8 @@ def handle_file_dict_request(unique_id, in_dict):
 
     shutil.move(_write_dir, write_dir)
 
+    _utils.logger.info(f"unique_id: {unique_id} added to queue as {_write_dir}")
+
     _utils.create_symlink_in_ram(write_dir)
 
     return res_path
@@ -162,11 +172,17 @@ class Sync(object):
 
                 unique_id = _utils.get_uuid(priority=8)
 
+                _utils.logger.info(f"unique_id: {unique_id} Sync request recieved.")
+
                 res_path = None
 
                 if _utils.MAX_PER_CLIENT_BATCH and (
                     len(req.media["data"]) > _utils.MAX_PER_CLIENT_BATCH
                 ):
+                    _utils.logger.info(
+                        f'unique_id: {unique_id} has batch of size {len(req.media["data"])}. MAX_PER_CLIENT_BATCH: {_utils.MAX_PER_CLIENT_BATCH}'
+                    )
+
                     resp.body, resp.status = (
                         json.dumps(
                             {
@@ -178,6 +194,8 @@ class Sync(object):
                     )
 
                 elif len(req.media["data"]) == 0:
+                    _utils.logger.info(f"unique_id: {unique_id} has empty batch.")
+
                     resp.body, resp.status = (
                         json.dumps({"prediction": [], "success": True}),
                         falcon.HTTP_200,
@@ -186,6 +204,10 @@ class Sync(object):
                 else:
                     if isinstance(req.media["data"], list):
                         if _utils.FILE_MODE:
+                            _utils.logger.info(
+                                f"unique_id: {unique_id} is a JSON input. Expectig FILE input."
+                            )
+
                             resp.body = json.dumps(
                                 {"success": False, "reason": "Expecting FILE input"}
                             )
@@ -196,6 +218,10 @@ class Sync(object):
 
                     elif isinstance(req.media["data"], dict):
                         if not _utils.FILE_MODE:
+                            _utils.logger.info(
+                                f"unique_id: {unique_id} is a FILE input. Expectig JSON input."
+                            )
+
                             resp.body = json.dumps(
                                 {"success": False, "reason": "Expecting JSON input"}
                             )

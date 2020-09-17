@@ -39,10 +39,11 @@ def start_loop(predictor, example):
         time.sleep(_utils.PREDICTION_LOOP_SLEEP)
         # Get the latest list of to process data
         to_process = _utils.get_to_process_list(_utils.FILE_MODE)
-        _utils.logger.info(f"{len(to_process)} inputs left in queue.")
 
         if not to_process:
             continue
+
+        _utils.logger.info(f"{len(to_process)} inputs left in queue.")
 
         if len(to_process) < batch_size - 1:
             # start the wait

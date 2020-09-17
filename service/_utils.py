@@ -160,7 +160,9 @@ def get_uuid(priority=9):
     if not USE_PRIORITY:
         priority = 9
 
-    if not priority.isdigit():
+    try:
+        priority = int(priority)
+    except:
         priority = 8
 
     priority = min(priority, 9)

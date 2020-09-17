@@ -49,9 +49,11 @@ def start_loop(predictor, example):
             # start the wait
             if not last_paused_time:
                 last_paused_time = time.time()
+                _utils.logger.info(f"Waiting for more inputs for batching.")
                 continue
             # if waiting for less than max_wait_time, continue waiting
             if time.time() - last_paused_time < max_wait_time:
+                _utils.logger.info(f"Waiting for more inputs for batching.")
                 continue
 
         # waiting completed

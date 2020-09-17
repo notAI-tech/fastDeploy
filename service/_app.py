@@ -177,6 +177,12 @@ class Sync(object):
                         falcon.HTTP_200,
                     )
 
+                elif len(req.media["data"]) == 0:
+                    resp.body, resp.status = (
+                        json.dumps({"prediction": [], "success": True}),
+                        falcon.HTTP_200,
+                    )
+
                 else:
                     if isinstance(req.media["data"], list):
                         if _utils.FILE_MODE:
@@ -239,6 +245,12 @@ class Async(object):
                             "reason": f"Maximum number of examples allowed in client batch is {_utils.MAX_PER_CLIENT_BATCH}",
                         }
                     ),
+                    falcon.HTTP_200,
+                )
+
+            elif len(req.media["data"]) == 0:
+                resp.body, resp.status = (
+                    json.dumps({"prediction": [], "success": True}),
                     falcon.HTTP_200,
                 )
 

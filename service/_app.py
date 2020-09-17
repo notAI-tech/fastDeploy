@@ -65,7 +65,7 @@ def wait_and_read_pred(res_path, unique_id):
 
     # Since this is the last step in /sync, we delete all files related to this unique_id
     _utils.cleanup(unique_id)
-    f"unique_id: {unique_id} cleaned up."
+    _utils.logger.info(f"unique_id: {unique_id} cleaned up.")
 
     return response, status
 
@@ -256,6 +256,7 @@ class Async(object):
     def on_post(self, req, resp):
         try:
             unique_id = _utils.get_uuid()
+            _utils.logger.info(f"unique_id: {unique_id} Async request recieved.")
 
             webhook = req.media.get("webhook")
 
@@ -264,6 +265,9 @@ class Async(object):
             if _utils.MAX_PER_CLIENT_BATCH and (
                 len(req.media["data"]) > _utils.MAX_PER_CLIENT_BATCH
             ):
+                _utils.logger.info(
+                    f'unique_id: {unique_id} has batch of size {len(req.media["data"])}. MAX_PER_CLIENT_BATCH: {_utils.MAX_PER_CLIENT_BATCH}'
+                )
                 resp.body, resp.status = (
                     json.dumps(
                         {
@@ -275,6 +279,8 @@ class Async(object):
                 )
 
             elif len(req.media["data"]) == 0:
+                _utils.logger.info(f"unique_id: {unique_id} has empty batch.")
+
                 resp.body, resp.status = (
                     json.dumps({"prediction": [], "success": True}),
                     falcon.HTTP_200,
@@ -283,6 +289,9 @@ class Async(object):
             else:
                 if isinstance(req.media["data"], list):
                     if _utils.FILE_MODE:
+                        _utils.logger.info(
+                            f"unique_id: {unique_id} is a JSON input. Expectig FILE input."
+                        )
                         resp.body = json.dumps(
                             {"success": False, "reason": "Expecting FILE input"}
                         )
@@ -298,6 +307,9 @@ class Async(object):
 
                 elif isinstance(req.media["data"], dict):
                     if not _utils.FILE_MODE:
+                        _utils.logger.info(
+                            f"unique_id: {unique_id} is a FILE input. Expectig JSON input."
+                        )
                         resp.body = json.dumps(
                             {"success": False, "reason": "Expecting JSON input"}
                         )
@@ -330,6 +342,8 @@ class Res(object):
     def on_post(self, req, resp):
         try:
             unique_id = req.media["unique_id"]
+            _utils.logger.info(f"unique_id: {unique_id} Result request recieved.")
+
             res_path = os.path.join(_utils.RAM_DIR, unique_id + ".res")
             res_path_disk = os.path.join(_utils.DISK_DIR, unique_id + ".res")
 
@@ -344,10 +358,15 @@ class Res(object):
                 except:
                     response = json.dumps({"prediction": str(pred), "success": True})
                 _utils.cleanup(unique_id)
+
+                _utils.logger.info(f"unique_id: {unique_id} cleaned up.")
+
                 resp.body = response
                 resp.status = falcon.HTTP_200
             except:
                 if not glob.glob(os.path.join(_utils.RAM_DIR, unique_id + ".inp*")):
+                    _utils.logger.info(f"unique_id: {unique_id} does not exist.")
+
                     resp.body = json.dumps(
                         {
                             "success": None,
@@ -357,6 +376,7 @@ class Res(object):
                     resp.status = falcon.HTTP_200
 
                 else:
+                    _utils.logger.info(f"unique_id: {unique_id} processing.")
                     resp.body = json.dumps({"success": None, "reason": "processing"})
                     resp.status = falcon.HTTP_200
 

@@ -160,10 +160,17 @@ def get_uuid(priority=9):
     if not USE_PRIORITY:
         priority = 9
 
+    if not priority.isdigit():
+        priority = 8
+
+    priority = min(priority, 9)
+    priority = max(priority, 0)
+
     return (
         str(priority)
+        + "_"
         + datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%f")[:-3]
-        + "-"
+        + "_"
         + str(uuid.uuid4())
     )
 

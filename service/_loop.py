@@ -97,6 +97,7 @@ def start_loop(predictor, example):
             try:
                 results = predictor(in_data, batch_size=batch_size)
             except Exception as ex:
+                _utils.logger.exception(ex, exc_info=True)
                 results = [str(ex) for _ in in_data]
 
             for i, in_path in enumerate(batch):

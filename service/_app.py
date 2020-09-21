@@ -79,7 +79,7 @@ def get_write_res_paths(unique_id, in_size=0):
         :return res_path: result file path
     """
     write_path = os.path.join(_utils.get_write_dir(in_size), unique_id + ".inp")
-    res_path = write_path[:-3] + "res"
+    res_path = os.path.join(_utils.RAM_DIR, unique_id + ".res")
 
     return write_path, res_path
 

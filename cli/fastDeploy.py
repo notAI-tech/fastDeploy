@@ -19,6 +19,7 @@ red, green, yellow, black = (
 BASE_IMAGES = {
     "base-v0.1": "Python-3.6.7 | Only fastDeploy",
     "tf_1_14_cpu": "Python-3.6.8 | Tensorflow 1.14 | CPU",
+    "tf_1_15_cpu": "Python-3.6.9 | Tensorflow 1.15 | CPU",
     "tf_2_1_cpu": "Python-3.6.9 | Tensorflow 2.1 | CPU",
     "tf_2_2_cpu": "Python-3.6.9 | Tensorflow 2.2 | CPU",
     "pyt_1_5_cpu": "Python-3.6.7 | Pytorch 1.5 | CPU",

@@ -1,5 +1,5 @@
 if [ "$UPDATE" = "true" ]; then
-    python3 -m pip install pydload
+    python3 -m pip install --no-cache-dir pydload
 
     echo 'Updating _app.py'
     rm _app.py

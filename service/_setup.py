@@ -53,7 +53,7 @@ for line in open("requirements.txt", "r"):
     if line[0] == "#":
         continue
     print(f"\t {yellow} Installing {line} {black}")
-    success = not os.system(f"python3 -m pip install {line}")
+    success = not os.system(f"python3 -m pip install --no-cache-dir {line}")
     if not success:
         print(f"{red} Could not install {line} {black}\n")
         quit()

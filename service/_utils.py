@@ -23,6 +23,9 @@ example = pickle.load(open("example.pkl", "rb"))
 
 FILE_MODE = False
 
+# En variable to configure allowed origins
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
+
 if isinstance(example, dict):
     FILE_MODE = True
 
@@ -47,7 +50,6 @@ if isinstance(example, dict):
 SYNC_RESULT_POLING_SLEEP = float(os.getenv("SYNC_RESULT_POLING_SLEEP", "0.06"))
 PREDICTION_LOOP_SLEEP = float(os.getenv("PREDICTION_LOOP_SLEEP", "0.06"))
 MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
-
 
 # No real use in making these configurable.
 batch_size_file_path = ".batch_size"
@@ -134,11 +136,11 @@ o_used = used
 
 def get_write_dir(file_size_in_bytes=0):
     """
-        Check the size limits to determine if a file should be written to RAM_DIR or DISK_DIR
+    Check the size limits to determine if a file should be written to RAM_DIR or DISK_DIR
 
-        :param file_size_in_bytes: file size in bytes. defaults to zero
+    :param file_size_in_bytes: file size in bytes. defaults to zero
 
-        :return: RAM_DIR or DISK_DIR
+    :return: RAM_DIR or DISK_DIR
     """
     if file_size_in_bytes > MAX_RAM_FILE_SIZE:
         return DISK_DIR
@@ -153,9 +155,9 @@ def get_write_dir(file_size_in_bytes=0):
 
 def get_uuid(priority=9):
     """
-        Generate a unique id.
+    Generate a unique id.
 
-        :return: unique id generated using uuid4 and current time.
+    :return: unique id generated using uuid4 and current time.
     """
     if not USE_PRIORITY:
         priority = 9
@@ -179,9 +181,9 @@ def get_uuid(priority=9):
 
 def warmup(predictor, example_input, n=3):
     """
-        Run warmup prediction on the model.
+    Run warmup prediction on the model.
 
-        :param n: number of warmup predictions to be run. defaults to 3
+    :param n: number of warmup predictions to be run. defaults to 3
     """
     logger.info("Warming up .. ")
     for _ in range(n):
@@ -190,13 +192,13 @@ def warmup(predictor, example_input, n=3):
 
 def find_optimum_batch_sizes(predictor, example_input):
     """
-        Finds the optimum batch size for a predictor function with the given example input.
+    Finds the optimum batch size for a predictor function with the given example input.
 
-        :param predictor: predictor function. Should have two inputs, a list of examples and batch size.
-        :param example_input: example input for the predictor.
+    :param predictor: predictor function. Should have two inputs, a list of examples and batch size.
+    :param example_input: example input for the predictor.
 
-        :return batch_size: optimal batch size to be used
-        :return time_per_example: approx time taken per example.
+    :return batch_size: optimal batch size to be used
+    :return time_per_example: approx time taken per example.
     """
     time_per_example = None
     previous_time_per_example = pow(2, 64)
@@ -245,9 +247,9 @@ def find_optimum_batch_sizes(predictor, example_input):
 
 def get_to_process_list(FILE_MODE):
     """
-        Returns reaming inputs as a list, sorted by their creation time.
+    Returns reaming inputs as a list, sorted by their creation time.
 
-        :param FILE_MODE: if operating in file mode or json mode.
+    :param FILE_MODE: if operating in file mode or json mode.
     """
     if not FILE_MODE:
         return sorted(glob.glob(os.path.join(RAM_DIR, "*.inp")))
@@ -257,7 +259,7 @@ def get_to_process_list(FILE_MODE):
 
 def get_batch(iterable, n):
     """
-        Yields a batch of size n from iterable
+    Yields a batch of size n from iterable
     """
     l = len(iterable)
     for ndx in range(0, l, n):
@@ -266,7 +268,7 @@ def get_batch(iterable, n):
 
 def create_symlink_in_ram(f):
     """
-        Given a file path f, creates symlink in RAM_DIR with the same basename as f.
+    Given a file path f, creates symlink in RAM_DIR with the same basename as f.
     """
     sym_link_path = os.path.join(RAM_DIR, os.path.basename(f))
     if not os.path.exists(sym_link_path):
@@ -276,9 +278,9 @@ def create_symlink_in_ram(f):
 
 def cleanup(unique_id):
     """
-        Delete all files or folders of the format unique_id* from RAM_DIR and DISK_DIR
+    Delete all files or folders of the format unique_id* from RAM_DIR and DISK_DIR
 
-        :param unique_id: unique_id
+    :param unique_id: unique_id
     """
     for _dir in (RAM_DIR, DISK_DIR):
         os.system(f"rm -rf {shlex.quote(os.path.join(_dir, unique_id))}*")
@@ -286,21 +288,21 @@ def cleanup(unique_id):
 
 def in_path_to_res_path(in_path):
     """
-        converts in_path to res_path
+    converts in_path to res_path
 
-        :param in_path: in_path
+    :param in_path: in_path
 
-        :return: res_path
+    :return: res_path
     """
     return in_path[:-3] + "res"
 
 
 def write_webhook(unique_id, webhook):
     """
-        writes webhook string (url) to corresponding file.
+    writes webhook string (url) to corresponding file.
 
-        :param unique_id: unique_id
-        :param webhook: webhook string
+    :param unique_id: unique_id
+    :param webhook: webhook string
     """
     if webhook and isinstance(webhook, str):
         open(os.path.join(RAM_DIR, unique_id + ".webhook"), "w").write(webhook)

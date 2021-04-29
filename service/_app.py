@@ -22,13 +22,13 @@ ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
 
 def wait_and_read_pred(res_path, unique_id):
     """
-        Waits for and reads pickle file at res_path.
+    Waits for and reads pickle file at res_path.
 
-        :param res_path: the result pickle file path to watch.
-        :param unique_id: unique_id used in cleanup 
+    :param res_path: the result pickle file path to watch.
+    :param unique_id: unique_id used in cleanup
 
-        :return response: python dict with keys "success" and "prediction"/ "reason"
-        :return status: HTTP status code
+    :return response: python dict with keys "success" and "prediction"/ "reason"
+    :return status: HTTP status code
     """
     # Keeping track of start_time for TIMEOUT implementation
     _utils.logger.info(f"unique_id: {unique_id} waiting for {res_path}")
@@ -72,11 +72,11 @@ def wait_and_read_pred(res_path, unique_id):
 
 def get_write_res_paths(unique_id, in_size=0):
     """
-        :param unique_id: unique id
-        :param in_size: size of the input data in bytes
+    :param unique_id: unique id
+    :param in_size: size of the input data in bytes
 
-        :return write_path: input file/dir path
-        :return res_path: result file path
+    :return write_path: input file/dir path
+    :return res_path: result file path
     """
     write_path = os.path.join(_utils.get_write_dir(in_size), unique_id + ".inp")
     res_path = os.path.join(_utils.RAM_DIR, unique_id + ".res")
@@ -86,12 +86,12 @@ def get_write_res_paths(unique_id, in_size=0):
 
 def handle_json_request(unique_id, in_json):
     """
-        Main function for handling JSON type data.
+    Main function for handling JSON type data.
 
-        :param unique_id: unique id
-        :param in_json: in list
+    :param unique_id: unique id
+    :param in_json: in list
 
-        :return res_path: result file path
+    :return res_path: result file path
     """
     # protocol 2 is faster than 3
     in_json = pickle.dumps(in_json, protocol=2)
@@ -112,12 +112,12 @@ def handle_json_request(unique_id, in_json):
 
 def handle_file_dict_request(unique_id, in_dict):
     """
-        Main function for handling FILE type data.
+    Main function for handling FILE type data.
 
-        :param unique_id: unique id
-        :param in_json: in dict of file names and base64 encoded files
+    :param unique_id: unique id
+    :param in_json: in dict of file names and base64 encoded files
 
-        :return res_path: result file path
+    :return res_path: result file path
     """
     # file_size = 0.75 * len(base64 string of the file)
     _write_dir, res_path = get_write_res_paths(
@@ -390,8 +390,13 @@ class Res(object):
             resp.status = falcon.HTTP_400
 
 
-app = falcon.API()
+app = falcon.App(cors_enable=True)
 app.req_options.auto_parse_form_urlencoded = True
+app = falcon.App(
+    middleware=falcon.CORSMiddleware(
+        allow_origins=_utils.ALLOWED_ORIGINS, allow_credentials=_utils.ALLOWED_ORIGINS
+    )
+)
 
 sync_api = Sync()
 async_api = Async()

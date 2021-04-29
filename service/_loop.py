@@ -10,12 +10,12 @@ import _utils
 
 def start_loop(predictor, example):
     """
-        The Prediction loop. This is where the logic happens.
+    The Prediction loop. This is where the logic happens.
 
-        :input predictor: the predictor function. def predictor(inputs=[], batch_size=8)
-        :input example: a pickled json of the example input.
+    :input predictor: the predictor function. def predictor(inputs=[], batch_size=8)
+    :input example: a pickled json of the example input.
 
-        This function starts a loop. Does not return anything.
+    This function starts a loop. Does not return anything.
     """
 
     # warmup

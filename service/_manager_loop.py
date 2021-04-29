@@ -10,7 +10,7 @@ import _utils
 
 def process_webhooks():
     """
-        Searches for webhook files, and sends the result if completed.
+    Searches for webhook files, and sends the result if completed.
     """
     # list of webhooks left to send.
     webhooks_left = glob.glob(os.path.join(_utils.RAM_DIR, "*webhook"))

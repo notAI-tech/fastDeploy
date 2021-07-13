@@ -16,40 +16,32 @@ red, green, yellow, black = (
     "\x1b[38;5;0m",
 )
 
+red, green, yellow, black = "", "", "", ""
+
 BASE_IMAGES = {
-    "base-v0.1": "Python-3.6.7 | Only fastDeploy",
-    "tf_1_14_cpu": "Python-3.6.8 | Tensorflow 1.14 | CPU",
-    "tf_1_15_cpu": "Python-3.6.9 | Tensorflow 1.15 | CPU",
-    "tf_2_1_cpu": "Python-3.6.9 | Tensorflow 2.1 | CPU",
-    "tf_2_2_cpu": "Python-3.6.9 | Tensorflow 2.2 | CPU",
-    "pyt_1_5_cpu": "Python-3.6.7 | Pytorch 1.5 | CPU",
+    "pyt_1_5_cuda_10_1": "pyt_1_5_cuda_10_1",
+    "pyt_1_7_cuda_11_0": "pyt_1_7_cuda_11_0",
+    "tf_1_14_cuda_10_0": "tf_1_14_cuda_10_0",
 }
 
 RECIPES = {
     "deepsegment_en": "https://github.com/bedapudi6788/deepsegment",
     "deepsegment_fr": "https://github.com/bedapudi6788/deepsegment",
     "deepsegment_it": "https://github.com/bedapudi6788/deepsegment",
-    
     "nudeclassifier": "https://github.com/bedapudi6788/NudeNet",
-
     "efficientnet_b0": "https://github.com/qubvel/efficientnet",
     "efficientnet_b2": "https://github.com/qubvel/efficientnet",
     "efficientnet_b4": "https://github.com/qubvel/efficientnet",
     "efficientnet_b7": "https://github.com/qubvel/efficientnet",
-
     "craft_text_detection": "https://github.com/notAI-tech/keras-craft",
-
     "transformer_ner": "https://github.com/huggingface/transformers",
     "transformer_sentiment": "https://github.com/huggingface/transformers",
     "transformer_summarization": "https://github.com/huggingface/transformers",
     "transformer_translation_en_to_fr": "https://github.com/huggingface/transformers",
-
     "kaldi_vosk-en_us-small": "https://github.com/alphacep/vosk-api/blob/master/doc/models.md",
     "kaldi_vosk-en_us-aspire": "https://github.com/alphacep/vosk-api/blob/master/doc/models.md",
-
     "audio_classification_yamnet": "https://github.com/tensorflow/models/blob/master/research/audioset/yamnet/",
-
-    "logodet": "https://github.com/notAI-tech/LogoDet"
+    "logodet": "https://github.com/notAI-tech/LogoDet",
 }
 
 
@@ -305,7 +297,9 @@ if __name__ == "__main__":
         description="CLI for fastDeploy. https://fastDeploy.notAI.tech/cli"
     )
     # parser.add_argument('--gpu', type=str, help='Id(s) of the gpu to run on.')
-    parser.add_argument("-b", "--build", type=str, help="Name of the build eg: resnet_v1")
+    parser.add_argument(
+        "-b", "--build", type=str, help="Name of the build eg: resnet_v1"
+    )
     parser.add_argument(
         "-s",
         "--source_dir",
@@ -313,8 +307,7 @@ if __name__ == "__main__":
         help="Path to your recipe directory. eg: ./resnet_dir",
     )
     parser.add_argument(
-        "-r",
-        "--run", type=str, help="local or cloud name of built recipe to run.",
+        "-r", "--run", type=str, help="local or cloud name of built recipe to run.",
     )
     parser.add_argument(
         "-n",
@@ -334,7 +327,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-v",
-        "--verbose", action="store_true", help="displays the docker commands used."
+        "--verbose",
+        action="store_true",
+        help="displays the docker commands used.",
     )
     parser.add_argument(
         "-l",

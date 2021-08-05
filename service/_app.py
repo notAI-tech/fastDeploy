@@ -172,7 +172,9 @@ class Sync(object):
 
                 unique_id = _utils.get_uuid(priority=8)
 
-                _utils.logger.info(f"unique_id: {unique_id} Sync request recieved.")
+                _utils.logger.info(
+                    f"unique_id: {unique_id} Sync request received with {len(req.media['data'])} inputs."
+                )
 
                 res_path = None
 
@@ -256,7 +258,9 @@ class Async(object):
     def on_post(self, req, resp):
         try:
             unique_id = _utils.get_uuid()
-            _utils.logger.info(f"unique_id: {unique_id} Async request recieved.")
+            _utils.logger.info(
+                f"unique_id: {unique_id} Async request received with {len(req.media['data'])} inputs."
+            )
 
             webhook = req.media.get("webhook")
 
@@ -342,7 +346,7 @@ class Res(object):
     def on_post(self, req, resp):
         try:
             unique_id = req.media["unique_id"]
-            _utils.logger.info(f"unique_id: {unique_id} Result request recieved.")
+            _utils.logger.info(f"unique_id: {unique_id} Result request received.")
 
             res_path = os.path.join(_utils.RAM_DIR, unique_id + ".res")
             res_path_disk = os.path.join(_utils.DISK_DIR, unique_id + ".res")

@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.7.1-cuda11.0-cudnn8-runtime
+FROM python:3.8-slim
 LABEL maintainer="Bedapudi Praneeth <praneeth@notai.tech>"
 RUN python3 -m pip install --no-cache-dir --upgrade pip requests gevent falcon diskcache ujson
 WORKDIR /app

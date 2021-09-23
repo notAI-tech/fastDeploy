@@ -47,11 +47,8 @@ if isinstance(example, dict):
 
     example = glob.glob(write_dir + "/*")
 
-
-SYNC_RESULT_POLING_SLEEP = float(os.getenv("SYNC_RESULT_POLING_SLEEP", "0.06"))
 PREDICTION_LOOP_SLEEP = float(os.getenv("PREDICTION_LOOP_SLEEP", "0.06"))
 MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
-
 
 REQUEST_QUEUE = Deque(".request_queue")
 RESULTS_INDEX = Index(".results_index")
@@ -65,6 +62,8 @@ batch_size_file_path = ".batch_size"
 # Keep 0 for auto selection
 WORKERS = int(os.getenv("WORKERS", "0"))
 
+TIMEOUT = int(os.getenv("TIMEOUT", "120"))
+
 # if BATCH_SIZE is not 0, will be used as default batch size.
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "0"))
 
@@ -74,6 +73,7 @@ MAX_PER_CLIENT_BATCH = int(os.getenv("MAX_PER_CLIENT_BATCH", "0"))
 
 # The loop will wait for time_per_example * MAX_WAIT for batching.
 MAX_WAIT = float(os.getenv("MAX_WAIT", 0.2))
+
 
 def warmup(predictor, example_input, n=3):
     """
@@ -86,12 +86,17 @@ def warmup(predictor, example_input, n=3):
         predictor(example_input)
 
 
-def find_optimum_batch_sizes(predictor, example_input):
+def find_optimum_batch_sizes(
+    predictor,
+    example_input,
+    max_batch_search_sec=int(os.getenv("MAX_BATCH_SEARCH_SEC", "240")),
+):
     """
     Finds the optimum batch size for a predictor function with the given example input.
 
     :param predictor: predictor function. Should have two inputs, a list of examples and batch size.
     :param example_input: example input for the predictor.
+    :param max_batch_search_sec: max time to spend on batch size search in seconds.
 
     :return batch_size: optimal batch size to be used
     :return time_per_example: approx time taken per example.
@@ -108,8 +113,15 @@ def find_optimum_batch_sizes(predictor, example_input):
             pow(2, batch_size) for batch_size in possible_batch_sizes
         ]
 
-    for batch_size in possible_batch_sizes:
+    search_start_time = time.time()
+    for b_i, batch_size in enumerate(possible_batch_sizes):
         start = time.time()
+        if start - search_start_time >= max_batch_search_sec:
+            batch_size = possible_batch_sizes[b_i - 1]
+            logger.warn(
+                f"Batch size set to {batch_size} because of MAX_BATCH_SEARCH_SEC: {max_batch_search_sec}"
+            )
+            break
         try:
             for _ in range(3):
                 predictor(example_input * batch_size, batch_size=batch_size)

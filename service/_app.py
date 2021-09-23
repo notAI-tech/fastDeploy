@@ -8,9 +8,8 @@ import sys
 import uuid
 import glob
 import time
-import json
+import ujson
 import base64
-import pickle
 import shutil
 import datetime
 
@@ -20,14 +19,13 @@ import _utils
 ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
 
 
-def wait_and_read_pred(res_path, unique_id):
+def wait_and_read_pred(unique_id):
     """
-    Waits for and reads pickle file at res_path.
+    Waits for and reads result for unique_id.
 
-    :param res_path: the result pickle file path to watch.
-    :param unique_id: unique_id used in cleanup
+    :param unique_id: unique_id of the input
 
-    :return response: python dict with keys "success" and "prediction"/ "reason"
+    :return response: json dumped python dict with keys "success" and "prediction"/ "reason"
     :return status: HTTP status code
     """
     # Keeping track of start_time for TIMEOUT implementation
@@ -36,21 +34,21 @@ def wait_and_read_pred(res_path, unique_id):
     start_time = time.time()
     # Default response and status
     response, status = (
-        json.dumps({"success": False, "reason": "timeout"}),
+        ujson.dumps({"success": False, "reason": "timeout"}),
         falcon.HTTP_503,
     )
     while True:
         try:
-            # if pickle doesn't exist,  while loop continues/
-            pred = pickle.load(open(res_path, "rb"))
+            # if result doesn't exist for this uuid,  while loop continues/
+            pred = _utils.RESULTS_INDEX[unique_id]
             try:
-                response = json.dumps({"prediction": pred, "success": True})
+                response = ujson.dumps({"prediction": pred, "success": True})
             # if return dict has any non json serializable values, we str() it
             except:
                 _utils.logger.info(
                     f"unique_id: {unique_id} could not json serialize the result."
                 )
-                response = json.dumps({"prediction": str(pred), "success": True})
+                response = ujson.dumps({"prediction": str(pred), "success": True})
             status = falcon.HTTP_200
             break
         except:
@@ -68,47 +66,6 @@ def wait_and_read_pred(res_path, unique_id):
     _utils.logger.info(f"unique_id: {unique_id} cleaned up.")
 
     return response, status
-
-
-def get_write_res_paths(unique_id, in_size=0):
-    """
-    :param unique_id: unique id
-    :param in_size: size of the input data in bytes
-
-    :return write_path: input file/dir path
-    :return res_path: result file path
-    """
-    write_path = os.path.join(_utils.get_write_dir(in_size), unique_id + ".inp")
-    res_path = os.path.join(_utils.RAM_DIR, unique_id + ".res")
-
-    return write_path, res_path
-
-
-def handle_json_request(unique_id, in_json):
-    """
-    Main function for handling JSON type data.
-
-    :param unique_id: unique id
-    :param in_json: in list
-
-    :return res_path: result file path
-    """
-    # protocol 2 is faster than 3
-    in_json = pickle.dumps(in_json, protocol=2)
-
-    write_path, res_path = get_write_res_paths(unique_id, sys.getsizeof(in_json))
-
-    open(write_path, "wb").write(in_json)
-
-    _utils.logger.info(f"unique_id: {unique_id} added to queue as {write_path}")
-
-    # If an input is more in size (than MAX_RAM_FILE_SIZE) or if CACHE is full, it is written to disk.
-    # in these cases, for faster glob and other file ops, we symlink them in RAM.
-    # This helps _loop.py to be optimal
-    _utils.create_symlink_in_ram(write_path)
-
-    return res_path
-
 
 def handle_file_dict_request(unique_id, in_dict):
     """
@@ -153,7 +110,7 @@ class Sync(object):
         try:
             if ONLY_ASYNC:
                 resp.body, resp.status = (
-                    json.dumps(
+                    ujson.dumps(
                         {
                             "success": False,
                             "reason": "ONLY_ASYNC is set to True on this server.",
@@ -163,20 +120,11 @@ class Sync(object):
                 )
 
             else:
-                priority = 8
-
-                try:
-                    priority = int(req.media["priority"])
-                except:
-                    pass
-
-                unique_id = _utils.get_uuid(priority=8)
+                unique_id = str(uuid.uuid4())
 
                 _utils.logger.info(
                     f"unique_id: {unique_id} Sync request received with {len(req.media['data'])} inputs."
                 )
-
-                res_path = None
 
                 if _utils.MAX_PER_CLIENT_BATCH and (
                     len(req.media["data"]) > _utils.MAX_PER_CLIENT_BATCH
@@ -186,7 +134,7 @@ class Sync(object):
                     )
 
                     resp.body, resp.status = (
-                        json.dumps(
+                        ujson.dumps(
                             {
                                 "success": False,
                                 "reason": f"Maximum number of examples allowed in client batch is {_utils.MAX_PER_CLIENT_BATCH}",
@@ -199,7 +147,7 @@ class Sync(object):
                     _utils.logger.info(f"unique_id: {unique_id} has empty batch.")
 
                     resp.body, resp.status = (
-                        json.dumps({"prediction": [], "success": True}),
+                        ujson.dumps({"prediction": [], "success": True}),
                         falcon.HTTP_200,
                     )
 
@@ -210,13 +158,15 @@ class Sync(object):
                                 f"unique_id: {unique_id} is a JSON input. Expectig FILE input."
                             )
 
-                            resp.body = json.dumps(
+                            resp.body = ujson.dumps(
                                 {"success": False, "reason": "Expecting FILE input"}
                             )
                             resp.status = falcon.HTTP_400
 
                         else:
-                            res_path = handle_json_request(unique_id, req.media["data"])
+                            _utils.REQUEST_QUEUE.appendleft({unique_id: req.media['data']})
+                            req.media.clear()
+                            resp.body, resp.status = wait_and_read_pred(unique_id)
 
                     elif isinstance(req.media["data"], dict):
                         if not _utils.FILE_MODE:
@@ -224,7 +174,7 @@ class Sync(object):
                                 f"unique_id: {unique_id} is a FILE input. Expectig JSON input."
                             )
 
-                            resp.body = json.dumps(
+                            resp.body = ujson.dumps(
                                 {"success": False, "reason": "Expecting JSON input"}
                             )
                             resp.status = falcon.HTTP_400
@@ -236,21 +186,13 @@ class Sync(object):
 
                     else:
                         resp.body, resp.status = (
-                            json.dumps({"success": False, "reason": "invalid request"}),
+                            ujson.dumps({"success": False, "reason": "invalid request"}),
                             falcon.HTTP_400,
                         )
 
-                    if res_path:
-                        req.media.clear()
-                        resp.body, resp.status = wait_and_read_pred(res_path, unique_id)
-
         except Exception as ex:
-            try:
-                _utils.cleanup(unique_id)
-            except:
-                pass
             _utils.logger.exception(ex, exc_info=True)
-            resp.body = json.dumps({"success": False, "reason": str(ex)})
+            resp.body = ujson.dumps({"success": False, "reason": str(ex)})
             resp.status = falcon.HTTP_400
 
 
@@ -273,7 +215,7 @@ class Async(object):
                     f'unique_id: {unique_id} has batch of size {len(req.media["data"])}. MAX_PER_CLIENT_BATCH: {_utils.MAX_PER_CLIENT_BATCH}'
                 )
                 resp.body, resp.status = (
-                    json.dumps(
+                    ujson.dumps(
                         {
                             "success": False,
                             "reason": f"Maximum number of examples allowed in client batch is {_utils.MAX_PER_CLIENT_BATCH}",
@@ -286,7 +228,7 @@ class Async(object):
                 _utils.logger.info(f"unique_id: {unique_id} has empty batch.")
 
                 resp.body, resp.status = (
-                    json.dumps({"prediction": [], "success": True}),
+                    ujson.dumps({"prediction": [], "success": True}),
                     falcon.HTTP_200,
                 )
 
@@ -296,7 +238,7 @@ class Async(object):
                         _utils.logger.info(
                             f"unique_id: {unique_id} is a JSON input. Expectig FILE input."
                         )
-                        resp.body = json.dumps(
+                        resp.body = ujson.dumps(
                             {"success": False, "reason": "Expecting FILE input"}
                         )
                         resp.status = falcon.HTTP_400
@@ -304,7 +246,7 @@ class Async(object):
                     else:
                         handle_json_request(unique_id, req.media["data"])
                         req.media.clear()
-                        resp.body = json.dumps(
+                        resp.body = ujson.dumps(
                             {"success": True, "unique_id": unique_id}
                         )
                         resp.status = falcon.HTTP_200
@@ -314,21 +256,21 @@ class Async(object):
                         _utils.logger.info(
                             f"unique_id: {unique_id} is a FILE input. Expectig JSON input."
                         )
-                        resp.body = json.dumps(
+                        resp.body = ujson.dumps(
                             {"success": False, "reason": "Expecting JSON input"}
                         )
                         resp.status = falcon.HTTP_400
                     else:
                         handle_file_dict_request(unique_id, req.media["data"])
                         req.media.clear()
-                        resp.body = json.dumps(
+                        resp.body = ujson.dumps(
                             {"success": True, "unique_id": unique_id}
                         )
                         resp.status = falcon.HTTP_200
 
                 else:
                     resp.body, resp.status = (
-                        json.dumps({"success": False, "reason": "invalid request"}),
+                        ujson.dumps({"success": False, "reason": "invalid request"}),
                         falcon.HTTP_400,
                     )
 
@@ -338,7 +280,7 @@ class Async(object):
             except:
                 pass
             _utils.logger.exception(ex, exc_info=True)
-            resp.body = json.dumps({"success": False, "reason": str(ex)})
+            resp.body = ujson.dumps({"success": False, "reason": str(ex)})
             resp.status = falcon.HTTP_400
 
 
@@ -358,9 +300,9 @@ class Res(object):
                     pred = pickle.load(open(res_path_disk, "rb"))
 
                 try:
-                    response = json.dumps({"prediction": pred, "success": True})
+                    response = ujson.dumps({"prediction": pred, "success": True})
                 except:
-                    response = json.dumps({"prediction": str(pred), "success": True})
+                    response = ujson.dumps({"prediction": str(pred), "success": True})
                 _utils.cleanup(unique_id)
 
                 _utils.logger.info(f"unique_id: {unique_id} cleaned up.")
@@ -371,7 +313,7 @@ class Res(object):
                 if not glob.glob(os.path.join(_utils.RAM_DIR, unique_id + ".inp*")):
                     _utils.logger.info(f"unique_id: {unique_id} does not exist.")
 
-                    resp.body = json.dumps(
+                    resp.body = ujson.dumps(
                         {
                             "success": None,
                             "reason": f"{unique_id} does not exist. You might have already accessed its result.",
@@ -381,7 +323,7 @@ class Res(object):
 
                 else:
                     _utils.logger.info(f"unique_id: {unique_id} processing.")
-                    resp.body = json.dumps({"success": None, "reason": "processing"})
+                    resp.body = ujson.dumps({"success": None, "reason": "processing"})
                     resp.status = falcon.HTTP_200
 
         except Exception as ex:
@@ -390,7 +332,7 @@ class Res(object):
             except:
                 pass
             _utils.logger.exception(ex, exc_info=True)
-            resp.body = json.dumps({"success": False, "reason": str(ex)})
+            resp.body = ujson.dumps({"success": False, "reason": str(ex)})
             resp.status = falcon.HTTP_400
 
 

@@ -1,8 +1,8 @@
 from gevent import monkey
-import gevent
 
 monkey.patch_all()
-
+import gevent
+import gevent.pool
 import os
 import sys
 import glob
@@ -30,8 +30,6 @@ def wait_and_read_pred(unique_id):
     :return status: HTTP status code
     """
     # Keeping track of start_time for TIMEOUT implementation
-    _utils.logger.info(f"unique_id: {unique_id} started waiting.")
-
     start_time = time.time()
     # Default response and status
     response, status = (
@@ -61,10 +59,6 @@ def wait_and_read_pred(unique_id):
                 break
 
             gevent.time.sleep(0)
-
-    # Since this is the last step in /sync, we delete all files related to this unique_id
-    _utils.cleanup(unique_id)
-    _utils.logger.info(f"unique_id: {unique_id} cleaned up.")
 
     return response, status
 
@@ -122,42 +116,18 @@ app.add_route("/infer", infer_api)
 app.add_route("/result", res_api)
 
 if __name__ == "__main__":
-    while "META.batch_size" not in _utils.REQUEST_QUEUE:
+    while "META.batch_size" not in _utils.RESULTS_INDEX:
         _utils.logger.info(f"Waiting for batch size search to finish.")
         time.sleep(5)
 
-    batch_size = _utils.REQUEST_QUEUE["META.batch_size"]
+    batch_size = _utils.RESULTS_INDEX["META.batch_size"]
 
     from gevent import pywsgi
-    from gevent import server
-    from gevent.server import _tcp_listener
-    from multiprocessing import Process, current_process, cpu_count
 
     port = int(os.getenv("PORT", "8080"))
     host = os.getenv("HOST", "0.0.0.0")
 
-    listener = _tcp_listener((host, port))
-
-    def serve_forever(listener):
-        pywsgi.WSGIServer(listener, app).serve_forever()
-
     print(f"fastDeploy active at http://{host}:{port}")
 
-    if not _utils.WORKERS:
-        n_workers = max(3, int((cpu_count()) + 1))
-        n_workers = min(n_workers, batch_size + 1)
-        _utils.logger.info(
-            f"WORKERS={n_workers}; batch_size={batch_size}; cpu_count={multiprocessing.cpu_count()}"
-        )
-    else:
-        n_workers = _utils.WORKERS
-        _utils.logger.info(f"WORKERS={n_workers} from supplied config.")
-
-    for _ in range(n_workers):
-        _utils.logger.info(f"worker {_ + 1}/{n_workers} started")
-        Process(target=serve_forever, args=(listener,)).start()
-
-    serve_forever(listener)
-
-    # server = pywsgi.WSGIServer((host, port), app)
-    # server.serve_forever()
+    server = pywsgi.WSGIServer((host, port), app, spawn=1000, log=None)
+    server.serve_forever()

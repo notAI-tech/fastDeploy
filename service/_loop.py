@@ -3,7 +3,6 @@ import glob
 import json
 import time
 import shutil
-import pickle
 
 import _utils
 
@@ -25,9 +24,10 @@ def start_loop(predictor, example):
     batch_size, time_per_example = _utils.find_optimum_batch_sizes(predictor, example)
 
     max_wait_time = time_per_example * _utils.MAX_WAIT
+    _utils.logger.info(f"max_wait_time: {max_wait_time}")
 
     # write batch size to temp file for use in generating _run.sh
-    _utils.REQUEST_QUEUE["META.batch_size"] = batch_size
+    _utils.RESULTS_INDEX["META.batch_size"] = batch_size
 
     # list of files/data to be processed is tracked here.
     to_process = None
@@ -35,39 +35,39 @@ def start_loop(predictor, example):
     _utils.logger.info("Starting prediction loop")
 
     while True:
-        time.sleep(_utils.PREDICTION_LOOP_SLEEP)
         # Get the latest list of to process data
-
         batch = []
         unique_ids = []
         batch_collection_start_time = 0
         while True:
-            try:
+            if len(_utils.REQUEST_QUEUE):
                 unique_id, in_data = _utils.REQUEST_QUEUE.pop()
                 batch_collection_start_time = time.time()
                 for _ in in_data:
                     unique_ids.append(unique_id)
                     batch.append(_)
 
-                if len(batch) >= batch_size:
+            if len(batch) >= batch_size:
+                unique_id_count = len(set(unique_ids))
+                if unique_id_count > 1:
                     _utils.logger.debug(
-                        f"Batch of size: {len(batch)}, batch_size: {batch_size} collected."
+                        f"Batch of size: {len(batch)}, batch_size: {batch_size}/ unique_ids: {unique_id_count} collected."
                     )
-                    batch_collection_start_time = 0
-                    break
+                batch_collection_start_time = 0
+                break
 
-                if batch_collection_start_time != 0 and (
-                    time.time() - batch_collection_start_time >= max_wait_time
-                ):
+            if batch_collection_start_time != 0 and (
+                time.time() - batch_collection_start_time >= max_wait_time
+            ):
+                unique_id_count = len(set(unique_ids))
+                if unique_id_count > 1:
                     _utils.logger.debug(
-                        f"Batch of size: {len(batch)}, batch_size: {batch_size} collected."
+                        f"Batch of size: {len(batch)}, batch_size: {batch_size}/ unique_ids: {unique_id_count} collected."
                     )
-                    batch_collection_start_time = 0
-                    break
+                batch_collection_start_time = 0
+                break
 
-                time.sleep(max_wait_time * 0.1)
-            except:
-                pass
+            time.sleep(time_per_example * 0.001)
 
         try:
             preds = predictor(batch, batch_size=batch_size)
@@ -87,6 +87,8 @@ def start_loop(predictor, example):
 
         for unique_id, _preds in unique_id_wise_results.items():
             _utils.RESULTS_INDEX[unique_id] = _preds
+
+        time.sleep(_utils.PREDICTION_LOOP_SLEEP)
 
 
 if __name__ == "__main__":

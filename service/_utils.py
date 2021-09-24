@@ -16,13 +16,15 @@ import json
 import time
 import shlex
 import shutil
-import pickle
 from datetime import datetime
 from diskcache import Deque, Index
 
-example = pickle.load(open("example.pkl", "rb"))
-
 FILE_MODE = False
+
+try:
+    from example import example
+except:
+    pass
 
 # En variable to configure allowed origins
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
@@ -50,13 +52,11 @@ if isinstance(example, dict):
 PREDICTION_LOOP_SLEEP = float(os.getenv("PREDICTION_LOOP_SLEEP", "0.06"))
 MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
 
-REQUEST_QUEUE = Deque(".request_queue")
+REQUEST_QUEUE = Deque(directory=".request_queue")
 RESULTS_INDEX = Index(".results_index")
 
 
 # No real use in making these configurable.
-batch_size_file_path = ".batch_size"
-# Delete batch_size_file is exists
 
 # Number of gunicorn workers to use
 # Keep 0 for auto selection

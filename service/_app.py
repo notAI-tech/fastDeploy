@@ -17,6 +17,10 @@ from functools import partial
 
 import _utils
 
+while "META.batch_size" not in _utils.RESULTS_INDEX:
+    _utils.logger.info(f"Waiting for batch size search to finish.")
+    time.sleep(5)
+
 ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
 
 

@@ -30,6 +30,8 @@ sys.path.append(args.recipe)
 
 QUEUE_DIR = args.recipe
 
+QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"{time.time()}")
+
 if args.queue_dir:
     queue_dir = args.QUEUE_DIR
 
@@ -65,6 +67,8 @@ if args.mode == "build_rest":
 
     if not args.base:
         base = "python:3.6-slim"
+    else:
+        base = args.base
 
     dockerfile_lines.append(f"FROM {base}")
     dockerfile_lines.append(
@@ -75,7 +79,9 @@ if args.mode == "build_rest":
         dockerfile_lines.append(f"RUN bash /extras.sh")
 
     dockerfile_lines.append(f"COPY requirements.txt /requirements.txt")
-    dockerfile_lines.append(f"RUN python3 -m pip install /requirements.txt")
+    dockerfile_lines.append(
+        f"RUN python3 -m pip install --no-cache-dir -r /requirements.txt"
+    )
 
     # recipe_base_name = f'/{os.path.basename(args.recipe).strip("./")}'
     # if not recipe_base_name:
@@ -84,11 +90,14 @@ if args.mode == "build_rest":
     dockerfile_lines.append(f"ADD . {recipe_base_name}")
 
     dockerfile_lines.append(
-        f'CMD python -m fastdeploy --recipe /recipe --mode {args.mode.split("build_")[1]}'
+        f'CMD python -m fastdeploy --recipe /recipe --mode loop ; python -m fastdeploy --recipe /recipe --mode {args.mode.split("build_")[1]} \n'
     )
 
     dockerfile_path = os.path.join(args.recipe, "fastDeploy.dockerfile")
+    print(dockerfile_path)
+
     _f = open(dockerfile_path, "w")
     _f.write("\n".join(dockerfile_lines))
+    print("\n".join(dockerfile_lines))
     _f.flush()
     _f.close()

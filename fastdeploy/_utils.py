@@ -22,15 +22,13 @@ from diskcache import Deque, Index
 import sys
 from example import example
 
-from . import QUEUE_DIR
+from . import QUEUE_DIR, QUEUE_NAME
 
 # En variable to configure allowed origins
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
 
 PREDICTION_LOOP_SLEEP = float(os.getenv("PREDICTION_LOOP_SLEEP", "0.06"))
 MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
-
-QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"{time.time()}")
 
 _request_queue = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.request_queue")
 _results_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.results_index")

@@ -1,1 +1,0 @@
-https://github.com/notAI-tech/keras-craft/archive/master.zip

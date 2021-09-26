@@ -3,40 +3,32 @@
     <p align="center">Deploy DL/ ML inference pipelines with minimal extra code.</p>
 </p>
 
-**CLI Usage:** [https://fastdeploy.notai.tech/cli](https://fastdeploy.notai.tech/cli)
-
-**API interface:** [https://fastdeploy.notai.tech/api](https://fastdeploy.notai.tech/api)
-
-**pre-built Recipies:** [https://fastdeploy.notai.tech/recipes](https://fastdeploy.notai.tech/recipes)
-
-**Deploying your code:** [https://fastdeploy.notai.tech/recipes#building-your-own-recipe-deployment](https://fastdeploy.notai.tech/recipes#building-your-own-recipe-deployment)
-
-We provide **free to use APIs** for some recipes. Documentation: [**https://fastdeploy.notai.tech/free_apis**](https://fastdeploy.notai.tech/free_apis)
-
-# Download CLI
+**Installation:** 
 ```bash
-wget https://raw.githubusercontent.com/notAI-tech/fastDeploy/master/cli/fastDeploy.py
-
-chmod +x fastDeploy.py
+pip install --upgrade fastdeploy
 ```
 
-# Quick Start
+**Usage:**
 ```bash
-# See all the arguments supported.
-./fastDeploy.py --help
+# Invoke fastdeploy 
+fastdeploy --help
+# or
+python -m fastdeploy --help
 
-# Print list of available recipes with descriptions.
-./fastDeploy.py --list_recipes
+# Start prediction "loop" for recipe "deepsegment"
+fastdeploy --recipe ./deepsegment --mode loop
 
-# Run a recipe (eg: craft_text_detection).
-./fastDeploy.py --run craft_text_detection --name craft_text_detection_test_run
+# Start rest apis for recipe "deepsegment"
+fastdeploy --recipe ./deepsegment --mode rest
+
+# Run prediction using curl
+curl -d '{"data": ["I was hungry i ordered a pizza"]}'\
+-H "Content-Type: application/json" -X POST http://localhost:8080/infer
+
+# Run prediction using python
+python -c 'import requests; print(requests.post("http://localhost:8080/infer",\
+json={"data": ["I was hungry i ordered a pizza"]}).json())'
+
+# Response
+[{'prediction': [['I was hungry', 'i ordered a pizza']], 'success': True}, '200 OK']
 ```
-
-
-# Feature Requests and Bug Reports
-Please raise a github issue for any feature requests or bug reports.
-
-- Use issue label **`fastDeploy Bug`** for issues with core fastDeploy.
-- Use issue label **`Recipe Bug`** for issues with any recipes we provide.
-- Use issue label **`Request Base`** for requesting a new base image.
-- Use issue label **`Request Recipe`** for requesting a recipe for useful public repos.

@@ -1,3 +1,0 @@
-deepsegment==2.3.1
-tensorflow==1.14
-keras==2.2.4

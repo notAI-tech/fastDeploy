@@ -32,3 +32,11 @@ json={"data": ["I was hungry i ordered a pizza"]}).json())'
 # Response
 [{'prediction': [['I was hungry', 'i ordered a pizza']], 'success': True}, '200 OK']
 ```
+
+**Features:**
+
+1. ***Minimal extra code:*** No model exporting/ conversion/ freezing required. fastDeploy is the easiest way to serve and/or dockerize your existing inference code with minimal work. 
+2. ***Fully configurable dynamic batching:*** fastDeploy dynamically batches concurrent requests for optimal resource usage.
+3. ***Containerization with no extra code:*** fastDeploy auto generates optimal dockerfiles and builds the image with no extra code.
+4. ***One consumer, multiple producers:*** Single fastDeploy loop (consumer) can simultaneously be connected to multiple (types of) producers (rest, websocket, file).
+5. ***One producer, multiple consumers:*** Distribute one producer's work load to multiple consumers running on multiple nodes (assuming common storage is available for queues)

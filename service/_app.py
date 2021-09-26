@@ -120,11 +120,11 @@ app.add_route("/infer", infer_api)
 app.add_route("/result", res_api)
 
 if __name__ == "__main__":
-    while "META.batch_size" not in _utils.RESULTS_INDEX:
-        _utils.logger.info(f"Waiting for batch size search to finish.")
-        time.sleep(5)
-
     batch_size = _utils.RESULTS_INDEX["META.batch_size"]
+
+    from gunicorn.app.wsgiapp import WSGIApplication
+
+    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
 
     from gevent import pywsgi
 

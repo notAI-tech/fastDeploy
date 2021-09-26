@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+.results_index/
+.request_queue/
+
 # C extensions
 *.so
 

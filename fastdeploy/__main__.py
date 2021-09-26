@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import argparse
 
 parser = argparse.ArgumentParser(description="CLI for fastDeploy")
@@ -72,7 +73,7 @@ if args.mode == "build_rest":
 
     dockerfile_lines.append(f"FROM {base}")
     dockerfile_lines.append(
-        f"RUN python3 -m pip install --upgrade --no-cache-dir pip fastdeploy"
+        f"RUN python3 -m pip install --upgrade --no-cache-dir pip fastdeploy gunicorn"
     )
     if os.path.exists(os.path.join(args.recipe, "extras.sh")):
         dockerfile_lines.append(f"COPY extras.sh /extras.sh")
@@ -89,15 +90,15 @@ if args.mode == "build_rest":
 
     dockerfile_lines.append(f"ADD . {recipe_base_name}")
 
+    dockerfile_lines.append(f"RUN cd {recipe_base_name} && python3 predictor.py")
+
     dockerfile_lines.append(
-        f'CMD python -m fastdeploy --recipe /recipe --mode loop ; python -m fastdeploy --recipe /recipe --mode {args.mode.split("build_")[1]} \n'
+        f'CMD python3 -m fastdeploy --recipe /recipe --mode loop ; python3 -m fastdeploy --recipe /recipe --mode {args.mode.split("build_")[1]} \n'
     )
 
     dockerfile_path = os.path.join(args.recipe, "fastDeploy.dockerfile")
-    print(dockerfile_path)
 
     _f = open(dockerfile_path, "w")
     _f.write("\n".join(dockerfile_lines))
-    print("\n".join(dockerfile_lines))
     _f.flush()
     _f.close()

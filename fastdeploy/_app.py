@@ -96,6 +96,20 @@ class Res(object):
             resp.status = falcon.HTTP_400
 
 
+class Monitor(object):
+    def on_post(self, req, resp):
+        try:
+            unique_id = req.media["unique_id"]
+            _utils.logger.info(f"unique_id: {unique_id} Result request received.")
+            resp.media = {"success": None, "reason": "processing"}
+            resp.status = falcon.HTTP_200
+
+        except Exception as ex:
+            _utils.logger.exception(ex, exc_info=True)
+            resp.media = {"success": False, "reason": str(ex)}
+            resp.status = falcon.HTTP_400
+
+
 json_handler = falcon.media.JSONHandler(
     loads=ujson.loads, dumps=partial(ujson.dumps, ensure_ascii=False)
 )

@@ -6,11 +6,22 @@ parser = argparse.ArgumentParser(description="CLI for fastDeploy")
 parser.add_argument(
     "--recipe", type=str, help="Path to your recipe folder", required=True
 )
+
 parser.add_argument(
     "--mode", type=str, help='One of, ["loop", "rest", "websocket"]', required=True
 )
+
+parser.add_argument(
+    "--queue_dir", type=str, help='One of, ["loop", "rest", "websocket"]', required=True
+)
+
 args = parser.parse_args()
 sys.path.append(args.recipe)
+
+QUEUE_DIR = args.recipe
+
+if args.queue_dir:
+    queue_dir = args.QUEUE_DIR
 
 if args.mode == "loop":
     from ._loop import start_loop

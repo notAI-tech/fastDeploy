@@ -22,16 +22,29 @@ from diskcache import Deque, Index
 import sys
 from example import example
 
+from . import QUEUE_DIR
+
 # En variable to configure allowed origins
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
 
 PREDICTION_LOOP_SLEEP = float(os.getenv("PREDICTION_LOOP_SLEEP", "0.06"))
 MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
 
-REQUEST_QUEUE = Deque(directory=".request_queue")
-RESULTS_INDEX = Index(".results_index")
+QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"{time.time()}")
 
+_request_queue = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.request_queue")
+_results_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.results_index")
+_log_queue = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.log_queue")
 
+REQUEST_QUEUE = Deque(directory=_request_queue)
+RESULTS_INDEX = Index(_results_index)
+LOG_QUEUE = Deque(directory=_log_queue)
+
+logger.info(
+    f"REQUEST_QUEUE: {_request_queue} RESULTS_INDEX: {_results_index} LOG_QUEUE: {_log_queue}"
+)
+
+# clear if not
 # No real use in making these configurable.
 
 # Number of gunicorn workers to use

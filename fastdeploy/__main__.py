@@ -1,7 +1,7 @@
 import os
 import sys
-import time
 import argparse
+import subprocess
 
 parser = argparse.ArgumentParser(description="CLI for fastDeploy")
 parser.add_argument(
@@ -31,7 +31,7 @@ sys.path.append(args.recipe)
 
 QUEUE_DIR = args.recipe
 
-QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"{time.time()}")
+QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"default")
 
 if args.queue_dir:
     queue_dir = args.QUEUE_DIR
@@ -102,3 +102,11 @@ if args.mode == "build_rest":
     _f.write("\n".join(dockerfile_lines))
     _f.flush()
     _f.close()
+
+    docker_image_name = f"fastdeploy_{os.path.basename(os.path.abspath(args.base))}".strip(
+        "/"
+    ).lower()
+
+    subprocess.run(
+        f"cd {args.recipe} && docker build -f fastDeploy.dockerfile -t {docker_image_name} ."
+    )

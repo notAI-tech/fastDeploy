@@ -36,12 +36,14 @@ QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"default")
 if args.queue_dir:
     queue_dir = args.QUEUE_DIR
 
-if args.mode == "loop":
+
+def loop():
     from ._loop import start_loop
 
     start_loop()
 
-if args.mode == "rest":
+
+def rest():
     from ._app import app
     from gevent import pywsgi
 
@@ -53,17 +55,8 @@ if args.mode == "rest":
     server = pywsgi.WSGIServer((host, port), app, spawn=1000, log=None)
     server.serve_forever()
 
-if args.mode == "build_rest":
-    """
-    FROM python:3.6.7-slim
-    RUN apt-get update && apt-get install -y build-essential gcc
-    RUN python3 -m pip install --upgrade pip
-    RUN python3 -m pip install Cython requests gevent gunicorn
-    RUN python3 -m pip install --no-binary :all: falcon
-    WORKDIR /app
-    ADD . /app
-    CMD ["bash", "_run.sh"]
-    """
+
+def build_rest():
     dockerfile_lines = []
 
     if not args.base:
@@ -110,3 +103,13 @@ if args.mode == "build_rest":
     subprocess.run(
         f"cd {args.recipe} && docker build -f fastDeploy.dockerfile -t {docker_image_name} ."
     )
+
+
+if args.mode == "loop":
+    loop()
+
+if args.mode == "rest":
+    rest()
+
+if args.mode == "build_rest":
+    build_rest()

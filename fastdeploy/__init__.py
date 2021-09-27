@@ -89,19 +89,20 @@ def build_rest():
         f'CMD python3 -m fastdeploy --recipe /recipe --mode loop ; python3 -m fastdeploy --recipe /recipe --mode {args.mode.split("build_")[1]} \n'
     )
 
-    dockerfile_path = os.path.join(args.recipe, "fastDeploy.dockerfile")
+    dockerfile_path = os.path.join(args.recipe, "fastDeploy.auto_dockerfile")
 
     _f = open(dockerfile_path, "w")
     _f.write("\n".join(dockerfile_lines))
     _f.flush()
     _f.close()
 
-    docker_image_name = f"fastdeploy_{os.path.basename(os.path.abspath(args.base))}".strip(
+    docker_image_name = f"fastdeploy_{os.path.basename(os.path.abspath(args.recipe))}".strip(
         "/"
     ).lower()
 
-    subprocess.run(
-        f"cd {args.recipe} && docker build -f fastDeploy.dockerfile -t {docker_image_name} ."
+    subprocess.call(
+        f"docker build -f {dockerfile_path} -t {docker_image_name} {args.recipe}",
+        shell=True,
     )
 
 

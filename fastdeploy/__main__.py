@@ -93,7 +93,7 @@ def build_rest():
 
     dockerfile_lines.append(f"FROM {base}")
     dockerfile_lines.append(
-        f"RUN python3 -m pip install --upgrade --no-cache-dir pip fastdeploy gunicorn"
+        f"RUN python3 -m pip install --upgrade --no-cache-dir pip https://github.com/notAI-tech/fastDeploy/archive/refs/heads/master.zip gunicorn"
     )
     if os.path.exists(os.path.join(RECIPE, "extras.sh")):
         dockerfile_lines.append(f"COPY extras.sh /extras.sh")
@@ -112,6 +112,8 @@ def build_rest():
     dockerfile_lines.append(f"RUN cd {recipe_base_name} && python3 predictor.py")
 
     gunicorn_command = f'RECIPE={recipe_base_name} MODE={MODE.split("build_")[1]} gunicorn --preload  -b 0.0.0.0:8080 fastdeploy:wsgi_app --workers={WORKERS} --worker-connections=1000 --worker-class=gevent --timeout={TIMEOUT}'
+
+    print(gunicorn_command)
 
     dockerfile_lines.append(
         f"CMD python3 -m fastdeploy --recipe /recipe --mode loop ;  {gunicorn_command} \n"
@@ -132,6 +134,8 @@ def build_rest():
         f"docker build -f {dockerfile_path} -t {docker_image_name} {RECIPE}",
         shell=True,
     )
+
+    print(f"{docker_image_name} built!")
 
 
 if MODE == "loop":

@@ -116,7 +116,7 @@ def build_rest():
     print(gunicorn_command)
 
     dockerfile_lines.append(
-        f"CMD python3 -m fastdeploy --recipe /recipe --mode loop ;  {gunicorn_command} \n"
+        f"CMD python3 -m fastdeploy --recipe /recipe --mode loop & ;  {gunicorn_command} \n"
     )
 
     dockerfile_path = os.path.join(RECIPE, "fastDeploy.auto_dockerfile")

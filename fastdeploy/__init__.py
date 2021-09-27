@@ -6,6 +6,8 @@ RECIPE = os.getenv("RECIPE")
 MODE = os.getenv("MODE")
 QUEUE_DIR = os.getenv("QUEUE_DIR")
 QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"default")
+WORKERS = os.getenv("WORKERS", "3")
+TIMEOUT = os.getenv("TIMEOUT", "1000")
 
 WSGI_ONLY = True
 
@@ -108,8 +110,10 @@ def build_rest():
 
     dockerfile_lines.append(f"RUN cd {recipe_base_name} && python3 predictor.py")
 
+    gunicorn_command = f'RECIPE={recipe_base_name} MODE={MODE.split("build_")[1]} gunicorn --preload  -b 0.0.0.0:8080 fastdeploy:wsgi_app --workers={WORKERS} --worker-connections=1000 --worker-class=gevent --timeout={TIMEOUT}'
+
     dockerfile_lines.append(
-        f'CMD python3 -m fastdeploy --recipe /recipe --mode loop ; python3 -m fastdeploy --recipe /recipe --mode {MODE.split("build_")[1]} \n'
+        f"CMD python3 -m fastdeploy --recipe /recipe --mode loop ;  {gunicorn_command} \n"
     )
 
     dockerfile_path = os.path.join(RECIPE, "fastDeploy.auto_dockerfile")

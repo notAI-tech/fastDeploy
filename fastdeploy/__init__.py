@@ -50,6 +50,7 @@ if not RECIPE or not MODE:
 
     MODE = args.mode
     RECIPE = args.recipe
+    BASE = args.base
 
 sys.path.append(RECIPE)
 
@@ -131,6 +132,8 @@ def build_rest():
         f"docker build -f {dockerfile_path} -t {docker_image_name} {RECIPE}",
         shell=True,
     )
+
+    print(f"{docker_image_name} built!")
 
 
 if MODE == "loop":

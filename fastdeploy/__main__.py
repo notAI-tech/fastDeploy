@@ -50,6 +50,7 @@ if not RECIPE or not MODE:
 
     MODE = args.mode
     RECIPE = args.recipe
+    BASE = args.base
 
 sys.path.append(RECIPE)
 

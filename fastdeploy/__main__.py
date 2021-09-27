@@ -51,8 +51,13 @@ if not RECIPE or not MODE:
 
 sys.path.append(RECIPE)
 
+wsgi_app = None
+
 if not QUEUE_DIR:
     QUEUE_DIR = RECIPE
+
+if WSGI_ONLY:
+    from ._app import app as wsgi_app
 
 
 def loop():
@@ -62,20 +67,17 @@ def loop():
 
 
 def rest():
-    from ._app import app
+    if not WSGI_ONLY:
+        from ._app import app
+        from gevent import pywsgi
 
-    if WSGI_ONLY:
-        return app
+        port = int(os.getenv("PORT", "8080"))
+        host = os.getenv("HOST", "0.0.0.0")
 
-    from gevent import pywsgi
+        print(f"fastDeploy active at http://{host}:{port}")
 
-    port = int(os.getenv("PORT", "8080"))
-    host = os.getenv("HOST", "0.0.0.0")
-
-    print(f"fastDeploy active at http://{host}:{port}")
-
-    server = pywsgi.WSGIServer((host, port), app, spawn=1000, log=None)
-    server.serve_forever()
+        server = pywsgi.WSGIServer((host, port), app, spawn=1000, log=None)
+        server.serve_forever()
 
 
 def build_rest():

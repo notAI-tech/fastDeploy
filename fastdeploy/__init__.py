@@ -5,8 +5,12 @@ import subprocess
 RECIPE = os.getenv("RECIPE")
 MODE = os.getenv("MODE")
 QUEUE_DIR = os.getenv("QUEUE_DIR")
+QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"default")
 
-if RECIPE is None or MODE is None:
+WSGI_ONLY = True
+
+if not RECIPE or not MODE:
+    WSGI_ONLY = False
     import argparse
 
     parser = argparse.ArgumentParser(description="CLI for fastDeploy")
@@ -39,19 +43,16 @@ if RECIPE is None or MODE is None:
     )
 
     args = parser.parse_args()
-    sys.path.append(RECIPE)
 
     QUEUE_DIR = args.recipe
-    if args.queue_dir:
-        QUEUE_DIR = args.queue_dir
 
     MODE = args.mode
     RECIPE = args.recipe
 
-    if args.queue_dir:
-        queue_dir = args.QUEUE_DIR
+sys.path.append(RECIPE)
 
-QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"default")
+if not QUEUE_DIR:
+    QUEUE_DIR = RECIPE
 
 
 def loop():
@@ -62,6 +63,10 @@ def loop():
 
 def rest():
     from ._app import app
+
+    if WSGI_ONLY:
+        return app
+
     from gevent import pywsgi
 
     port = int(os.getenv("PORT", "8080"))

@@ -15,7 +15,7 @@ if not RECIPE or not MODE:
     WSGI_ONLY = False
     import argparse
 
-    parser = argparse.ArgumentParser(description="CLI for fastDeploy")
+    parser = argparse.ArgumentParser(description="CLI for fastDeploy 1.0-rc10")
     parser.add_argument(
         "--recipe",
         type=str,
@@ -70,17 +70,16 @@ def loop():
 
 
 def rest():
-    if not WSGI_ONLY:
-        from ._app import app
-        from gevent import pywsgi
+    from ._app import app
+    from gevent import pywsgi
 
-        port = int(os.getenv("PORT", "8080"))
-        host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8080"))
+    host = os.getenv("HOST", "0.0.0.0")
 
-        print(f"fastDeploy active at http://{host}:{port}")
+    print(f"fastDeploy active at http://{host}:{port}")
 
-        server = pywsgi.WSGIServer((host, port), app, spawn=1000, log=None)
-        server.serve_forever()
+    server = pywsgi.WSGIServer((host, port), app, spawn=1000, log=None)
+    server.serve_forever()
 
 
 def build_rest():
@@ -113,10 +112,8 @@ def build_rest():
 
     gunicorn_command = f'RECIPE={recipe_base_name} MODE={MODE.split("build_")[1]} gunicorn --preload  -b 0.0.0.0:8080 fastdeploy:wsgi_app --workers={WORKERS} --worker-connections=1000 --worker-class=gevent --timeout={TIMEOUT}'
 
-    print(gunicorn_command)
-
     dockerfile_lines.append(
-        f"CMD python3 -m fastdeploy --recipe /recipe --mode loop & ;  {gunicorn_command} \n"
+        f"CMD ['sh', '-c', 'python3 -m fastdeploy --recipe /recipe --mode loop & {gunicorn_command}'] \n"
     )
 
     dockerfile_path = os.path.join(RECIPE, "fastDeploy.auto_dockerfile")
@@ -141,8 +138,9 @@ def build_rest():
 if MODE == "loop":
     loop()
 
-if MODE == "rest":
-    rest()
+if not WSGI_ONLY:
+    if MODE == "rest":
+        rest()
 
 if MODE == "build_rest":
     build_rest()

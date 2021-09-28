@@ -113,7 +113,11 @@ def build_rest():
     gunicorn_command = f'RECIPE={recipe_base_name} MODE={MODE.split("build_")[1]} gunicorn --preload  -b 0.0.0.0:8080 fastdeploy:wsgi_app --workers={WORKERS} --worker-connections=1000 --worker-class=gevent --timeout={TIMEOUT}'
 
     dockerfile_lines.append(
-        f"CMD ['sh', '-c', 'python3 -m fastdeploy --recipe /recipe --mode loop & {gunicorn_command}'] \n"
+        f'ENTRYPOINT {os.getenv("ENTRYPOINT", ["/bin/sh", "-c"])} \n'
+    )
+
+    dockerfile_lines.append(
+        f'CMD ["python3 -m fastdeploy --recipe /recipe --mode loop & {gunicorn_command}"] \n'
     )
 
     dockerfile_path = os.path.join(RECIPE, "fastDeploy.auto_dockerfile")
@@ -133,6 +137,7 @@ def build_rest():
     )
 
     print(f"{docker_image_name} built!")
+    exit()
 
 
 if MODE == "loop":

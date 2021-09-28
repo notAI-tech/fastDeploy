@@ -31,6 +31,16 @@ json={"data": ["I was hungry i ordered a pizza"]}).json())'
 
 # Response
 [{'prediction': [['I was hungry', 'i ordered a pizza']], 'success': True}, '200 OK']
+
+# Auto genereate dockerfile and build docker image. --base is docker base
+fastdeploy --recipe ./recipes/deepsegment/ --mode build_rest --base tensorflow/tensorflow:1.14.0-py3
+# fastdeploy_deepsegment built!
+
+# Run docker image
+docker run -it -p8080:8080 fastdeploy_deepsegment
+
+# pip version of fastdeploy uses pywsgi with gevent. Docker version uses by default 3 gunicorn gevent workers with 1000 "threads" per worker.
+
 ```
 
 **Features:**

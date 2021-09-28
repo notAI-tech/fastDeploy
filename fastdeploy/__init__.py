@@ -121,6 +121,10 @@ def build_rest():
     )
 
     dockerfile_path = os.path.join(RECIPE, "fastDeploy.auto_dockerfile")
+    _dockerignore_f = os.path.join(RECIPE, ".dockerignore", "w")
+    _dockerignore_f.write("*.request_queue\n*.results_index\n*.log_queue")
+    _dockerignore_f.flush()
+    _dockerignore_f.close()
 
     _f = open(dockerfile_path, "w")
     _f.write("\n".join(dockerfile_lines))

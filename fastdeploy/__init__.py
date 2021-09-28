@@ -113,7 +113,7 @@ def build_rest():
     gunicorn_command = f'RECIPE={recipe_base_name} MODE={MODE.split("build_")[1]} gunicorn --preload  -b 0.0.0.0:8080 fastdeploy:wsgi_app --workers={WORKERS} --worker-connections=1000 --worker-class=gevent --timeout={TIMEOUT}'
 
     dockerfile_lines.append(
-        f'ENTRYPOINT {os.getenv("ENTRYPOINT", ["/bin/sh", "-c"])} \n'
+        f'ENTRYPOINT {os.getenv("ENTRYPOINT", ["/bin/sh", "-c"])} \n'.replace("'", '"')
     )
 
     dockerfile_lines.append(

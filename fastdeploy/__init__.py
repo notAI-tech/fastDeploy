@@ -116,7 +116,7 @@ def build_rest():
 
     dockerfile_lines.append(f"FROM {base}")
     dockerfile_lines.append(
-        f"RUN python3 -m pip install --upgrade --no-cache-dir pip https://github.com/notAI-tech/fastDeploy/archive/refs/heads/master.zip gunicorn"
+        f"RUN python3 -m pip install --upgrade --no-cache-dir pip https://github.com/notAI-tech/fastDeploy/archive/refs/heads/master.zip"
     )
     if os.path.exists(os.path.join(RECIPE, "extras.sh")):
         dockerfile_lines.append(f"COPY extras.sh /extras.sh")

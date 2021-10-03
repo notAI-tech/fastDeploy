@@ -32,14 +32,14 @@ MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
 
 _request_queue = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.request_queue")
 _results_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.results_index")
-_log_queue = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.log_queue")
+_log_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.log_index")
 
 REQUEST_QUEUE = Deque(directory=_request_queue)
 RESULTS_INDEX = Index(_results_index)
-LOG_QUEUE = Deque(directory=_log_queue)
+LOG_INDEX = Index(_log_index)
 
 logger.info(
-    f"REQUEST_QUEUE: {_request_queue} RESULTS_INDEX: {_results_index} LOG_QUEUE: {_log_queue}"
+    f"REQUEST_QUEUE: {_request_queue} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index}"
 )
 
 # clear if not

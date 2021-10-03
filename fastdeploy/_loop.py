@@ -25,10 +25,11 @@ def start_loop():
     )
 
     max_wait_time = time_per_example * _utils.MAX_WAIT
-    _utils.logger.info(f"max_wait_time: {max_wait_time}")
 
     # write batch size to temp file for use in generating _run.sh
-    _utils.RESULTS_INDEX["META.batch_size"] = batch_size
+    _utils.LOG_INDEX["META.batch_size"] = batch_size
+    _utils.LOG_INDEX["META.time_per_example"] = time_per_example
+    _utils.logger.info(f"max_wait_time: {max_wait_time}, batch_size: {batch_size}")
 
     # list of files/data to be processed is tracked here.
     to_process = None
@@ -39,11 +40,17 @@ def start_loop():
         # Get the latest list of to process data
         batch = []
         unique_ids = []
+        unique_id_to_metrics = {}
         batch_collection_start_time = 0
         while True:
             if len(_utils.REQUEST_QUEUE):
-                unique_id, in_data = _utils.REQUEST_QUEUE.pop()
+                (
+                    unique_id,
+                    in_data,
+                    unique_id_to_metrics[unique_id],
+                ) = _utils.REQUEST_QUEUE.pop()
                 batch_collection_start_time = time.time()
+
                 for _ in in_data:
                     unique_ids.append(unique_id)
                     batch.append(_)
@@ -68,10 +75,18 @@ def start_loop():
                 batch_collection_start_time = 0
                 break
 
-            time.sleep(time_per_example * 0.001)
+            time.sleep(time_per_example * 0.004)
 
         try:
+            pred_start_time = time.time()
             preds = predictor(batch, batch_size=batch_size)
+            pred_end_time = time.time()
+
+            for unique_id in unique_id_to_metrics:
+                unique_id_to_metrics[unique_id]["prediction_start"] = pred_start_time
+                unique_id_to_metrics[unique_id]["prediction_end"] = pred_end_time
+                unique_id_to_metrics[unique_id]["predicted_in_batch"] = len(unique_ids)
+
             _utils.logger.debug(
                 f"Batch of size: {len(batch)}, max_batch_size: {batch_size} predicted."
             )
@@ -87,7 +102,7 @@ def start_loop():
             unique_id_wise_results[unique_id].append(pred)
 
         for unique_id, _preds in unique_id_wise_results.items():
-            _utils.RESULTS_INDEX[unique_id] = _preds
+            _utils.RESULTS_INDEX[unique_id] = (_preds, unique_id_to_metrics[unique_id])
 
         time.sleep(_utils.PREDICTION_LOOP_SLEEP)
 

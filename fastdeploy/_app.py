@@ -175,6 +175,9 @@ infer_api = Infer()
 res_api = Res()
 metrics_api = Metrics()
 app.add_route("/infer", infer_api)
+
+# Backwards compatibility
+app.add_route("/sync", infer_api)
 app.add_route("/result", res_api)
 app.add_route("/metrics", metrics_api)
 

@@ -18,10 +18,10 @@ URL = "https://github.com/notAI-tech/fastDeploy"
 EMAIL = "praneeth@bpraneeth.com"
 AUTHOR = "BEDAPUDI PRANEETH"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "1.0-rc18"
+VERSION = "1.0-rc20"
 
 # What packages are required for this module to be executed?
-REQUIRED = ["requests", "falcon", "diskcache", "ujson", "gunicorn[gevent]"]
+REQUIRED = ["requests", "falcon", "diskcache", "ujson", "gunicorn[gevent]", "epyk"]
 
 # What packages are optional?
 EXTRAS = {

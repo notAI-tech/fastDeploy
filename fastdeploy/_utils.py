@@ -33,13 +33,14 @@ MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
 _request_queue = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.request_queue")
 _results_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.results_index")
 _log_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.log_index")
+_htmls_dir = os.path.join(QUEUE_DIR, ".htmls")
 
 REQUEST_QUEUE = Deque(directory=_request_queue)
 RESULTS_INDEX = Index(_results_index)
 LOG_INDEX = Index(_log_index)
 
 logger.info(
-    f"REQUEST_QUEUE: {_request_queue} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index}"
+    f"REQUEST_QUEUE: {_request_queue} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index} _htmls_dir: {_htmls_dir}"
 )
 
 # clear if not
@@ -101,6 +102,7 @@ def find_optimum_batch_sizes(
         ]
 
     search_start_time = time.time()
+    batch_size_to_time_per_example = {}
     for b_i, batch_size in enumerate(possible_batch_sizes):
         start = time.time()
         if start - search_start_time >= max_batch_search_sec:
@@ -122,6 +124,12 @@ def find_optimum_batch_sizes(
         logger.info(
             f"Time per sample for batch_size: {batch_size} is {time_per_example}"
         )
+
+        batch_size_to_time_per_example[batch_size] = time_per_example
+
+        LOG_INDEX[
+            f"META.batch_size_to_time_per_example"
+        ] = batch_size_to_time_per_example
 
         # determine which batch size yields the least time per example.
 

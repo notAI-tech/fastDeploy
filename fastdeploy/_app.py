@@ -13,8 +13,10 @@ import falcon
 import base64
 import shutil
 import datetime
-from functools import partial
 import logging
+import epyk
+from functools import partial
+
 from . import _utils
 
 while "META.batch_size" not in _utils.LOG_INDEX:
@@ -63,6 +65,7 @@ def wait_and_read_pred(unique_id):
                 break
 
             gevent.time.sleep(0)
+            metrics = {}
 
     return response, status, metrics
 
@@ -85,10 +88,13 @@ class Infer(object):
                 resp.media = {"unique_id": unique_id}
                 resp.status = falcon.HTTP_200
             else:
-                preds, status, metrics = wait_and_read_pred(unique_id)
+                preds, status, _metrics = wait_and_read_pred(unique_id)
 
-                metrics["responded"] = time.time()
-                _utils.LOG_INDEX[unique_id] = (metrics, req.media["data"])
+                if not len(_metrics):
+                    _metrics = metrics
+
+                _metrics["responded"] = time.time()
+                _utils.LOG_INDEX[unique_id] = (_metrics, req.media["data"])
 
                 resp.media = preds
                 resp.status = status
@@ -107,12 +113,15 @@ class Metrics(object):
             total_time = int(req.params.get("total_time", 600))
 
             loop_batch_size = _utils.LOG_INDEX["META.batch_size"]
-            loop_time_per_example = _utils.LOG_INDEX["META.time_per_example"]
-
-            print(loop_batch_size, loop_time_per_example, "???")
+            batch_size_to_time_per_example = _utils.LOG_INDEX[
+                "META.batch_size_to_time_per_example"
+            ]
 
             first_end_time = 0
             all_results_in_time_period = []
+
+            current_time = time.time()
+
             for _ in reversed(_utils.LOG_INDEX):
                 if _[:5] == "META.":
                     continue
@@ -122,17 +131,43 @@ class Metrics(object):
                     _utils.RESULTS_INDEX[_],
                 )
 
-                print(metrics)
                 if metrics["received"] <= end_time:
-                    all_results_in_time_period.append((in_data, result, metrics))
+                    all_results_in_time_period.append(
+                        {
+                            "unique_id": _,
+                            "loop_time_per_example": loop_time_per_example,
+                            "received_on": metrics["received"] - current_time,
+                            "prediction_time_per_example": (
+                                metrics["prediction_end"] - metrics["prediction_start"]
+                            )
+                            / metrics["predicted_in_batch"],
+                            "latency": metrics["prediction_start"]
+                            - metrics["received"]
+                            + metrics["responded"]
+                            - metrics["prediction_end"],
+                        }
+                    )
                     if first_end_time == 0:
                         first_end_time = metrics["received"]
 
                 if metrics["received"] + total_time < end_time:
                     break
 
-            print("------", all_results_in_time_period)
-            resp.media = all_results_in_time_period
+            page = epyk.Page()
+            page.headers.dev()
+            js_data = page.data.js.record(data=all_results_in_time_period)
+
+            line = page.ui.charts.chartJs.line(
+                all_results_in_time_period,
+                y_columns=["prediction_time_per_example", "loop_time_per_example"],
+                x_axis="unique_id",
+            )
+            page.ui.row([line])
+
+            print(dir(page.outs))
+
+            resp.text = page.outs.html()
+            resp.content_type = "text/html"
             resp.status = falcon.HTTP_200
         except Exception as ex:
             logging.exception(ex, exc_info=True)

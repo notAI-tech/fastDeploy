@@ -19,11 +19,13 @@ from functools import partial
 
 from . import _utils
 
-while "META.batch_size" not in _utils.LOG_INDEX:
+while "META.time_per_example" not in _utils.LOG_INDEX:
     _utils.logger.info(f"Waiting for batch size search to finish.")
     time.sleep(5)
 
 ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
+
+TIME_PER_EXAMPLE = _utils.LOG_INDEX["META.time_per_example"]
 
 
 def wait_and_read_pred(unique_id):
@@ -64,7 +66,7 @@ def wait_and_read_pred(unique_id):
                 )
                 break
 
-            gevent.time.sleep(0)
+            gevent.time.sleep(TIME_PER_EXAMPLE * 0.501)
             metrics = {}
 
     return response, status, metrics

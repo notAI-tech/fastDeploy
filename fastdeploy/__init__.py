@@ -10,7 +10,7 @@ RECIPE = os.getenv("RECIPE")
 MODE = os.getenv("MODE")
 QUEUE_DIR = os.getenv("QUEUE_DIR")
 QUEUE_NAME = os.getenv(f"QUEUE_NAME", f"default")
-WORKERS = os.getenv("WORKERS", max(int(os.cpu_count() / 3), 1))
+WORKERS = int(os.getenv("WORKERS", 3))
 TIMEOUT = os.getenv("TIMEOUT", "1000")
 
 if not RECIPE or not MODE:
@@ -139,7 +139,7 @@ def build_rest():
     )
 
     dockerfile_lines.append(
-        f'CMD ["python3 -m fastdeploy --recipe /recipe --mode loop & python3 -m fastdeploy --recipe /recipe --mode rest"] \n'
+        f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --mode loop & python3 -m fastdeploy --recipe /recipe --mode rest"] \n'
     )
 
     dockerfile_path = os.path.join(RECIPE, "fastDeploy.auto_dockerfile")

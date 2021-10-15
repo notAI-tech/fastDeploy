@@ -30,7 +30,7 @@ python -c 'import requests; print(requests.post("http://localhost:8080/infer",\
 json={"data": ["I was hungry i ordered a pizza"]}).json())'
 
 # Response
-[{'prediction': [['I was hungry', 'i ordered a pizza']], 'success': True}, '200 OK']
+{'prediction': [['I was hungry', 'i ordered a pizza']], 'success': True}
 
 # Auto genereate dockerfile and build docker image. --base is docker base
 fastdeploy --recipe ./recipes/deepsegment/ \

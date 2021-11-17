@@ -30,7 +30,7 @@ python -c 'import requests; print(requests.post("http://localhost:8080/infer",\
 json={"data": ["I was hungry i ordered a pizza"]}).json())'
 
 # Response
-[{'prediction': [['I was hungry', 'i ordered a pizza']], 'success': True}, '200 OK']
+{'prediction': [['I was hungry', 'i ordered a pizza']], 'success': True}
 
 # Auto genereate dockerfile and build docker image. --base is docker base
 fastdeploy --recipe ./recipes/deepsegment/ \
@@ -40,9 +40,6 @@ fastdeploy --recipe ./recipes/deepsegment/ \
 # Run docker image
 docker run -it -p8080:8080 fastdeploy_deepsegment
 
-# pip version of fastdeploy uses pywsgi with gevent.
-# Docker version uses by default 3 gunicorn gevent workers with 1000 "threads" per worker.
-
 ```
 
 **Features:**
@@ -50,5 +47,5 @@ docker run -it -p8080:8080 fastdeploy_deepsegment
 1. ***Minimal extra code:*** No model exporting/ conversion/ freezing required. fastDeploy is the easiest way to serve and/or dockerize your existing inference code with minimal work. 
 2. ***Fully configurable dynamic batching:*** fastDeploy dynamically batches concurrent requests for optimal resource usage.
 3. ***Containerization with no extra code:*** fastDeploy auto generates optimal dockerfiles and builds the image with no extra code.
-4. ***One consumer, multiple producers:*** Single fastDeploy loop (consumer) can simultaneously be connected to multiple (types of) producers (rest, websocket, file).
+4. ***One consumer, multiple producers:*** (Coming soon) Single fastDeploy loop (consumer) can simultaneously be connected to multiple (types of) producers (rest, websocket, file).
 5. ***One producer, multiple consumers:*** Distribute one producer's work load to multiple consumers running on multiple nodes (assuming common storage is available for queues)

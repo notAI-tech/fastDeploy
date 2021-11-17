@@ -1,4 +1,5 @@
 import resource
+
 try:
     resource.setrlimit(resource.RLIMIT_NOFILE, (131072, 131072))
 except:
@@ -56,6 +57,7 @@ if not RECIPE or not MODE:
     BASE = args.base
 
 sys.path.append(RECIPE)
+os.chdir(RECIPE)
 
 wsgi_app = None
 

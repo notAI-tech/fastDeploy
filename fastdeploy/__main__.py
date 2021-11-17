@@ -50,10 +50,10 @@ if not RECIPE or not MODE:
 
     args = parser.parse_args()
 
-    QUEUE_DIR = args.recipe
+    QUEUE_DIR = os.path.abspath(args.recipe)
 
     MODE = args.mode
-    RECIPE = args.recipe
+    RECIPE = os.path.abspath(args.recipe)
     BASE = args.base
 
 sys.path.append(RECIPE)

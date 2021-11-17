@@ -1,6 +1,8 @@
 import resource
-
-resource.setrlimit(resource.RLIMIT_NOFILE, (131072, 131072))
+try:
+    resource.setrlimit(resource.RLIMIT_NOFILE, (131072, 131072))
+except:
+    pass
 
 import os
 import sys

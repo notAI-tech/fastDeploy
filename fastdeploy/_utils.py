@@ -22,6 +22,12 @@ from diskcache import Deque, Index
 import sys
 from example import example
 
+IS_FILE_INPUT = False
+try:
+    IS_FILE_INPUT = os.path.exists(example[0])
+except:
+    pass
+
 from . import QUEUE_DIR, QUEUE_NAME
 
 # En variable to configure allowed origins
@@ -39,8 +45,10 @@ REQUEST_QUEUE = Deque(directory=_request_queue)
 RESULTS_INDEX = Index(_results_index)
 LOG_INDEX = Index(_log_index)
 
+LOG_INDEX["META.IS_FILE_INPUT"] = IS_FILE_INPUT
+
 logger.info(
-    f"REQUEST_QUEUE: {_request_queue} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index} _htmls_dir: {_htmls_dir}"
+    f"REQUEST_QUEUE: {_request_queue} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index} _htmls_dir: {_htmls_dir} IS_FILE_INPUT: {IS_FILE_INPUT}"
 )
 
 # clear if not

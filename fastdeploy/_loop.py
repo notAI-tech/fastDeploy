@@ -6,6 +6,8 @@ import shutil
 
 from . import _utils
 
+IS_FILE_INPUT = _utils.LOG_INDEX["META.IS_FILE_INPUT"]
+
 
 def start_loop():
     from predictor import predictor
@@ -93,6 +95,10 @@ def start_loop():
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)
             preds = [{"success": False, "reason": str(ex)} for _ in range(len(batch))]
+
+        if IS_FILE_INPUT:
+            for _ in batch:
+                os.remove(_)
 
         unique_id_wise_results = {}
         for unique_id, pred in zip(unique_ids, preds):

@@ -26,6 +26,7 @@ while "META.time_per_example" not in _utils.LOG_INDEX:
 ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
 
 TIME_PER_EXAMPLE = _utils.LOG_INDEX["META.time_per_example"]
+IS_FILE_INPUT = _utils.LOG_INDEX["META.IS_FILE_INPUT"]
 
 
 def wait_and_read_pred(unique_id):
@@ -76,18 +77,68 @@ class Infer(object):
     def on_post(self, req, resp):
         try:
             unique_id = str(uuid.uuid4())
+
+            req_params = req.params
+            is_async_request = ONLY_ASYNC or req_params.get("async")
+
+            if (req.content_type == "application/json" and IS_FILE_INPUT) or (
+                req.content_type != "application/json" and not IS_FILE_INPUT
+            ):
+                if IS_FILE_INPUT:
+                    resp.media = {
+                        "success": False,
+                        "reason": f"Received json input. Expected multi-part file input.",
+                    }
+                else:
+                    resp.media = {
+                        "success": False,
+                        "reason": f"Received multi-part file input. Expected json input.",
+                    }
+
+                resp.status = falcon.HTTP_400
+
+            else:
+                if req.content_type == "application/json":
+                    in_data = req.media
+                    try:
+                        # Legacy. use data in "data" key if exists
+                        in_data = in_data["data"]
+                    except:
+                        pass
+
+                else:
+                    in_data = []
+
+                    for part in req.get_media():
+                        _temp_file_path = (
+                            f"{uuid.uuid4()}{os.path.splitext(part.filename)[1]}"
+                        )
+                        _temp_file = open(_temp_file_path, "wb")
+
+                        while True:
+                            chunk = part.stream.read(2048)
+                            if not chunk:
+                                break
+
+                            _temp_file.write(chunk)
+                            _temp_file.flush()
+                            _temp_file.close()
+
+                        in_data.append(_temp_file_path)
+
             metrics = {
                 "received": time.time(),
                 "prediction_start": -1,
                 "prediction_end": -1,
-                "batch_size": len(req.media["data"]),
+                "batch_size": len(in_data),
                 "predicted_in_batch": -1,
                 "responded": -1,
             }
-            _utils.REQUEST_QUEUE.appendleft((unique_id, req.media["data"], metrics))
 
-            if ONLY_ASYNC:
-                resp.media = {"unique_id": unique_id}
+            _utils.REQUEST_QUEUE.appendleft((unique_id, in_data, metrics))
+
+            if is_async_request:
+                resp.media = {"unique_id": unique_id, "success": True}
                 resp.status = falcon.HTTP_200
             else:
                 preds, status, _metrics = wait_and_read_pred(unique_id)
@@ -96,7 +147,7 @@ class Infer(object):
                     _metrics = metrics
 
                 _metrics["responded"] = time.time()
-                _utils.LOG_INDEX[unique_id] = (_metrics, req.media["data"])
+                _utils.LOG_INDEX[unique_id] = (_metrics, in_data)
 
                 resp.media = preds
                 resp.status = status
@@ -176,6 +227,16 @@ class Metrics(object):
             pass
 
 
+class Webui(object):
+    def on_get(self, req, resp):
+
+        try:
+            pass
+        except Exception as ex:
+            logging.exception(ex, exc_info=True)
+            pass
+
+
 class Res(object):
     def on_post(self, req, resp):
         try:
@@ -211,12 +272,16 @@ app = falcon.App(
 infer_api = Infer()
 res_api = Res()
 metrics_api = Metrics()
+webui_api = Webui()
+
 app.add_route("/infer", infer_api)
+app.add_route("/result", res_api)
+app.add_route("/metrics", metrics_api)
+app.add_route("/", webui_api)
 
 # Backwards compatibility
 app.add_route("/sync", infer_api)
-app.add_route("/result", res_api)
-app.add_route("/metrics", metrics_api)
+
 
 if __name__ == "__main__":
     batch_size = _utils.RESULTS_INDEX["META.batch_size"]

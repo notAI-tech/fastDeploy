@@ -98,7 +98,10 @@ def start_loop():
 
         if IS_FILE_INPUT:
             for _ in batch:
-                os.remove(_)
+                try:
+                    os.remove(_)
+                except Exception as ex:
+                    _utils.logger.warning(ex, exc_info=True)
 
         unique_id_wise_results = {}
         for unique_id, pred in zip(unique_ids, preds):

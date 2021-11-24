@@ -121,8 +121,8 @@ class Infer(object):
                                 break
 
                             _temp_file.write(chunk)
-                            _temp_file.flush()
-                            _temp_file.close()
+                        _temp_file.flush()
+                        _temp_file.close()
 
                         in_data.append(_temp_file_path)
 

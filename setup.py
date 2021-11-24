@@ -21,7 +21,7 @@ REQUIRES_PYTHON = ">=3.6.0"
 VERSION = "1.0-rc26"
 
 # What packages are required for this module to be executed?
-REQUIRED = ["requests", "falcon", "diskcache", "ujson", "gunicorn[gevent]", "epyk"]
+REQUIRED = ["requests", "falcon", "diskcache", "ujson", "gunicorn[gevent]", "epyk", "gevent-websocket"]
 
 # What packages are optional?
 EXTRAS = {

@@ -283,19 +283,29 @@ app.add_route("/", webui_api)
 app.add_route("/sync", infer_api)
 
 
-if __name__ == "__main__":
-    batch_size = _utils.RESULTS_INDEX["META.batch_size"]
+from geventwebsocket import WebSocketApplication
 
-    from gunicorn.app.wsgiapp import WSGIApplication
 
-    WSGIApplication("%(prog)s [OPTIONS] [APP_MODULE]").run()
+class WebSocketInfer(WebSocketApplication):
+    def on_open(self):
+        self.connection_id = f"{uuid.uuid4()}"
+        self.start_time = time.time()
+        self.n = 0
+        _utils.logger.info(f"{self.connection_id} websocket connection opened")
 
-    from gevent import pywsgi
+    def on_message(self, message):
+        try:
+            if message is not None:
+                self.n += 1
+                print(self.n, type(message))
+                gevent.time.sleep(0.5)
+                self.ws.send(ujson.dumps({"success": self.n}))
+        except Exception as ex:
+            _utils.logger.exception(ex, exc_info=True)
+            pass
 
-    port = int(os.getenv("PORT", "8080"))
-    host = os.getenv("HOST", "0.0.0.0")
-
-    print(f"fastDeploy active at http://{host}:{port}")
-
-    server = pywsgi.WSGIServer((host, port), app, spawn=1000, log=None)
-    server.serve_forever()
+    def on_close(self, reason):
+        _utils.logger.info(
+            f"{self.connection_id} websocket connection closed. Time spent: {time.time() - self.start_time}"
+        )
+        pass

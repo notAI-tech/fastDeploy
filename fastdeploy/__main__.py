@@ -56,10 +56,9 @@ if not RECIPE or not MODE:
     RECIPE = os.path.abspath(args.recipe)
     BASE = args.base
 
-sys.path.append(RECIPE)
-os.chdir(RECIPE)
-
-wsgi_app = None
+if os.path.exists(RECIPE):
+    sys.path.append(RECIPE)
+    os.chdir(RECIPE)
 
 if not QUEUE_DIR:
     QUEUE_DIR = RECIPE
@@ -108,6 +107,16 @@ def rest():
     print(f"fastDeploy active at http://{host}:{port}")
 
     StandaloneApplication(app, options).run()
+
+
+def websocket():
+    from ._app import WebSocketInfer
+    from geventwebsocket import WebSocketServer, Resource
+
+    port = int(os.getenv("PORT", "8080"))
+    host = os.getenv("HOST", "0.0.0.0")
+
+    WebSocketServer((host, port), Resource({"/infer": WebSocketInfer})).serve_forever()
 
 
 def build_rest():
@@ -178,3 +187,6 @@ if MODE == "rest":
 
 if MODE == "build_rest":
     build_rest()
+
+if MODE == "websocket":
+    websocket()

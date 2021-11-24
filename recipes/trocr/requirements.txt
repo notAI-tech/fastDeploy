@@ -1,0 +1,4 @@
+torch
+torchvision
+transformers
+craft-text-detector

@@ -291,7 +291,7 @@ class WebSocketInfer(WebSocketApplication):
         self.connection_id = f"{uuid.uuid4()}"
         self.start_time = time.time()
         self.n = 0
-        _utils.logger.info(f"{self.connection_id} websocket connection opened")
+        _utils.logger.info(f"{self.connection_id} websocket connection opened.")
 
     def on_message(self, message):
         try:

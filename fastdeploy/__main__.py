@@ -111,12 +111,15 @@ def rest():
 
 def websocket():
     from ._app import WebSocketInfer
+    from collections import OrderedDict
     from geventwebsocket import WebSocketServer, Resource
 
     port = int(os.getenv("PORT", "8080"))
     host = os.getenv("HOST", "0.0.0.0")
 
-    WebSocketServer((host, port), Resource({"/infer": WebSocketInfer})).serve_forever()
+    WebSocketServer(
+        (host, port), Resource(OrderedDict([("/infer", WebSocketInfer)]))
+    ).serve_forever()
 
 
 def build_rest():

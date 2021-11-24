@@ -60,7 +60,7 @@ def start_loop():
             if len(batch) >= batch_size:
                 unique_id_count = len(set(unique_ids))
                 if unique_id_count > 1:
-                    _utils.logger.debug(
+                    _utils.logger.info(
                         f"Batch of size: {len(batch)}, max_batch_size: {batch_size}, unique_ids: {unique_id_count} collected."
                     )
                 batch_collection_start_time = 0
@@ -71,7 +71,7 @@ def start_loop():
             ):
                 unique_id_count = len(set(unique_ids))
                 if unique_id_count > 1:
-                    _utils.logger.debug(
+                    _utils.logger.info(
                         f"Batch of size: {len(batch)}, max_batch_size: {batch_size}, unique_ids: {unique_id_count} collected."
                     )
                 batch_collection_start_time = 0
@@ -89,7 +89,7 @@ def start_loop():
                 unique_id_to_metrics[unique_id]["prediction_end"] = pred_end_time
                 unique_id_to_metrics[unique_id]["predicted_in_batch"] = len(unique_ids)
 
-            _utils.logger.debug(
+            _utils.logger.info(
                 f"Batch of size: {len(batch)}, max_batch_size: {batch_size} predicted."
             )
         except Exception as ex:

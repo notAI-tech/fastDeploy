@@ -36,19 +36,19 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
 PREDICTION_LOOP_SLEEP = float(os.getenv("PREDICTION_LOOP_SLEEP", "0.06"))
 MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
 
-_request_queue = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.request_queue")
+_request_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.request_index")
 _results_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.results_index")
 _log_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.log_index")
 _htmls_dir = os.path.join(QUEUE_DIR, ".htmls")
 
-REQUEST_QUEUE = Deque(directory=_request_queue)
+REQUEST_INDEX = Index(_request_index)
 RESULTS_INDEX = Index(_results_index)
 LOG_INDEX = Index(_log_index)
 
 LOG_INDEX["META.IS_FILE_INPUT"] = IS_FILE_INPUT
 
 logger.info(
-    f"REQUEST_QUEUE: {_request_queue} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index} _htmls_dir: {_htmls_dir} IS_FILE_INPUT: {IS_FILE_INPUT}"
+    f"REQUEST_INDEX: {_request_index} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index} _htmls_dir: {_htmls_dir} IS_FILE_INPUT: {IS_FILE_INPUT}"
 )
 
 # clear if not

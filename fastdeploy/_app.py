@@ -135,7 +135,7 @@ class Infer(object):
                 "responded": -1,
             }
 
-            _utils.REQUEST_QUEUE.appendleft((unique_id, in_data, metrics))
+            _utils.REQUEST_INDEX[unique_id] = (in_data, metrics)
 
             if is_async_request:
                 resp.media = {"unique_id": unique_id, "success": True}
@@ -285,27 +285,43 @@ app.add_route("/sync", infer_api)
 
 from geventwebsocket import WebSocketApplication
 
+CONTEXT_PREDICTOR = _utils.LOG_INDEX[f"META.context"]
+
 
 class WebSocketInfer(WebSocketApplication):
     def on_open(self):
         self.connection_id = f"{uuid.uuid4()}"
-        self.start_time = time.time()
         self.n = 0
+        self.start_time = time.time()
         _utils.logger.info(f"{self.connection_id} websocket connection opened.")
 
     def on_message(self, message):
+        self.n += 1
         try:
             if message is not None:
-                self.n += 1
-                print(self.n, type(message))
-                gevent.time.sleep(0.5)
-                self.ws.send(ujson.dumps({"success": self.n}))
+                if not CONTEXT_PREDICTOR:
+                    metrics = {
+                        "received": time.time(),
+                        "prediction_start": -1,
+                        "prediction_end": -1,
+                        "batch_size": 1,
+                        "predicted_in_batch": -1,
+                        "responded": -1,
+                    }
+                    message_id = f"{self.connection_id}.{self.n}"
+                    _utils.REQUEST_INDEX[message_id] = ([message], metrics)
+                    preds, status, metrics = wait_and_read_pred(message_id)
+                    if "prediction" in preds:
+                        preds["prediction"] = preds["prediction"][0]
+
+                    self.ws.send(ujson.dumps(preds))
+
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)
             pass
 
     def on_close(self, reason):
         _utils.logger.info(
-            f"{self.connection_id} websocket connection closed. Time spent: {time.time() - self.start_time}"
+            f"{self.connection_id} websocket connection closed. Time spent: {time.time() - self.start_time} n_mesages: {self.n}"
         )
         pass

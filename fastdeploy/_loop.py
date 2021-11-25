@@ -10,7 +10,12 @@ IS_FILE_INPUT = _utils.LOG_INDEX["META.IS_FILE_INPUT"]
 
 
 def start_loop():
-    from predictor import predictor
+    try:
+        from predictor import predictor
+
+        _utils.LOG_INDEX[f"META.context"] = False
+    except Exception as ex:
+        _utils.logger.exception(ex, exc_info=True)
 
     """
     The Prediction loop. This is where the logic happens.
@@ -45,12 +50,11 @@ def start_loop():
         unique_id_to_metrics = {}
         batch_collection_start_time = 0
         while True:
-            if len(_utils.REQUEST_QUEUE):
+            if len(_utils.REQUEST_INDEX):
                 (
                     unique_id,
-                    in_data,
-                    unique_id_to_metrics[unique_id],
-                ) = _utils.REQUEST_QUEUE.pop()
+                    (in_data, unique_id_to_metrics[unique_id]),
+                ) = _utils.REQUEST_INDEX.popitem(last=False)
                 batch_collection_start_time = time.time()
 
                 for _ in in_data:

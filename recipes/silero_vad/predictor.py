@@ -37,7 +37,7 @@ def predictor(in_data, batch_size=4):
 
         batch = [int2float(np.frombuffer(_, np.int16)) for _ in batch]
         max_len_in_batch = max(len(max(batch, key=len)), 4000)
-        print([max_len_in_batch - len(_) for _ in batch])
+
         batch = [np.pad(_, (0, max_len_in_batch - len(_))) for _ in batch]
         batch = np.asarray(batch)
 

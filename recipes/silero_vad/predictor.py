@@ -63,5 +63,5 @@ if __name__ == "__main__":
         data = [_ for _ in data if _ is not None and len(_)]
         if not data:
             break
-        
+
         print(i * 0.25, len(data), predictor(data))

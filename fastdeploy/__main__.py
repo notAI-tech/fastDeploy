@@ -122,7 +122,7 @@ def websocket():
     ).serve_forever()
 
 
-def build_rest():
+def build(mode="build_rest"):
     dockerfile_lines = []
 
     if not BASE:
@@ -154,9 +154,14 @@ def build_rest():
         f'ENTRYPOINT {os.getenv("ENTRYPOINT", ["/bin/sh", "-c"])} \n'.replace("'", '"')
     )
 
-    dockerfile_lines.append(
-        f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --mode loop & python3 -m fastdeploy --recipe /recipe --mode rest"] \n'
-    )
+    if mode == "build_rest":
+        dockerfile_lines.append(
+            f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --mode loop & python3 -m fastdeploy --recipe /recipe --mode rest"] \n'
+        )
+    elif mode == "build_websocket":
+        dockerfile_lines.append(
+            f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --mode loop & python3 -m fastdeploy --recipe /recipe --mode websocket"] \n'
+        )
 
     dockerfile_path = os.path.join(RECIPE, "fastDeploy.auto_dockerfile")
     _dockerignore_f = open(os.path.join(RECIPE, ".dockerignore"), "w")
@@ -185,11 +190,14 @@ def build_rest():
 if MODE == "loop":
     loop()
 
-if MODE == "rest":
+elif MODE == "rest":
     rest()
 
-if MODE == "build_rest":
-    build_rest()
+elif MODE == "build_rest":
+    build(mode="build_rest")
 
-if MODE == "websocket":
+elif MODE == "build_websocket":
+    build(mode="build_socket")
+
+elif MODE == "websocket":
     websocket()

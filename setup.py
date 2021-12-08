@@ -18,7 +18,7 @@ URL = "https://github.com/notAI-tech/fastDeploy"
 EMAIL = "praneeth@bpraneeth.com"
 AUTHOR = "BEDAPUDI PRANEETH"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "1.0-rc28"
+VERSION = "1.0-rc29"
 
 # What packages are required for this module to be executed?
 REQUIRED = ["requests", "falcon", "diskcache", "ujson", "gunicorn[gevent]", "epyk", "gevent-websocket"]
@@ -107,7 +107,7 @@ setup(
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     include_package_data=True,
-    license="GPLv3",
+    license="MIT",
     classifiers=[
         # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
         "License :: OSI Approved :: MIT License",

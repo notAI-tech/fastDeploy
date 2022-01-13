@@ -48,6 +48,13 @@ if not RECIPE or not MODE:
         required=False,
     )
 
+    parser.add_argument(
+        "--docker_args",
+        type=str,
+        help='This string will be passed to docker as args',
+        required=False,
+    )
+
     args = parser.parse_args()
 
     QUEUE_DIR = os.path.abspath(args.recipe)
@@ -55,6 +62,9 @@ if not RECIPE or not MODE:
     MODE = args.mode
     RECIPE = os.path.abspath(args.recipe)
     BASE = args.base
+    DOCKER_ARGS = args.docker_args
+    if not DOCKER_ARGS:
+        DOCKER_ARGS = ''
 
 if os.path.exists(RECIPE):
     sys.path.append(RECIPE)
@@ -179,7 +189,7 @@ def build(mode="build_rest"):
     ).lower()
 
     subprocess.call(
-        f"docker build -f {dockerfile_path} -t {docker_image_name} {RECIPE}",
+        f"docker build {DOCKER_ARGS} -f {dockerfile_path} -t {docker_image_name} {RECIPE}",
         shell=True,
     )
 

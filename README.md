@@ -21,9 +21,16 @@ fastdeploy --recipe ./deepsegment --mode loop
 # Start rest apis for recipe "deepsegment"
 fastdeploy --recipe ./deepsegment --mode rest
 
-# Run prediction using curl
+# Run json prediction using curl
 curl -d '{"data": ["I was hungry i ordered a pizza"]}'\
 -H "Content-Type: application/json" -X POST http://localhost:8080/infer
+
+# Run file prediction using curl
+curl -F image_1=@image_1.png image_2=@image_2.png http://localhost:8080/infer
+
+# Run file prediction using python
+python -c 'import requests; print(requests.post("http://localhost:8080/infer",\
+json={"data": ["I was hungry i ordered a pizza"]}).json())'
 
 # Run prediction using python
 python -c 'import requests; print(requests.post("http://localhost:8080/infer",\

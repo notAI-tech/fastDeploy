@@ -10,10 +10,19 @@ IS_FILE_INPUT = _utils.LOG_INDEX["META.IS_FILE_INPUT"]
 
 
 def start_loop():
+    ACCEPTS_EXTRAS = False
     try:
         from predictor import predictor
 
-        _utils.LOG_INDEX[f"META.context"] = False
+        try:
+            predictor([], extras=[])
+            ACCEPTS_EXTRAS = True
+        except:
+            pass
+
+        _utils.LOG_INDEX["ACCEPTS_EXTRAS"] = ACCEPTS_EXTRAS
+
+        _utils.logger.info(f'ACCEPTS_EXTRAS: {_utils.LOG_INDEX["ACCEPTS_EXTRAS"]}')
     except Exception as ex:
         _utils.logger.exception(ex, exc_info=True)
 
@@ -46,6 +55,9 @@ def start_loop():
     while True:
         # Get the latest list of to process data
         batch = []
+
+        batch_extra_options = []
+
         unique_ids = []
         unique_id_to_metrics = {}
         batch_collection_start_time = 0
@@ -53,13 +65,14 @@ def start_loop():
             if len(_utils.REQUEST_INDEX):
                 (
                     unique_id,
-                    (in_data, unique_id_to_metrics[unique_id]),
+                    (in_data, unique_id_to_metrics[unique_id], _batch_extra_options),
                 ) = _utils.REQUEST_INDEX.popitem(last=False)
                 batch_collection_start_time = time.time()
 
-                for _ in in_data:
+                for __i, _ in enumerate(in_data):
                     unique_ids.append(unique_id)
                     batch.append(_)
+                    batch_extra_options += _batch_extra_options
 
             if len(batch) >= batch_size:
                 unique_id_count = len(set(unique_ids))
@@ -85,7 +98,14 @@ def start_loop():
 
         try:
             pred_start_time = time.time()
-            preds = predictor(batch, batch_size=batch_size)
+
+            if ACCEPTS_EXTRAS:
+                preds = predictor(
+                    batch, batch_size=batch_size, extras=batch_extra_options
+                )
+            else:
+                preds = predictor(batch, batch_size=batch_size)
+
             pred_end_time = time.time()
 
             for unique_id in unique_id_to_metrics:

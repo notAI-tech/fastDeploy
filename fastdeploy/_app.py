@@ -81,6 +81,8 @@ class Infer(object):
             req_params = req.params
             is_async_request = ONLY_ASYNC or req_params.get("async")
 
+            _extra_options_for_predictor = {}
+
             if (req.content_type == "application/json" and IS_FILE_INPUT) or (
                 req.content_type != "application/json" and not IS_FILE_INPUT
             ):
@@ -108,23 +110,38 @@ class Infer(object):
 
                 else:
                     in_data = []
+                    _in_file_names = []
 
                     for part in req.get_media():
-                        _temp_file_path = (
-                            f"{uuid.uuid4()}{os.path.splitext(part.filename)[1]}"
-                        )
-                        _temp_file = open(_temp_file_path, "wb")
+                        if (
+                            part.content_type == "text/plain"
+                            and _utils.LOG_INDEX["ACCEPTS_EXTRAS"]
+                        ):
+                            try:
+                                _extra_options_for_predictor.update(
+                                    ujson.loads(part.text)
+                                )
+                            except:
+                                pass
 
-                        while True:
-                            chunk = part.stream.read(2048)
-                            if not chunk:
-                                break
+                        else:
+                            _in_file_names.append(part.name)
 
-                            _temp_file.write(chunk)
-                        _temp_file.flush()
-                        _temp_file.close()
+                            _temp_file_path = (
+                                f"{uuid.uuid4()}{os.path.splitext(part.filename)[1]}"
+                            )
+                            _temp_file = open(_temp_file_path, "wb")
 
-                        in_data.append(_temp_file_path)
+                            while True:
+                                chunk = part.stream.read(2048)
+                                if not chunk:
+                                    break
+
+                                _temp_file.write(chunk)
+                            _temp_file.flush()
+                            _temp_file.close()
+
+                            in_data.append(_temp_file_path)
 
             metrics = {
                 "received": time.time(),
@@ -135,7 +152,11 @@ class Infer(object):
                 "responded": -1,
             }
 
-            _utils.REQUEST_INDEX[unique_id] = (in_data, metrics)
+            _utils.REQUEST_INDEX[unique_id] = (
+                in_data,
+                metrics,
+                [_extra_options_for_predictor.get(_) for _ in _in_file_names],
+            )
 
             if is_async_request:
                 resp.media = {"unique_id": unique_id, "success": True}
@@ -282,10 +303,7 @@ app.add_route("/", webui_api)
 # Backwards compatibility
 app.add_route("/sync", infer_api)
 
-
 from geventwebsocket import WebSocketApplication
-
-CONTEXT_PREDICTOR = _utils.LOG_INDEX[f"META.context"]
 
 
 class WebSocketInfer(WebSocketApplication):
@@ -299,22 +317,21 @@ class WebSocketInfer(WebSocketApplication):
         self.n += 1
         try:
             if message is not None:
-                if not CONTEXT_PREDICTOR:
-                    metrics = {
-                        "received": time.time(),
-                        "prediction_start": -1,
-                        "prediction_end": -1,
-                        "batch_size": 1,
-                        "predicted_in_batch": -1,
-                        "responded": -1,
-                    }
-                    message_id = f"{self.connection_id}.{self.n}"
-                    _utils.REQUEST_INDEX[message_id] = ([message], metrics)
-                    preds, status, metrics = wait_and_read_pred(message_id)
-                    if "prediction" in preds:
-                        preds["prediction"] = preds["prediction"][0]
+                metrics = {
+                    "received": time.time(),
+                    "prediction_start": -1,
+                    "prediction_end": -1,
+                    "batch_size": 1,
+                    "predicted_in_batch": -1,
+                    "responded": -1,
+                }
+                message_id = f"{self.connection_id}.{self.n}"
+                _utils.REQUEST_INDEX[message_id] = ([message], metrics)
+                preds, status, metrics = wait_and_read_pred(message_id)
+                if "prediction" in preds:
+                    preds["prediction"] = preds["prediction"][0]
 
-                    self.ws.send(ujson.dumps(preds))
+                self.ws.send(ujson.dumps(preds))
 
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)

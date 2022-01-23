@@ -113,10 +113,7 @@ class Infer(object):
                     _in_file_names = []
 
                     for part in req.get_media():
-                        if (
-                            part.content_type == "text/plain"
-                            and _utils.LOG_INDEX["ACCEPTS_EXTRAS"]
-                        ):
+                        if not part.filename and _utils.LOG_INDEX["ACCEPTS_EXTRAS"]:
                             try:
                                 _extra_options_for_predictor.update(
                                     ujson.loads(part.text)

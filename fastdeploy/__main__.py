@@ -51,7 +51,7 @@ if not RECIPE or not MODE:
     parser.add_argument(
         "--docker_args",
         type=str,
-        help='This string will be passed to docker as args',
+        help="This string will be passed to docker as args",
         required=False,
     )
 
@@ -64,7 +64,7 @@ if not RECIPE or not MODE:
     BASE = args.base
     DOCKER_ARGS = args.docker_args
     if not DOCKER_ARGS:
-        DOCKER_ARGS = ''
+        DOCKER_ARGS = ""
 
 if os.path.exists(RECIPE):
     sys.path.append(RECIPE)

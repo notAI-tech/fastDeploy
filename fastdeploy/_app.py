@@ -172,7 +172,7 @@ class Infer(object):
 
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)
-            resp.media = {"success": False, "reason": str(ex)}
+            resp.media = {"success": False, "reason": "malformed request"}
             resp.status = falcon.HTTP_400
 
 
@@ -260,7 +260,18 @@ class Res(object):
         try:
             unique_id = req.media["unique_id"]
             _utils.logger.info(f"unique_id: {unique_id} Result request received.")
-            resp.media = {"success": None, "reason": "processing"}
+            try:
+                pred, metrics = _utils.RESULTS_INDEX[unique_id]
+                resp.media = {"success": True, "prediction": pred}
+            except:
+                if unique_id in _utils.REQUEST_INDEX:
+                    resp.media = {"success": None, "reason": "processing"}
+                else:
+                    resp.media = {
+                        "success": False,
+                        "reason": "No request found with this unique_id",
+                    }
+
             resp.status = falcon.HTTP_200
 
         except Exception as ex:

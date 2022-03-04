@@ -158,7 +158,9 @@ def build(mode="build_rest"):
 
     dockerfile_lines.append(f"ADD . {recipe_base_name}")
 
-    dockerfile_lines.append(f"RUN cd {recipe_base_name} && python3 predictor.py")
+    dockerfile_lines.append(
+        f"RUN sudo chmod -R a+rw /recipe || chmod -R a+rw /recipe && cd {recipe_base_name} && python3 predictor.py"
+    )
 
     dockerfile_lines.append(
         f'ENTRYPOINT {os.getenv("ENTRYPOINT", ["/bin/sh", "-c"])} \n'.replace("'", '"')

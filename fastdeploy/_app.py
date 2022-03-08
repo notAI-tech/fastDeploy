@@ -102,11 +102,14 @@ class Infer(object):
             else:
                 if req.content_type == "application/json":
                     in_data = req.media
+
                     try:
                         # Legacy. use data in "data" key if exists
                         in_data = in_data["data"]
                     except:
                         pass
+
+                    _in_file_names = len(in_data)
 
                 else:
                     in_data = []
@@ -247,9 +250,10 @@ class Metrics(object):
 
 class Webui(object):
     def on_get(self, req, resp):
-
         try:
-            pass
+            if req.params.get("example"):
+                resp.media = _utils.example
+                resp.status = falcon.HTTP_200
         except Exception as ex:
             logging.exception(ex, exc_info=True)
             pass

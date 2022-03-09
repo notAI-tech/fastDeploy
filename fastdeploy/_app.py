@@ -237,7 +237,6 @@ class Metrics(object):
             )
             page.ui.row([line])
 
-
             resp.text = page.outs.html()
             resp.content_type = "text/html"
             resp.status = falcon.HTTP_200
@@ -246,20 +245,11 @@ class Metrics(object):
             pass
 
 
-class Webui(object):
-    def on_get(self, req, resp):
-        try:
-            if req.params.get("example"):
-                resp.media = _utils.example
-                resp.status = falcon.HTTP_200
-        except Exception as ex:
-            logging.exception(ex, exc_info=True)
-            pass
-
 class Meta(object):
     def on_get(self, req, resp):
         resp.media = {"is_file_input": IS_FILE_INPUT, "example": _utils.example}
         resp.status = falcon.HTTP_200
+
 
 class Res(object):
     def on_post(self, req, resp):
@@ -307,14 +297,17 @@ app = falcon.App(
 infer_api = Infer()
 res_api = Res()
 metrics_api = Metrics()
-webui_api = Webui()
 meta_api = Meta()
 
 app.add_route("/infer", infer_api)
 app.add_route("/result", res_api)
 app.add_route("/metrics", metrics_api)
 app.add_route("/meta", meta_api)
-app.add_route("/", webui_api)
+app.add_static_route(
+    "/",
+    os.path.join(os.path.split(os.path.abspath(_utils.__file__))[0], "fastdeploy-ui"),
+    fallback_filename="index.html",
+)
 
 # Backwards compatibility
 app.add_route("/sync", infer_api)

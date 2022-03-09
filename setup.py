@@ -18,10 +18,18 @@ URL = "https://github.com/notAI-tech/fastDeploy"
 EMAIL = "praneeth@bpraneeth.com"
 AUTHOR = "BEDAPUDI PRANEETH"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "1.0-rc40"
+VERSION = "1.0-rc41"
 
 # What packages are required for this module to be executed?
-REQUIRED = ["requests", "falcon", "diskcache", "ujson", "gunicorn[gevent]", "epyk", "gevent-websocket"]
+REQUIRED = [
+    "requests",
+    "falcon",
+    "diskcache",
+    "ujson",
+    "gunicorn[gevent]",
+    "epyk",
+    "gevent-websocket",
+]
 
 # What packages are optional?
 EXTRAS = {
@@ -106,7 +114,7 @@ setup(
     entry_points={"console_scripts": ["fastdeploy=fastdeploy:main"]},
     install_requires=REQUIRED,
     extras_require=EXTRAS,
-    package_data={NAME: ['fastdeploy-ui/*', 'fastdeploy-ui/build/*']},
+    package_data={NAME: ["fastdeploy-ui/*", "fastdeploy-ui/build/*"]},
     include_package_data=True,
     license="MIT",
     classifiers=[
@@ -118,5 +126,7 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     # $ setup.py publish support.
-    cmdclass={"upload": UploadCommand,},
+    cmdclass={
+        "upload": UploadCommand,
+    },
 )

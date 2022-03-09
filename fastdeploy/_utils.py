@@ -47,8 +47,13 @@ LOG_INDEX = Index(_log_index)
 
 LOG_INDEX["META.IS_FILE_INPUT"] = IS_FILE_INPUT
 
+FASTDEPLOY_UI_PATH = os.getenv(
+    "FASTDEPLOY-UI",
+    os.path.join(os.path.split(os.path.abspath(_utils.__file__))[0], "fastdeploy-ui"),
+)
+
 logger.info(
-    f"REQUEST_INDEX: {_request_index} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index} _htmls_dir: {_htmls_dir} IS_FILE_INPUT: {IS_FILE_INPUT}"
+    f"REQUEST_INDEX: {_request_index} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index} _htmls_dir: {_htmls_dir} IS_FILE_INPUT: {IS_FILE_INPUT} FASTDEPLOY_UI_PATH: {FASTDEPLOY_UI_PATH}"
 )
 
 # clear if not

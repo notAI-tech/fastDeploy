@@ -109,7 +109,7 @@ class Infer(object):
                     except:
                         pass
 
-                    _in_file_names = len(in_data)
+                    _in_file_names = [None for _ in range(len(in_data))]
 
                 else:
                     in_data = []

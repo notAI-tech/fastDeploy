@@ -106,6 +106,7 @@ setup(
     entry_points={"console_scripts": ["fastdeploy=fastdeploy:main"]},
     install_requires=REQUIRED,
     extras_require=EXTRAS,
+    package_data={NAME: ['fastdeploy-ui/*', 'fastdeploy-ui/build/*']},
     include_package_data=True,
     license="MIT",
     classifiers=[

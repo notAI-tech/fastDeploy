@@ -14,7 +14,6 @@ import base64
 import shutil
 import datetime
 import logging
-import epyk
 from functools import partial
 
 from . import _utils
@@ -238,7 +237,6 @@ class Metrics(object):
             )
             page.ui.row([line])
 
-            print(dir(page.outs))
 
             resp.text = page.outs.html()
             resp.content_type = "text/html"
@@ -258,6 +256,10 @@ class Webui(object):
             logging.exception(ex, exc_info=True)
             pass
 
+class Meta(object):
+    def on_get(self, req, resp):
+        resp.media = {"is_file_input": IS_FILE_INPUT, "example": _utils.example}
+        resp.status = falcon.HTTP_200
 
 class Res(object):
     def on_post(self, req, resp):
@@ -306,10 +308,12 @@ infer_api = Infer()
 res_api = Res()
 metrics_api = Metrics()
 webui_api = Webui()
+meta_api = Meta()
 
 app.add_route("/infer", infer_api)
 app.add_route("/result", res_api)
 app.add_route("/metrics", metrics_api)
+app.add_route("/meta", meta_api)
 app.add_route("/", webui_api)
 
 # Backwards compatibility

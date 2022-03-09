@@ -18,7 +18,7 @@ URL = "https://github.com/notAI-tech/fastDeploy"
 EMAIL = "praneeth@bpraneeth.com"
 AUTHOR = "BEDAPUDI PRANEETH"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "1.0-rc41"
+VERSION = "1.0-rc42"
 
 # What packages are required for this module to be executed?
 REQUIRED = [

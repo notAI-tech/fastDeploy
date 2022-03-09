@@ -49,7 +49,7 @@ LOG_INDEX["META.IS_FILE_INPUT"] = IS_FILE_INPUT
 
 FASTDEPLOY_UI_PATH = os.getenv(
     "FASTDEPLOY-UI",
-    os.path.join(os.path.split(os.path.abspath(_utils.__file__))[0], "fastdeploy-ui"),
+    os.path.join(os.path.split(os.path.abspath(__file__))[0], "fastdeploy-ui"),
 )
 
 logger.info(

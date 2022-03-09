@@ -303,14 +303,12 @@ app.add_route("/infer", infer_api)
 app.add_route("/result", res_api)
 app.add_route("/metrics", metrics_api)
 app.add_route("/meta", meta_api)
+
+FASTDEPLOY_UI_PATH = os.getenv("FASTDEPLOY-UI", os.path.join(os.path.split(os.path.abspath(_utils.__file__))[0], "fastdeploy-ui"))
+print(FASTDEPLOY_UI_PATH)
 app.add_static_route(
     "/",
-    os.getenv(
-        "FASTDEPLOY-UI",
-        os.path.join(
-            os.path.split(os.path.abspath(_utils.__file__))[0], "fastdeploy-ui"
-        ),
-    ),
+    FASTDEPLOY_UI_PATH,
     fallback_filename="index.html",
 )
 

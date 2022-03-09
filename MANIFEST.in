@@ -1,0 +1,4 @@
+include fastdeploy/fastdeploy-ui/*
+include fastdeploy/fastdeploy-ui/build/*
+include fastdeploy-ui/*
+include fastdeploy-ui/build/*

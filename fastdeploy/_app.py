@@ -305,7 +305,12 @@ app.add_route("/metrics", metrics_api)
 app.add_route("/meta", meta_api)
 app.add_static_route(
     "/",
-    os.path.join(os.path.split(os.path.abspath(_utils.__file__))[0], "fastdeploy-ui"),
+    os.getenv(
+        "FASTDEPLOY-UI",
+        os.path.join(
+            os.path.split(os.path.abspath(_utils.__file__))[0], "fastdeploy-ui"
+        ),
+    ),
     fallback_filename="index.html",
 )
 

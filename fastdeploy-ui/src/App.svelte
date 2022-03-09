@@ -7,7 +7,7 @@
 	let META = null
 	
 	onMount(async () => {
-		fetch("http://localhost:8000/meta")
+		fetch("/meta")
 		.then(response => response.json())
 		.then(data => {
 				META = data
@@ -21,7 +21,7 @@
 		
 	async function getResult () {
 		console.log( JSON.stringify([single_input]))
-		const res = await fetch('http://localhost:8000/infer', {
+		const res = await fetch('/infer', {
 			method: 'POST',
 			headers: {
 					'Accept': 'application/json',

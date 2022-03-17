@@ -73,6 +73,15 @@ if os.path.exists(RECIPE):
 if not QUEUE_DIR:
     QUEUE_DIR = RECIPE
 
+    try:
+        if not os.path.exists(os.path.join(RECIPE, ".gitignore")):
+            _gitignore_f = open(os.path.join(RECIPE, ".gitignore"), "a")
+            _gitignore_f.write("*.request_index\n*.results_index\n*.log_index")
+            _gitignore_f.flush()
+            _gitignore_f.close()
+    except:
+        pass
+
 
 def loop():
     from ._loop import start_loop
@@ -181,6 +190,11 @@ def build(mode="build_rest"):
     _dockerignore_f.flush()
     _dockerignore_f.close()
 
+    _gitignore_f = open(os.path.join(RECIPE, ".gitignore"), "w")
+    _gitignore_f.write("*.request_index\n*.results_index\n*.log_index")
+    _gitignore_f.flush()
+    _gitignore_f.close()
+
     _f = open(dockerfile_path, "w")
     _f.write("\n".join(dockerfile_lines))
     _f.flush()
@@ -203,6 +217,7 @@ if MODE == "loop":
     loop()
 
 elif MODE == "rest":
+
     rest()
 
 elif MODE == "build_rest":

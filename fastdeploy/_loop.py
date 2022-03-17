@@ -60,7 +60,8 @@ def start_loop():
 
         unique_ids = []
         unique_id_to_metrics = {}
-        batch_collection_start_time = 0
+        batch_collection_start_time = time.time()
+        first_sleep_start_time = 0
         while True:
             if len(_utils.REQUEST_INDEX):
                 (
@@ -73,6 +74,20 @@ def start_loop():
                     unique_ids.append(unique_id)
                     batch.append(_)
                     batch_extra_options += _batch_extra_options
+
+            if len(unique_ids) == 0:
+                if first_sleep_start_time == 0:
+                    first_sleep_start_time = time.time()
+                else:
+                    if time.time() - first_sleep_start_time >= _utils.BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR:
+                        _utils.logger.info(f"Empty for {_utils.BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR} sec sleeping for {_utils.BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY} sec")
+                        time.sleep(_utils.BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY)
+                        continue
+                
+                time.sleep(_utils.PREDICTION_LOOP_SLEEP)
+                continue
+            
+            first_sleep_start_time = 0
 
             if len(batch) >= batch_size:
                 unique_id_count = len(set(unique_ids))

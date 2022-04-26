@@ -8,18 +8,25 @@
     "start": "sirv public --no-clear"
   },
   "devDependencies": {
+    "@carbon/charts-svelte": "^0.57.0",
     "@rollup/plugin-commonjs": "^17.0.0",
     "@rollup/plugin-node-resolve": "^11.0.0",
     "carbon-components-svelte": "^0.60.0",
-    "carbon-icons-svelte": "^10.45.0",
+    "carbon-icons-svelte": "^10.45.1",
+    "d3": "^7.4.4",
     "rollup": "^2.3.4",
     "rollup-plugin-css-only": "^3.1.0",
     "rollup-plugin-livereload": "^2.0.0",
     "rollup-plugin-svelte": "^7.0.0",
     "rollup-plugin-terser": "^7.0.0",
-    "svelte": "^3.0.0"
+    "svelte": "^3.47.0"
   },
   "dependencies": {
-    "sirv-cli": "^2.0.0"
+    "clipboard-copy": "^4.0.1",
+    "curlconverter": "^3.21.0",
+    "lightweight-charts": "^3.8.0",
+    "sirv-cli": "^2.0.0",
+    "svelte-frappe-charts": "^1.9.1",
+    "svelte-lightweight-charts": "^1.4.0"
   }
 }

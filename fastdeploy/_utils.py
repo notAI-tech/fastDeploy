@@ -17,7 +17,7 @@ import time
 import shlex
 import shutil
 from datetime import datetime
-from diskcache import Deque, Index
+from diskcache import Index, Cache
 
 import sys
 from example import example
@@ -34,20 +34,31 @@ from . import QUEUE_DIR, QUEUE_NAME
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
 
 PREDICTION_LOOP_SLEEP = float(os.getenv("PREDICTION_LOOP_SLEEP", "0.06"))
-BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR = float(os.getenv("BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR", "30"))
-BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY = float(os.getenv("BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY", "10"))
+BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR = float(
+    os.getenv("BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR", "60")
+)
+BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY = float(
+    os.getenv("BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY", "1")
+)
 MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
 
 _request_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.request_index")
-_results_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.results_index")
-_log_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.log_index")
+_results_cache = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.results_cache")
+_metrics_cache = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.metrics_cache")
+_meta_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.META_INDEX")
 _htmls_dir = os.path.join(QUEUE_DIR, ".htmls")
 
 REQUEST_INDEX = Index(_request_index)
-RESULTS_INDEX = Index(_results_index)
-LOG_INDEX = Index(_log_index)
+RESULTS_INDEX = Cache(_results_cache)
+METRICS_CACHE = Cache(_metrics_cache)
+META_INDEX = Index(_meta_index)
 
-LOG_INDEX["META.IS_FILE_INPUT"] = IS_FILE_INPUT
+META_INDEX["IS_FILE_INPUT"] = IS_FILE_INPUT
+META_INDEX["PREDICTION_LOOP_SLEEP"] = PREDICTION_LOOP_SLEEP
+META_INDEX["BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR"] = BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR
+META_INDEX["BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY"] = BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY
+META_INDEX["MANAGER_LOOP_SLEEP"] = MANAGER_LOOP_SLEEP
+META_INDEX["TOTAL_REQUESTS"] = 0
 
 FASTDEPLOY_UI_PATH = os.getenv(
     "FASTDEPLOYUI",
@@ -55,7 +66,7 @@ FASTDEPLOY_UI_PATH = os.getenv(
 )
 
 logger.info(
-    f"REQUEST_INDEX: {_request_index} RESULTS_INDEX: {_results_index} LOG_INDEX: {_log_index} _htmls_dir: {_htmls_dir} IS_FILE_INPUT: {IS_FILE_INPUT} FASTDEPLOY_UI_PATH: {FASTDEPLOY_UI_PATH}"
+    f"REQUEST_INDEX: {_request_index} RESULTS_INDEX: {_results_cache} META_INDEX: {_meta_index} _htmls_dir: {_htmls_dir} IS_FILE_INPUT: {IS_FILE_INPUT} FASTDEPLOY_UI_PATH: {FASTDEPLOY_UI_PATH}"
 )
 
 # clear if not
@@ -142,9 +153,7 @@ def find_optimum_batch_sizes(
 
         batch_size_to_time_per_example[batch_size] = time_per_example
 
-        LOG_INDEX[
-            f"META.batch_size_to_time_per_example"
-        ] = batch_size_to_time_per_example
+        META_INDEX[f"batch_size_to_time_per_example"] = batch_size_to_time_per_example
 
         # determine which batch size yields the least time per example.
 

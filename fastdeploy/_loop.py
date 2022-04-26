@@ -6,7 +6,7 @@ import shutil
 
 from . import _utils
 
-IS_FILE_INPUT = _utils.LOG_INDEX["META.IS_FILE_INPUT"]
+IS_FILE_INPUT = _utils.META_INDEX["IS_FILE_INPUT"]
 
 
 def start_loop():
@@ -20,9 +20,9 @@ def start_loop():
         except:
             pass
 
-        _utils.LOG_INDEX["ACCEPTS_EXTRAS"] = ACCEPTS_EXTRAS
+        _utils.META_INDEX["ACCEPTS_EXTRAS"] = ACCEPTS_EXTRAS
 
-        _utils.logger.info(f'ACCEPTS_EXTRAS: {_utils.LOG_INDEX["ACCEPTS_EXTRAS"]}')
+        _utils.logger.info(f'ACCEPTS_EXTRAS: {_utils.META_INDEX["ACCEPTS_EXTRAS"]}')
     except Exception as ex:
         _utils.logger.exception(ex, exc_info=True)
 
@@ -43,8 +43,8 @@ def start_loop():
     max_wait_time = time_per_example * _utils.MAX_WAIT
 
     # write batch size to temp file for use in generating _run.sh
-    _utils.LOG_INDEX["META.batch_size"] = batch_size
-    _utils.LOG_INDEX["META.time_per_example"] = time_per_example
+    _utils.META_INDEX["batch_size"] = batch_size
+    _utils.META_INDEX["time_per_example"] = time_per_example
     _utils.logger.info(f"max_wait_time: {max_wait_time}, batch_size: {batch_size}")
 
     # list of files/data to be processed is tracked here.
@@ -62,6 +62,7 @@ def start_loop():
         unique_id_to_metrics = {}
         batch_collection_start_time = time.time()
         first_sleep_start_time = 0
+        __loop_is_sleeping = False
         while True:
             if len(_utils.REQUEST_INDEX):
                 (
@@ -79,15 +80,23 @@ def start_loop():
                 if first_sleep_start_time == 0:
                     first_sleep_start_time = time.time()
                 else:
-                    if time.time() - first_sleep_start_time >= _utils.BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR:
-                        _utils.logger.info(f"Empty for {_utils.BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR} sec sleeping for {_utils.BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY} sec")
+                    if (
+                        time.time() - first_sleep_start_time
+                        >= _utils.BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR
+                    ):
+                        if not __loop_is_sleeping:
+                            _utils.logger.info(
+                                f"Empty for {_utils.BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR} sec, loop sleep started. wakeup_interval: {_utils.BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY}"
+                            )
+                        __loop_is_sleeping = True
                         time.sleep(_utils.BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY)
                         continue
-                
+
                 time.sleep(_utils.PREDICTION_LOOP_SLEEP)
                 continue
-            
+
             first_sleep_start_time = 0
+            __loop_is_sleeping = False
 
             if len(batch) >= batch_size:
                 unique_id_count = len(set(unique_ids))

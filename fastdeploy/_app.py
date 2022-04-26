@@ -12,20 +12,21 @@ import ujson
 import falcon
 import base64
 import shutil
-import datetime
 import logging
+import datetime
+import mimetypes
 from functools import partial
 
 from . import _utils
 
-while "META.time_per_example" not in _utils.LOG_INDEX:
+while "time_per_example" not in _utils.META_INDEX:
     _utils.logger.info(f"Waiting for batch size search to finish.")
     time.sleep(5)
 
 ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
 
-TIME_PER_EXAMPLE = _utils.LOG_INDEX["META.time_per_example"]
-IS_FILE_INPUT = _utils.LOG_INDEX["META.IS_FILE_INPUT"]
+TIME_PER_EXAMPLE = _utils.META_INDEX["time_per_example"]
+IS_FILE_INPUT = _utils.META_INDEX["IS_FILE_INPUT"]
 
 
 def wait_and_read_pred(unique_id):
@@ -115,7 +116,7 @@ class Infer(object):
                     _in_file_names = []
 
                     for part in req.get_media():
-                        if not part.filename and _utils.LOG_INDEX["ACCEPTS_EXTRAS"]:
+                        if not part.filename and _utils.META_INDEX["ACCEPTS_EXTRAS"]:
                             try:
                                 _extra_options_for_predictor.update(
                                     ujson.loads(part.text)
@@ -157,6 +158,8 @@ class Infer(object):
                 [_extra_options_for_predictor.get(_) for _ in _in_file_names],
             )
 
+            _utils.META_INDEX["TOTAL_REQUESTS"] += 1
+
             if is_async_request:
                 resp.media = {"unique_id": unique_id, "success": True}
                 resp.status = falcon.HTTP_200
@@ -167,7 +170,11 @@ class Infer(object):
                     _metrics = metrics
 
                 _metrics["responded"] = time.time()
-                _utils.LOG_INDEX[unique_id] = (_metrics, in_data)
+                _utils.METRICS_CACHE[len(_utils.METRICS_CACHE)] = (
+                    unique_id,
+                    _metrics,
+                    in_data,
+                )
 
                 resp.media = preds
                 resp.status = status
@@ -183,72 +190,106 @@ class Metrics(object):
 
         try:
             end_time = int(req.params.get("from_time", time.time()))
-            total_time = int(req.params.get("total_time", 600))
+            total_time = int(req.params.get("total_time", 3600))
 
-            loop_batch_size = _utils.LOG_INDEX["META.batch_size"]
-            batch_size_to_time_per_example = _utils.LOG_INDEX[
-                "META.batch_size_to_time_per_example"
+            loop_batch_size = _utils.META_INDEX["batch_size"]
+            batch_size_to_time_per_example = _utils.META_INDEX[
+                "batch_size_to_time_per_example"
             ]
 
             first_end_time = 0
-            all_results_in_time_period = []
+            all_metrics_in_time_period = {
+                "time_graph_data": {
+                    "labels": [],
+                    "datasets": [
+                        {"name": "Response time", "values": []},
+                        {"name": "Prediction time", "values": []},
+                    ],
+                },
+                "index_to_all_meta": {},
+            }
 
             current_time = time.time()
 
-            for _ in reversed(_utils.LOG_INDEX):
-                if _[:5] == "META.":
-                    continue
-
-                (metrics, in_data), result = (
-                    _utils.LOG_INDEX[_],
-                    _utils.RESULTS_INDEX[_],
-                )
-
-                if metrics["received"] <= end_time:
-                    all_results_in_time_period.append(
-                        {
-                            "unique_id": _,
-                            "loop_time_per_example": loop_time_per_example,
-                            "received_on": metrics["received"] - current_time,
-                            "prediction_time_per_example": (
-                                metrics["prediction_end"] - metrics["prediction_start"]
-                            )
-                            / metrics["predicted_in_batch"],
-                            "latency": metrics["prediction_start"]
-                            - metrics["received"]
-                            + metrics["responded"]
-                            - metrics["prediction_end"],
-                        }
-                    )
-                    if first_end_time == 0:
-                        first_end_time = metrics["received"]
-
-                if metrics["received"] + total_time < end_time:
+            n_metrics = len(_utils.METRICS_CACHE)
+            for _ in reversed(range(n_metrics)):
+                unique_id, _metrics, _in_data = _utils.METRICS_CACHE[_]
+                # max 5 second loop alowed
+                if time.time() - current_time >= 5:
                     break
 
-            page = epyk.Page()
-            page.headers.dev()
-            js_data = page.data.js.record(data=all_results_in_time_period)
+                received_time = _metrics["received"]
+                prediction_start = _metrics["prediction_start"]
+                prediction_end = _metrics["prediction_end"]
+                batch_size = _metrics["batch_size"]
+                predicted_in_batch = _metrics["predicted_in_batch"]
+                responded_at = _metrics["responded"]
 
-            line = page.ui.charts.chartJs.line(
-                all_results_in_time_period,
-                y_columns=["prediction_time_per_example", "loop_time_per_example"],
-                x_axis="unique_id",
-            )
-            page.ui.row([line])
+                prediction_time_per_example = (
+                    prediction_end - prediction_start
+                ) / predicted_in_batch
 
-            resp.text = page.outs.html()
-            resp.content_type = "text/html"
+                if current_time - received_time >= total_time:
+                    break
+
+                if received_time <= 0 or responded_at <= 0:
+                    continue
+
+                all_metrics_in_time_period["time_graph_data"]["labels"].insert(
+                    0,
+                    _utils.META_INDEX["TOTAL_REQUESTS"]
+                    - len(all_metrics_in_time_period["index_to_all_meta"]),
+                )
+                all_metrics_in_time_period["time_graph_data"]["datasets"][0][
+                    "values"
+                ].insert(0, responded_at - received_time)
+                all_metrics_in_time_period["time_graph_data"]["datasets"][1][
+                    "values"
+                ].insert(
+                    0,
+                    batch_size
+                    * (prediction_end - prediction_start)
+                    / predicted_in_batch,
+                )
+                all_metrics_in_time_period["index_to_all_meta"][
+                    n_metrics - len(all_metrics_in_time_period["index_to_all_meta"])
+                ] = {
+                    "unique_id": unique_id,
+                    "received_time": str(
+                        datetime.datetime.fromtimestamp(received_time)
+                    ),
+                    "prediction_time_per_example": prediction_time_per_example,
+                    "batch_size": batch_size,
+                    "start_to_end_time": responded_at - received_time,
+                    "predicted_in_batch": predicted_in_batch,
+                }
+
+            resp.media = all_metrics_in_time_period
             resp.status = falcon.HTTP_200
+
         except Exception as ex:
             logging.exception(ex, exc_info=True)
             pass
 
 
+ALL_META = {}
+for k, v in _utils.META_INDEX.items():
+    ALL_META[k] = v
+
+ALL_META["is_file_input"] = IS_FILE_INPUT
+ALL_META["example"] = _utils.example
+
+
 class Meta(object):
     def on_get(self, req, resp):
-        resp.media = {"is_file_input": IS_FILE_INPUT, "example": _utils.example}
-        resp.status = falcon.HTTP_200
+        if req.params.get("example") == "true":
+            resp.content_type = mimetypes.guess_type(_utils.example[0])[0]
+            resp.stream = open(_utils.example[0], "rb")
+            resp.downloadable_as = os.path.basename(_utils.example[0])
+
+        else:
+            resp.media = ALL_META
+            resp.status = falcon.HTTP_200
 
 
 class Res(object):

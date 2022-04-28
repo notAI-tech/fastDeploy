@@ -1,6 +1,11 @@
 <svelte:head><link rel="stylesheet" href="https://unpkg.com/carbon-components-svelte@0.30.0/css/g10.css" /></svelte:head>
 
 <script>
+
+$: {
+  document.title = "fastDeploy monitor"
+}
+
 import {
     Header,
     HeaderNav,
@@ -71,6 +76,8 @@ let index_to_all_metadata = {}
 let META = {};
 
 let time_graph_ref;
+let auto_batching_graph_ref;
+
 let time_graph_data = {
     labels: [],
     datasets: [
@@ -79,11 +86,13 @@ let time_graph_data = {
     ]
   };
 
-const on_time_graph_select = (event) => {
-console.log("Data select event fired!", event);
-on_time_graph_selected = event;
-};
-let on_time_graph_selected;
+let auto_batching_graph_data = {
+                    labels: [],
+                    datasets: [
+                        {name: "Input batch size", values: []},
+                        {name: "Dynamically batched to", values: []}
+                    ]
+                }
 
 onMount(async () => {
     fetch("/meta")
@@ -125,6 +134,8 @@ onMount(async () => {
         .then(data => {
 			console.log(data)
 			time_graph_data = data['time_graph_data']
+			auto_batching_graph_data = data['auto_batching_graph_data']
+			console.log(auto_batching_graph_data)
 			index_to_all_metadata = data['index_to_all_meta']
         }).catch(error => {
             console.log(error);
@@ -255,7 +266,8 @@ async function getFileResult() {
 				/>
 
 			<Column>
-				<Chart title="Latency graph" colors={["green", "blue"]} data={time_graph_data} type="line" bind:this={time_graph_ref} isNavigable on:data-select={on_time_graph_select} lineOptions={{"dotSize": 4}} tooltipOptions=	{{formatTooltipX: d => index_to_all_metadata[d]["unique_id"] + "</br> received: " + index_to_all_metadata[d]["received_time"] + "</br> in_batch_size/predicted_in_batch_of_size:" + index_to_all_metadata[d]["batch_size"] + "/" + index_to_all_metadata[d]["predicted_in_batch"], formatTooltipY: d => d + ' sec'}}/>
+				<Chart title="Latency graph" colors={["green", "blue"]} data={time_graph_data} type="line" bind:this={time_graph_ref} isNavigable lineOptions={{"dotSize": 4}} tooltipOptions=	{{formatTooltipX: d => index_to_all_metadata[d]["unique_id"] + "</br> received: " + index_to_all_metadata[d]["received_time"] + "</br> in_batch_size/predicted_in_batch_of_size:" + index_to_all_metadata[d]["batch_size"] + "/" + index_to_all_metadata[d]["predicted_in_batch"], formatTooltipY: d => d + ' sec'}}/>
+				<Chart title="Auto batching graph" colors={["yellow", "green"]} data={auto_batching_graph_data} type="line" bind:this={auto_batching_graph_ref} isNavigable lineOptions={{"dotSize": 4}} tooltipOptions=	{{formatTooltipX: d => index_to_all_metadata[d]["unique_id"] + "</br> received: " + index_to_all_metadata[d]["received_time"] + "</br> in_batch_size/predicted_in_batch_of_size:" + index_to_all_metadata[d]["batch_size"] + "/" + index_to_all_metadata[d]["predicted_in_batch"], formatTooltipY: d => d + ' inputs'}}/>
 			</Column>
 
 		</Row>

@@ -206,19 +206,21 @@ class Metrics(object):
                         {"name": "Prediction time", "values": []},
                     ],
                 },
-                # "input_size_graph_data": {
-                #     "labels": [],
-                #     "datasets": [
-                #         {"name": "Average input size", "values": []},
-                #         {"name": "Max input size per request", "values": []}
-                #     ],
-                # },
+                "auto_batching_graph_data": {
+                    "labels": [],
+                    "datasets": [
+                        {"name": "Input batch size", "values": []},
+                        {"name": "Dynamically batched to", "values": []},
+                    ],
+                },
                 "index_to_all_meta": {},
             }
 
             current_time = time.time()
 
             n_metrics = len(_utils.METRICS_CACHE)
+            total_requests = n_metrics
+
             for _ in reversed(range(n_metrics)):
                 unique_id, _metrics, _in_data = _utils.METRICS_CACHE[_]
                 # max 5 second loop alowed
@@ -242,11 +244,21 @@ class Metrics(object):
                 if received_time <= 0 or responded_at <= 0:
                     continue
 
-                all_metrics_in_time_period["time_graph_data"]["labels"].insert(
-                    0,
-                    _utils.META_INDEX["TOTAL_REQUESTS"]
-                    - len(all_metrics_in_time_period["index_to_all_meta"]),
+                x_id = total_requests - len(
+                    all_metrics_in_time_period["index_to_all_meta"]
                 )
+
+                all_metrics_in_time_period["auto_batching_graph_data"]["labels"].insert(
+                    0, x_id
+                )
+                all_metrics_in_time_period["auto_batching_graph_data"]["datasets"][0][
+                    "values"
+                ].insert(0, batch_size)
+                all_metrics_in_time_period["auto_batching_graph_data"]["datasets"][1][
+                    "values"
+                ].insert(0, predicted_in_batch)
+
+                all_metrics_in_time_period["time_graph_data"]["labels"].insert(0, x_id)
                 all_metrics_in_time_period["time_graph_data"]["datasets"][0][
                     "values"
                 ].insert(0, responded_at - received_time)
@@ -258,6 +270,7 @@ class Metrics(object):
                     * (prediction_end - prediction_start)
                     / predicted_in_batch,
                 )
+
                 all_metrics_in_time_period["index_to_all_meta"][
                     n_metrics - len(all_metrics_in_time_period["index_to_all_meta"])
                 ] = {

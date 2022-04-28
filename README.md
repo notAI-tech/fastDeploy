@@ -8,11 +8,6 @@
 pip install --upgrade fastdeploy
 ```
 
-**fastDeploy monitor**
-- available on localhost:8080 (or --port)
-
-
-
 **Usage:**
 ```bash
 # Invoke fastdeploy 
@@ -36,6 +31,12 @@ docker run -it -p8080:8080 fastdeploy_echo_json
 
 ```
 
-- https://github.com/notAI-tech/fastDeploy/blob/master/recipe.md Writing a recipe for your model(s)
+**fastDeploy monitor**
+- available on localhost:8080 (or --port)
+
+![](https://raw.githubusercontent.com/notAI-tech/fastDeploy/master/fastDeploy_monitor_logo.png)
+
+
+- https://github.com/notAI-tech/fastDeploy/blob/master/recipe.md Writing a recipe for your prediction script
 - https://github.com/notAI-tech/fastDeploy/blob/master/inference.md cURL and Python inference commands.
 

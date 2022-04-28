@@ -139,7 +139,18 @@ def find_optimum_batch_sizes(
             break
         try:
             for _ in range(3):
-                predictor(example_input * batch_size, batch_size=batch_size)
+                preds = predictor(example_input * batch_size, batch_size=batch_size)
+                if not isinstance(preds, list) or len(preds) != batch_size:
+                    logger.error(
+                        "Something is seriously wrong! len(inputs) != len(outputs) from predictor.py. Check your recipe"
+                    )
+                    logger.error(
+                        f"Inputs: {example_input * batch_size} length: {batch_size}"
+                    )
+                    logger.error(
+                        f"Preds: {preds} length: {len(preds) if isinstance(preds, list) else 'N/A'}"
+                    )
+                    exit()
         except Exception as ex:
             logger.exception(ex, exc_info=True)
             logger.warn("Batch size set to 1 because of above exception")

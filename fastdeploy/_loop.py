@@ -122,13 +122,23 @@ def start_loop():
 
         try:
             pred_start_time = time.time()
-
+            __in_batch_length = len(batch)
             if ACCEPTS_EXTRAS:
                 preds = predictor(
                     batch, batch_size=batch_size, extras=batch_extra_options
                 )
             else:
                 preds = predictor(batch, batch_size=batch_size)
+
+            if not isinstance(preds, list) or len(preds) != __in_batch_length:
+                _utils.logger.error(
+                    "Something is seriously wrong! len(inputs) != len(outputs) from predictor.py. Check your recipe"
+                )
+                _utils.logger.error(f"Inputs: {batch} length: {__in_batch_length}")
+                _utils.logger.error(
+                    f"Preds: {preds} length: {len(preds) if isinstance(preds, list) else 'N/A'}"
+                )
+                exit()
 
             pred_end_time = time.time()
 

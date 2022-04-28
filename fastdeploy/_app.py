@@ -206,6 +206,13 @@ class Metrics(object):
                         {"name": "Prediction time", "values": []},
                     ],
                 },
+                # "input_size_graph_data": {
+                #     "labels": [],
+                #     "datasets": [
+                #         {"name": "Average input size", "values": []},
+                #         {"name": "Max input size per request", "values": []}
+                #     ],
+                # },
                 "index_to_all_meta": {},
             }
 

@@ -1,9 +1,9 @@
 FROM tensorflow/tensorflow:1.14.0-py3
-RUN python3 -m pip install --upgrade --no-cache-dir pip https://github.com/notAI-tech/fastDeploy/archive/refs/heads/master.zip gunicorn
+RUN python3 -m pip install --upgrade --no-cache-dir pip fastdeploy
 COPY requirements.txt /requirements.txt
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt
 ADD . /recipe
-RUN cd /recipe && python3 predictor.py
+RUN sudo chmod -R a+rw /recipe || chmod -R a+rw /recipe && cd /recipe && python3 predictor.py
 ENTRYPOINT ["/bin/sh", "-c"] 
 
-CMD ["python3 -m fastdeploy --recipe /recipe --mode loop & RECIPE=/recipe MODE=rest gunicorn --preload  -b 0.0.0.0:8080 fastdeploy:wsgi_app --workers=3 --worker-connections=1000 --worker-class=gevent --timeout=1000"] 
+CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --mode loop & python3 -m fastdeploy --recipe /recipe --mode rest"] 

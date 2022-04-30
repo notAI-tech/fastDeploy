@@ -34,7 +34,7 @@ docker run -it -p8080:8080 fastdeploy_echo_json
 **fastDeploy monitor**
 - available on localhost:8080 (or --port)
 
-![](https://raw.githubusercontent.com/notAI-tech/fastDeploy/master/fastDeploy_monitor_logo.png)
+![](https://raw.githubusercontent.com/notAI-tech/fastDeploy/master/fastDeploy_monitor.png)
 
 
 - https://github.com/notAI-tech/fastDeploy/blob/master/recipe.md Writing a recipe for your prediction script

@@ -57,7 +57,7 @@ if not RECIPE or not MODE:
 
     args = parser.parse_args()
 
-    QUEUE_DIR = os.path.abspath(args.recipe)
+    QUEUE_DIR = os.path.join(os.path.abspath(args.recipe), "fastdeploy_dbs")
 
     MODE = args.mode
     RECIPE = os.path.abspath(args.recipe)
@@ -71,7 +71,7 @@ if os.path.exists(RECIPE):
     os.chdir(RECIPE)
 
 if not QUEUE_DIR:
-    QUEUE_DIR = RECIPE
+    QUEUE_DIR = os.path.join(RECIPE, "fastdeploy_dbs")
 
     try:
         if not os.path.exists(os.path.join(RECIPE, ".gitignore")):

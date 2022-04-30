@@ -46,7 +46,6 @@ _request_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.request_index")
 _results_cache = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.results_cache")
 _metrics_cache = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.metrics_cache")
 _meta_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.META_INDEX")
-_htmls_dir = os.path.join(QUEUE_DIR, ".htmls")
 
 REQUEST_INDEX = Index(_request_index)
 RESULTS_INDEX = Cache(_results_cache)
@@ -66,7 +65,7 @@ FASTDEPLOY_UI_PATH = os.getenv(
 )
 
 logger.info(
-    f"REQUEST_INDEX: {_request_index} RESULTS_INDEX: {_results_cache} META_INDEX: {_meta_index} _htmls_dir: {_htmls_dir} IS_FILE_INPUT: {IS_FILE_INPUT} FASTDEPLOY_UI_PATH: {FASTDEPLOY_UI_PATH}"
+    f"REQUEST_INDEX: {_request_index} RESULTS_INDEX: {_results_cache} META_INDEX: {_meta_index} IS_FILE_INPUT: {IS_FILE_INPUT} FASTDEPLOY_UI_PATH: {FASTDEPLOY_UI_PATH}"
 )
 
 # clear if not

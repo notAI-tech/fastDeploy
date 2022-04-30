@@ -2,6 +2,15 @@ import os
 import cv2
 import onnxruntime
 session = onnxruntime.InferenceSession("yolov5s.onnx", None)
+classes_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
+        'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+        'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
+        'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
+        'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
+        'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
+        'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+        'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear',
+        'hair drier', 'toothbrush']
 
 def xywh2xyxy(x):
     # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
@@ -204,13 +213,15 @@ def predictor(img_paths, img_dimension=int(os.getenv("img_dimension", "640")), b
         img = np.ascontiguousarray(img) 
         img = img.astype('float32')
         img = img / 255.0  # 0 - 255 to 0.0 - 1.0
+        print(img.shape)
         if len(img.shape) == 3:
             img = img[None]  # expand for batch dim
+        print(img.shape)
         
         
         pred = torch.Tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
 
-        pred = non_max_suppression(pred, conf_thres=0.2, iou_thres=0.2, classes=None, agnostic=False, max_det=8)
+        pred = non_max_suppression(pred, conf_thres=0.2, iou_thres=0.2, classes=None, agnostic=False, max_det=20)
 
         gn = torch.tensor(img0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
 
@@ -222,11 +233,16 @@ def predictor(img_paths, img_dimension=int(os.getenv("img_dimension", "640")), b
             # Write results
             for *xyxy, conf, cls in reversed(det):
                 xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                line = {"class": int(cls), "xywh": [float(_) for _ in xywh], "conf": float(conf)}  # label format
+                line = {"class": classes_names[int(cls)], "xywh": [float(_) for _ in xywh], "conf": float(conf)}  # label format
                 pred_lines.append(line)
         
         all_preds += [pred_lines]
     
     return all_preds
 
+
+if __name__ == '__main__':
+    import sys
+    import json
+    print(json.dumps(predictor(sys.argv[1:]), indent=4))
 

@@ -19,7 +19,7 @@ TIMEOUT = os.getenv("TIMEOUT", "1000")
 if not RECIPE or not MODE:
     import argparse
 
-    parser = argparse.ArgumentParser(description="CLI for fastDeploy 1.0-rc10")
+    parser = argparse.ArgumentParser(description="CLI for fastDeploy")
     parser.add_argument(
         "--recipe",
         type=str,

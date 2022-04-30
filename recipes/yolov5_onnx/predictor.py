@@ -213,10 +213,8 @@ def predictor(img_paths, img_dimension=int(os.getenv("img_dimension", "640")), b
         img = np.ascontiguousarray(img) 
         img = img.astype('float32')
         img = img / 255.0  # 0 - 255 to 0.0 - 1.0
-        print(img.shape)
         if len(img.shape) == 3:
             img = img[None]  # expand for batch dim
-        print(img.shape)
         
         
         pred = torch.Tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))

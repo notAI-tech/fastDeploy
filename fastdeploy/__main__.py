@@ -76,7 +76,7 @@ if not QUEUE_DIR:
     try:
         if not os.path.exists(os.path.join(RECIPE, ".gitignore")):
             _gitignore_f = open(os.path.join(RECIPE, ".gitignore"), "a")
-            _gitignore_f.write("*.request_index\n*.results_index\n*.log_index")
+            _gitignore_f.write("\nfastdeploy_dbs\nfastdeploy_dbs/*\n")
             _gitignore_f.flush()
             _gitignore_f.close()
     except:
@@ -190,8 +190,8 @@ def build(mode="build_rest"):
     _dockerignore_f.flush()
     _dockerignore_f.close()
 
-    _gitignore_f = open(os.path.join(RECIPE, ".gitignore"), "w")
-    _gitignore_f.write("*.request_index\n*.results_index\n*.log_index")
+    _gitignore_f = open(os.path.join(RECIPE, ".gitignore"), "a")
+    _gitignore_f.write("\nfastdeploy_dbs\nfastdeploy_dbs/*\n")
     _gitignore_f.flush()
     _gitignore_f.close()
 

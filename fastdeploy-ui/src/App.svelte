@@ -64,13 +64,13 @@ let sync_curl_text = 'Loading ...'
 let async_curl_text = 'Loading ...'
 let JSON_CURL_SYNC = `curl -d 'EXAMPLE' -H "Content-Type: application/json" -X POST "http://localhost:8080/infer"`
 let FILE_CURL_SYNC = `curl EXAMPLE "http://localhost:8080/infer"`
-let res_curl_text = `curl -d '{"unique_id": "REQUEST_ID"}' -H "Content-Type: application/json" -X POST "http://localhost:8080/res"`
+let res_curl_text = `curl -d '{"unique_id": "REQUEST_ID"}' -H "Content-Type: application/json" -X POST "http://localhost:8080/result"`
 
 let sync_python_text = 'Loading ...'
 let async_python_text = 'Loading ...'
 let JSON_PYTHON_SYNC = `requests.post("http://localhost:8080/infer", json=EXAMPLE).json()`
 let FILE_PYTHON_SYNC = `requests.post("http://localhost:8080/infer", files={"f1": open("EXAMPLE", "rb")}).json()`
-let res_python_text = `requests.get("http://localhost:8080/res", json={"unique_id": "REQUEST_ID"}).json()`
+let res_python_text = `requests.get("http://localhost:8080/result", json={"unique_id": "REQUEST_ID"}).json()`
 let index_to_all_metadata = {}
 
 let META = {};
@@ -103,14 +103,14 @@ onMount(async () => {
 
             if (!META['is_file_input']) {
                 sync_curl_text = JSON_CURL_SYNC.replaceAll('EXAMPLE', JSON.stringify(data["example"]))
-				async_curl_text = sync_curl_text + '?async=true'
+				async_curl_text = sync_curl_text.replaceAll("/infer", "/infer?async=true")
 				
 				sync_python_text = JSON_PYTHON_SYNC.replaceAll('EXAMPLE', JSON.stringify(data["example"]))
 				async_python_text = sync_python_text.replaceAll("/infer", "/infer?async=true")
 
             } else {
 				sync_curl_text = FILE_CURL_SYNC.replaceAll('EXAMPLE', '-F f1=@"' + data["example"][0] + '"')
-				async_curl_text = sync_curl_text + '?async=true'
+				 async_curl_text = sync_curl_text.replaceAll("/infer", "/infer?async=true")
 				
 				sync_python_text = FILE_PYTHON_SYNC.replaceAll('EXAMPLE', data["example"][0])
 				async_python_text = sync_python_text.replaceAll("/infer", "/infer?async=true")

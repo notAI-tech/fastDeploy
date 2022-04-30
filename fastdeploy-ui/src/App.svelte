@@ -192,11 +192,11 @@ async function getFileResult() {
 	  <SkipToContent />
 	</svelte:fragment>
 	
-	<HeaderNav>
+	<!-- <HeaderNav>
 	  <HeaderNavItem href="/" text="" />
 	  <HeaderNavItem href="/" text="" />
 	  <HeaderNavItem href="/" text="" />
-	</HeaderNav>
+	</HeaderNav> -->
 
 	<!-- <SideNav bind:isOpen={isSideNavOpen} rail>
 		<SideNavItems>

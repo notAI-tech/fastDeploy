@@ -1,6 +1,6 @@
 # What is a Recipe?
 
-- TO serve your model via fastDeploy, a folder with files `example.py`, `predictor.py` and optional `requirements.txt`, `extras.sh` needs to be added to your existing scripts.
+- To serve your model via fastDeploy, files `example.py`, `predictor.py` and optional `requirements.txt`, `extras.sh` needs to be added to your existing scripts.
 - These files make up `recipe` for fastDeploy
 
 # predictor.py
@@ -24,8 +24,8 @@ def predictor.py(list_of_inputs, batch_size=1):
 
 ```python
 example = [INPUT]
-# INPUT can be string/lsit/dict anything your scripts need.
-# INPUT can also be file path, in which case you can keep example file next to example.py and INPUT = example file name
+# INPUT can be string/lsit/dict (REST API will accept JSON) anything your scripts need.
+# INPUT can also be file path (in which case the REST API will accept multi-part posts), in which case you can keep example file next to example.py and INPUT = example file name
 ```
 
 # requirements.txt 

@@ -74,7 +74,8 @@ def start_loop():
                 for __i, _ in enumerate(in_data):
                     unique_ids.append(unique_id)
                     batch.append(_)
-                    batch_extra_options += _batch_extra_options
+
+                batch_extra_options += _batch_extra_options
 
             if len(unique_ids) == 0:
                 if first_sleep_start_time == 0:

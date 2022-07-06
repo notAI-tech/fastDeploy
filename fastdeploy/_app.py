@@ -19,8 +19,8 @@ from functools import partial
 
 from . import _utils
 
+_utils.logger.info(f"Waiting for warmup, batch size search to finish.")
 while "time_per_example" not in _utils.META_INDEX:
-    _utils.logger.info(f"Waiting for batch size search to finish.")
     time.sleep(5)
 
 ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)

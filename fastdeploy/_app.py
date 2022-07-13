@@ -300,6 +300,29 @@ ALL_META["is_file_input"] = IS_FILE_INPUT
 ALL_META["example"] = _utils.example
 
 
+class Health(object):
+    def on_get(self, req, resp):
+        stuck_for = req.params.get("stuck")
+        predictor_wait_started_at = _utils.META_INDEX["predictor_wait_started_at"]
+
+        if (
+            stuck_for
+            and predictor_wait_started_at
+            and time.time() - predictor_wait_started_at >= stuck_for
+        ):
+            resp.status = falcon.HTTP_503
+            resp.media = {
+                "predictor_status": f"predictor stuck for {time.time() - predictor_wait_started_at}. deemed stuck."
+            }
+        else:
+            resp.status = falcon.HTTP_200
+            resp.media = {
+                "predictor_status": f"queue waiting for predictor for {time.time() - predictor_wait_started_at}"
+                if predictor_wait_started_at
+                else "queue empty"
+            }
+
+
 class Meta(object):
     def on_get(self, req, resp):
         if req.params.get("example") == "true":
@@ -359,11 +382,13 @@ infer_api = Infer()
 res_api = Res()
 metrics_api = Metrics()
 meta_api = Meta()
+health_api = Health()
 
 app.add_route("/infer", infer_api)
 app.add_route("/result", res_api)
 app.add_route("/metrics", metrics_api)
 app.add_route("/meta", meta_api)
+app.add_route("/health", health_api)
 
 
 app.add_static_route(

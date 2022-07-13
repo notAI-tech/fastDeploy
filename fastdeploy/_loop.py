@@ -15,7 +15,7 @@ def start_loop():
         from predictor import predictor
 
         try:
-            predictor([], extras=[])
+            predictor(_utils.example[:1], extras=[None])
             ACCEPTS_EXTRAS = True
         except:
             pass
@@ -64,6 +64,7 @@ def start_loop():
         first_sleep_start_time = 0
         __loop_is_sleeping = False
         while True:
+            _utils.META_INDEX["predictor_wait_started_at"] = 0
             if len(_utils.REQUEST_INDEX):
                 (
                     unique_id,
@@ -124,12 +125,16 @@ def start_loop():
         try:
             pred_start_time = time.time()
             __in_batch_length = len(batch)
+            _utils.META_INDEX["predictor_wait_started_at"] = time.time()
+
             if ACCEPTS_EXTRAS:
                 preds = predictor(
                     batch, batch_size=batch_size, extras=batch_extra_options
                 )
             else:
                 preds = predictor(batch, batch_size=batch_size)
+
+            _utils.META_INDEX["predictor_wait_started_at"] = 0
 
             if not isinstance(preds, list) or len(preds) != __in_batch_length:
                 _utils.logger.error(

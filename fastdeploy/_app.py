@@ -302,7 +302,7 @@ ALL_META["example"] = _utils.example
 
 class Health(object):
     def on_get(self, req, resp):
-        stuck_for = req.params.get("stuck")
+        stuck_for = float(req.params.get("stuck"))
         predictor_wait_started_at = _utils.META_INDEX["predictor_wait_started_at"]
 
         if (

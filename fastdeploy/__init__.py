@@ -153,22 +153,23 @@ def build(mode="build_rest"):
     dockerfile_lines.append(
         f"RUN python3 -m pip install --upgrade --no-cache-dir pip fastdeploy"
     )
-    if os.path.exists(os.path.join(RECIPE, "extras.sh")):
-        dockerfile_lines.append(f"COPY extras.sh /extras.sh")
-        dockerfile_lines.append(f"RUN bash /extras.sh")
-
-    dockerfile_lines.append(f"COPY requirements.txt /requirements.txt")
-    dockerfile_lines.append(
-        f"RUN python3 -m pip install --no-cache-dir -r /requirements.txt"
-    )
 
     # if not recipe_base_name:
     recipe_base_name = "/recipe"
 
     dockerfile_lines.append(f"ADD . {recipe_base_name}")
 
+    if os.path.exists(os.path.join(RECIPE, "extras.sh")):
+        dockerfile_lines.append(f"cd {recipe_base_name} && RUN bash extras.sh")
+
     dockerfile_lines.append(
-        f"RUN sudo chmod -R a+rw /recipe || chmod -R a+rw /recipe && cd {recipe_base_name} && python3 predictor.py"
+        f"RUN cd {recipe_base_name} && python3 -m pip install --no-cache-dir -r requirements.txt"
+    )
+
+    
+
+    dockerfile_lines.append(
+        f"RUN sudo chmod -R a+rw {recipe_base_name} || chmod -R a+rw {recipe_base_name} && cd {recipe_base_name} && python3 predictor.py"
     )
 
     dockerfile_lines.append(
@@ -177,11 +178,11 @@ def build(mode="build_rest"):
 
     if mode == "build_rest":
         dockerfile_lines.append(
-            f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --mode loop & python3 -m fastdeploy --recipe /recipe --mode rest"] \n'
+            f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe {recipe_base_name} --mode loop & python3 -m fastdeploy --recipe {recipe_base_name} --mode rest"] \n'
         )
     elif mode == "build_websocket":
         dockerfile_lines.append(
-            f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --mode loop & python3 -m fastdeploy --recipe /recipe --mode websocket"] \n'
+            f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe {recipe_base_name} --mode loop & python3 -m fastdeploy --recipe {recipe_base_name} --mode websocket"] \n'
         )
 
     dockerfile_path = os.path.join(RECIPE, "fastDeploy.auto_dockerfile")

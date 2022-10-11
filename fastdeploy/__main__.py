@@ -160,7 +160,7 @@ def build(mode="build_rest"):
     dockerfile_lines.append(f"ADD . {recipe_base_name}")
 
     if os.path.exists(os.path.join(RECIPE, "extras.sh")):
-        dockerfile_lines.append(f"cd {recipe_base_name} && RUN bash extras.sh")
+        dockerfile_lines.append(f"RUN cd {recipe_base_name} && bash extras.sh")
 
     dockerfile_lines.append(
         f"RUN cd {recipe_base_name} && python3 -m pip install --no-cache-dir -r requirements.txt"

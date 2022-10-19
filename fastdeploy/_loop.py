@@ -140,7 +140,9 @@ def start_loop():
                 _utils.logger.error(
                     "Something is seriously wrong! len(inputs) != len(outputs) from predictor.py. Check your recipe"
                 )
-                _utils.logger.error(f"Inputs: {batch} length: {__in_batch_length}")
+                _utils.logger.error(
+                    f"Inputs: {batch} length: {__in_batch_length, len(batch)}"
+                )
                 _utils.logger.error(
                     f"Preds: {preds} length: {len(preds) if isinstance(preds, list) else 'N/A'}"
                 )

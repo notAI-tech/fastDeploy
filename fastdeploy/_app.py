@@ -303,23 +303,27 @@ ALL_META["example"] = _utils.example
 class Health(object):
     def on_get(self, req, resp):
         stuck_for = float(req.params.get("stuck"))
-        predictor_wait_started_at = _utils.META_INDEX["predictor_wait_started_at"]
+        last_prediction_loop_start_time = _utils.META_INDEX["last_prediction_loop_start_time"]
+        prediction_loop_stuck_for = time.time() - last_prediction_loop_start_time
 
-        if (
-            stuck_for
-            and predictor_wait_started_at
-            and time.time() - predictor_wait_started_at >= stuck_for
-        ):
-            resp.status = falcon.HTTP_503
-            resp.media = {
-                "predictor_status": f"predictor stuck for {time.time() - predictor_wait_started_at}. deemed stuck."
-            }
+        if last_prediction_loop_start_time:
+            if (
+                stuck_for
+                and prediction_loop_stuck_for >= stuck_for
+            ):
+                resp.status = falcon.HTTP_503
+                resp.media = {
+                    "predictor_status": f"prediction loop stuck for {prediction_loop_stuck_for}. deemed stuck."
+                }
+            else:
+                resp.status = falcon.HTTP_200
+                resp.media = {
+                    "predictor_status": f"prediction loop running for {prediction_loop_stuck_for}"
+                }
         else:
             resp.status = falcon.HTTP_200
             resp.media = {
-                "predictor_status": f"queue waiting for predictor for {time.time() - predictor_wait_started_at}"
-                if predictor_wait_started_at
-                else "queue empty"
+                "predictor_status": f"prediction loop not started"
             }
 
 

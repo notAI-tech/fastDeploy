@@ -143,41 +143,41 @@ class Infer(object):
 
                             in_data.append(_temp_file_path)
 
-            metrics = {
-                "received": time.time(),
-                "prediction_start": -1,
-                "prediction_end": -1,
-                "batch_size": len(in_data),
-                "predicted_in_batch": -1,
-                "responded": -1,
-            }
+                metrics = {
+                    "received": time.time(),
+                    "prediction_start": -1,
+                    "prediction_end": -1,
+                    "batch_size": len(in_data),
+                    "predicted_in_batch": -1,
+                    "responded": -1,
+                }
 
-            _utils.REQUEST_INDEX[unique_id] = (
-                in_data,
-                metrics,
-                [_extra_options_for_predictor.get(_) for _ in _in_file_names],
-            )
-
-            _utils.META_INDEX["TOTAL_REQUESTS"] += 1
-
-            if is_async_request:
-                resp.media = {"unique_id": unique_id, "success": True}
-                resp.status = falcon.HTTP_200
-            else:
-                preds, status, _metrics = wait_and_read_pred(unique_id)
-
-                if not len(_metrics):
-                    _metrics = metrics
-
-                _metrics["responded"] = time.time()
-                _utils.METRICS_CACHE[len(_utils.METRICS_CACHE)] = (
-                    unique_id,
-                    _metrics,
+                _utils.REQUEST_INDEX[unique_id] = (
                     in_data,
+                    metrics,
+                    [_extra_options_for_predictor.get(_) for _ in _in_file_names],
                 )
 
-                resp.media = preds
-                resp.status = status
+                _utils.META_INDEX["TOTAL_REQUESTS"] += 1
+
+                if is_async_request:
+                    resp.media = {"unique_id": unique_id, "success": True}
+                    resp.status = falcon.HTTP_200
+                else:
+                    preds, status, _metrics = wait_and_read_pred(unique_id)
+
+                    if not len(_metrics):
+                        _metrics = metrics
+
+                    _metrics["responded"] = time.time()
+                    _utils.METRICS_CACHE[len(_utils.METRICS_CACHE)] = (
+                        unique_id,
+                        _metrics,
+                        in_data,
+                    )
+
+                    resp.media = preds
+                    resp.status = status
 
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)

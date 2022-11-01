@@ -10,6 +10,8 @@ IS_FILE_INPUT = _utils.META_INDEX["IS_FILE_INPUT"]
 
 
 def start_loop():
+    _utils.META_INDEX["last_prediction_loop_start_time"] = 0
+
     ACCEPTS_EXTRAS = False
     try:
         from predictor import predictor
@@ -64,7 +66,8 @@ def start_loop():
         first_sleep_start_time = 0
         __loop_is_sleeping = False
         while True:
-            _utils.META_INDEX["predictor_wait_started_at"] = 0
+            _utils.META_INDEX["last_prediction_loop_start_time"] = time.time()
+            
             if len(_utils.REQUEST_INDEX):
                 (
                     unique_id,
@@ -125,7 +128,6 @@ def start_loop():
         try:
             pred_start_time = time.time()
             __in_batch_length = len(batch)
-            _utils.META_INDEX["predictor_wait_started_at"] = time.time()
 
             if ACCEPTS_EXTRAS:
                 preds = predictor(
@@ -133,8 +135,6 @@ def start_loop():
                 )
             else:
                 preds = predictor(batch, batch_size=batch_size)
-
-            _utils.META_INDEX["predictor_wait_started_at"] = 0
 
             if not isinstance(preds, list) or len(preds) != __in_batch_length:
                 _utils.logger.error(

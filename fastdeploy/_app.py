@@ -143,41 +143,41 @@ class Infer(object):
 
                             in_data.append(_temp_file_path)
 
-            metrics = {
-                "received": time.time(),
-                "prediction_start": -1,
-                "prediction_end": -1,
-                "batch_size": len(in_data),
-                "predicted_in_batch": -1,
-                "responded": -1,
-            }
+                metrics = {
+                    "received": time.time(),
+                    "prediction_start": -1,
+                    "prediction_end": -1,
+                    "batch_size": len(in_data),
+                    "predicted_in_batch": -1,
+                    "responded": -1,
+                }
 
-            _utils.REQUEST_INDEX[unique_id] = (
-                in_data,
-                metrics,
-                [_extra_options_for_predictor.get(_) for _ in _in_file_names],
-            )
-
-            _utils.META_INDEX["TOTAL_REQUESTS"] += 1
-
-            if is_async_request:
-                resp.media = {"unique_id": unique_id, "success": True}
-                resp.status = falcon.HTTP_200
-            else:
-                preds, status, _metrics = wait_and_read_pred(unique_id)
-
-                if not len(_metrics):
-                    _metrics = metrics
-
-                _metrics["responded"] = time.time()
-                _utils.METRICS_CACHE[len(_utils.METRICS_CACHE)] = (
-                    unique_id,
-                    _metrics,
+                _utils.REQUEST_INDEX[unique_id] = (
                     in_data,
+                    metrics,
+                    [_extra_options_for_predictor.get(_) for _ in _in_file_names],
                 )
 
-                resp.media = preds
-                resp.status = status
+                _utils.META_INDEX["TOTAL_REQUESTS"] += 1
+
+                if is_async_request:
+                    resp.media = {"unique_id": unique_id, "success": True}
+                    resp.status = falcon.HTTP_200
+                else:
+                    preds, status, _metrics = wait_and_read_pred(unique_id)
+
+                    if not len(_metrics):
+                        _metrics = metrics
+
+                    _metrics["responded"] = time.time()
+                    _utils.METRICS_CACHE[len(_utils.METRICS_CACHE)] = (
+                        unique_id,
+                        _metrics,
+                        in_data,
+                    )
+
+                    resp.media = preds
+                    resp.status = status
 
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)
@@ -303,23 +303,27 @@ ALL_META["example"] = _utils.example
 class Health(object):
     def on_get(self, req, resp):
         stuck_for = float(req.params.get("stuck"))
-        predictor_wait_started_at = _utils.META_INDEX["predictor_wait_started_at"]
+        last_prediction_loop_start_time = _utils.META_INDEX["last_prediction_loop_start_time"]
+        prediction_loop_stuck_for = time.time() - last_prediction_loop_start_time
 
-        if (
-            stuck_for
-            and predictor_wait_started_at
-            and time.time() - predictor_wait_started_at >= stuck_for
-        ):
-            resp.status = falcon.HTTP_503
-            resp.media = {
-                "predictor_status": f"predictor stuck for {time.time() - predictor_wait_started_at}. deemed stuck."
-            }
+        if last_prediction_loop_start_time:
+            if (
+                stuck_for
+                and prediction_loop_stuck_for >= stuck_for
+            ):
+                resp.status = falcon.HTTP_503
+                resp.media = {
+                    "predictor_status": f"prediction loop stuck for {prediction_loop_stuck_for}. deemed stuck."
+                }
+            else:
+                resp.status = falcon.HTTP_200
+                resp.media = {
+                    "predictor_status": f"prediction loop running for {prediction_loop_stuck_for}"
+                }
         else:
             resp.status = falcon.HTTP_200
             resp.media = {
-                "predictor_status": f"queue waiting for predictor for {time.time() - predictor_wait_started_at}"
-                if predictor_wait_started_at
-                else "queue empty"
+                "predictor_status": f"prediction loop not started"
             }
 
 

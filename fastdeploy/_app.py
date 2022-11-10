@@ -62,6 +62,7 @@ def wait_and_read_pred(unique_id):
         except:
             # stop in case of timeout
             if time.time() - start_time >= _utils.TIMEOUT:
+                del _utils.REQUEST_INDEX[unique_id]
                 _utils.logger.warn(
                     f"unique_id: {unique_id} timedout, with timeout {_utils.TIMEOUT}"
                 )

@@ -327,6 +327,32 @@ class Health(object):
                 "predictor_status": f"prediction loop not started"
             }
 
+class Readiness(object):
+    def on_get(self, req, resp):
+        total_prediction_time = _utils.META_INDEX["time_per_example"]
+        total_requests = 1
+        for i in range(min(100, len(_utils.METRICS_CACHE))):
+            _, _metrics, _ = _utils.METRICS_CACHE[i]
+            total_prediction_time += (_metrics["prediction_end"]-_metrics["prediction_start"])
+            total_requests += _metrics["predicted_in_batch"]
+
+        total_reqs_in_queue = 0
+        for k, v in _utils.REQUEST_INDEX.items():
+            total_reqs_in_queue += len(v[0])
+
+        approx_wait_time = total_reqs_in_queue*(total_prediction_time/total_requests)
+        max_wait_time = float(req.params.get("waittime"))
+
+        if (max_wait_time) and (approx_wait_time > max_wait_time):
+                resp.status = falcon.HTTP_503
+                resp.media = {
+                    "wait_time": f"current wait time is {approx_wait_time}. not ready"
+                }
+        else:
+            resp.status = falcon.HTTP_200
+            resp.media = {
+                "wait_time": f"current wait time is {approx_wait_time}"
+            }
 
 class Meta(object):
     def on_get(self, req, resp):
@@ -388,12 +414,14 @@ res_api = Res()
 metrics_api = Metrics()
 meta_api = Meta()
 health_api = Health()
+readiness_api = Readiness()
 
 app.add_route("/infer", infer_api)
 app.add_route("/result", res_api)
 app.add_route("/metrics", metrics_api)
 app.add_route("/meta", meta_api)
 app.add_route("/health", health_api)
+app.add_route("/readiness", readiness_api)
 
 
 app.add_static_route(

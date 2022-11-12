@@ -42,33 +42,32 @@ BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY = float(
 )
 MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
 
-_request_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.request_index")
-_results_cache = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.results_cache")
-_metrics_cache = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.metrics_cache")
-_meta_index = os.path.join(QUEUE_DIR, f"{QUEUE_NAME}.META_INDEX")
-
-REQUEST_INDEX = Index(_request_index)
-RESULTS_INDEX = Cache(_results_cache)
-METRICS_CACHE = Cache(_metrics_cache)
+_meta_index = os.path.join(QUEUE_DIR, f"common.META_INDEX")
 META_INDEX = Index(_meta_index)
-
 META_INDEX["IS_FILE_INPUT"] = IS_FILE_INPUT
 META_INDEX["PREDICTION_LOOP_SLEEP"] = PREDICTION_LOOP_SLEEP
 META_INDEX["BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR"] = BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR
 META_INDEX["BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY"] = BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY
 META_INDEX["MANAGER_LOOP_SLEEP"] = MANAGER_LOOP_SLEEP
 META_INDEX["TOTAL_REQUESTS"] = 0
+METRICS_CACHE = Cache(os.path.join(QUEUE_DIR, "metrics_cache"))
+
+
+def get_request_index_results_index(predictor_id):
+    _request_index = os.path.join(QUEUE_DIR, f"{predictor_id}.request_index")
+    _results_cache = os.path.join(QUEUE_DIR, f"{predictor_id}.results_cache")
+
+    REQUEST_INDEX = Index(_request_index)
+    RESULTS_INDEX = Cache(_results_cache)
+
+    return REQUEST_INDEX, RESULTS_INDEX
+
 
 FASTDEPLOY_UI_PATH = os.getenv(
     "FASTDEPLOYUI",
     os.path.join(os.path.split(os.path.abspath(__file__))[0], "fastdeploy-ui"),
 )
 
-logger.info(
-    f"REQUEST_INDEX: {_request_index} RESULTS_INDEX: {_results_cache} META_INDEX: {_meta_index} IS_FILE_INPUT: {IS_FILE_INPUT} FASTDEPLOY_UI_PATH: {FASTDEPLOY_UI_PATH}"
-)
-
-# clear if not
 # No real use in making these configurable.
 
 # Number of gunicorn workers to use
@@ -181,17 +180,3 @@ def find_optimum_batch_sizes(
     logger.info(f"optimum batch size is {batch_size}")
 
     return batch_size, time_per_example
-
-
-def write_webhook(unique_id, webhook):
-    """
-    writes webhook string (url) to corresponding file.
-
-    :param unique_id: unique_id
-    :param webhook: webhook string
-    """
-    if webhook and isinstance(webhook, str):
-        open(os.path.join(RAM_DIR, unique_id + ".webhook"), "w").write(webhook)
-    else:
-        if webhook is not None:
-            logger.warn(f"id: {unique_id}, webhook: {webhook} is not valid.")

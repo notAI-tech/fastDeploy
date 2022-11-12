@@ -20,13 +20,29 @@ from functools import partial
 from . import _utils
 
 _utils.logger.info(f"Waiting for warmup, batch size search to finish.")
-while "time_per_example" not in _utils.META_INDEX:
+
+while "LAST_PREDICTOR_SEQUENCE" not in _utils.META_INDEX:
+    time.sleep(5)
+
+LAST_PREDICTOR_SEQUENCE = _utils.META_INDEX["LAST_PREDICTOR_SEQUENCE"]
+
+print("-->", LAST_PREDICTOR_SEQUENCE)
+
+while f"example_{LAST_PREDICTOR_SEQUENCE}" not in _utils.META_INDEX:
     time.sleep(5)
 
 ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
 
-TIME_PER_EXAMPLE = _utils.META_INDEX["time_per_example"]
+TIME_PER_EXAMPLE = sum(
+    [
+        _utils.META_INDEX[f"time_per_example_{_}"]
+        for _ in range(LAST_PREDICTOR_SEQUENCE + 1)
+    ]
+)
 IS_FILE_INPUT = _utils.META_INDEX["IS_FILE_INPUT"]
+
+REQUEST_INDEX, __ = _utils.get_request_index_results_index(LAST_PREDICTOR_SEQUENCE)
+__, RESULTS_INDEX = _utils.get_request_index_results_index(0)
 
 
 def wait_and_read_pred(unique_id):
@@ -48,7 +64,7 @@ def wait_and_read_pred(unique_id):
     while True:
         try:
             # if result doesn't exist for this uuid,  while loop continues/
-            pred, metrics = _utils.RESULTS_INDEX[unique_id]
+            pred, metrics = RESULTS_INDEX[unique_id]
             try:
                 response = {"prediction": pred, "success": True}
             # if return dict has any non json serializable values, we str() it
@@ -62,7 +78,7 @@ def wait_and_read_pred(unique_id):
         except:
             # stop in case of timeout
             if time.time() - start_time >= _utils.TIMEOUT:
-                del _utils.REQUEST_INDEX[unique_id]
+                del REQUEST_INDEX[unique_id]
                 _utils.logger.warn(
                     f"unique_id: {unique_id} timedout, with timeout {_utils.TIMEOUT}"
                 )
@@ -153,7 +169,7 @@ class Infer(object):
                     "responded": -1,
                 }
 
-                _utils.REQUEST_INDEX[unique_id] = (
+                REQUEST_INDEX[unique_id] = (
                     in_data,
                     metrics,
                     [_extra_options_for_predictor.get(_) for _ in _in_file_names],
@@ -193,7 +209,6 @@ class Metrics(object):
             end_time = int(req.params.get("from_time", time.time()))
             total_time = int(req.params.get("total_time", 3600))
 
-            loop_batch_size = _utils.META_INDEX["batch_size"]
             batch_size_to_time_per_example = _utils.META_INDEX[
                 "batch_size_to_time_per_example"
             ]
@@ -303,29 +318,32 @@ ALL_META["example"] = _utils.example
 
 class Health(object):
     def on_get(self, req, resp):
-        stuck_for = float(req.params.get("stuck"))
-        last_prediction_loop_start_time = _utils.META_INDEX["last_prediction_loop_start_time"]
-        prediction_loop_stuck_for = time.time() - last_prediction_loop_start_time
+        stuck_for = req.params.get("stuck")
+        if stuck_for:
+            stuck_for = float(stuck_for)
+            last_prediction_loop_start_time = _utils.META_INDEX[
+                "last_prediction_loop_start_time"
+            ]
+            prediction_loop_stuck_for = time.time() - last_prediction_loop_start_time
 
-        if last_prediction_loop_start_time:
-            if (
-                stuck_for
-                and prediction_loop_stuck_for >= stuck_for
-            ):
-                resp.status = falcon.HTTP_503
-                resp.media = {
-                    "predictor_status": f"prediction loop stuck for {prediction_loop_stuck_for}. deemed stuck."
-                }
+            if last_prediction_loop_start_time:
+                if stuck_for and prediction_loop_stuck_for >= stuck_for:
+                    resp.status = falcon.HTTP_503
+                    resp.media = {
+                        "predictor_status": f"prediction loop stuck for {prediction_loop_stuck_for}. deemed stuck."
+                    }
+                else:
+                    resp.status = falcon.HTTP_200
+                    resp.media = {
+                        "predictor_status": f"prediction loop running for {prediction_loop_stuck_for}"
+                    }
             else:
                 resp.status = falcon.HTTP_200
-                resp.media = {
-                    "predictor_status": f"prediction loop running for {prediction_loop_stuck_for}"
-                }
+                resp.media = {"predictor_status": f"prediction loop not started"}
+
         else:
-            resp.status = falcon.HTTP_200
-            resp.media = {
-                "predictor_status": f"prediction loop not started"
-            }
+            pass
+            # time.time() - REQUEST_INDEX[]
 
 
 class Meta(object):
@@ -346,10 +364,10 @@ class Res(object):
             unique_id = req.media["unique_id"]
             _utils.logger.info(f"unique_id: {unique_id} Result request received.")
             try:
-                pred, metrics = _utils.RESULTS_INDEX[unique_id]
+                pred, metrics = RESULTS_INDEX[unique_id]
                 resp.media = {"success": True, "prediction": pred}
             except:
-                if unique_id in _utils.REQUEST_INDEX:
+                if unique_id in REQUEST_INDEX:
                     resp.media = {"success": None, "reason": "processing"}
                 else:
                     resp.media = {
@@ -428,7 +446,7 @@ class WebSocketInfer(WebSocketApplication):
                     "responded": -1,
                 }
                 message_id = f"{self.connection_id}.{self.n}"
-                _utils.REQUEST_INDEX[message_id] = ([message], metrics)
+                REQUEST_INDEX[message_id] = ([message], metrics)
                 preds, status, metrics = wait_and_read_pred(message_id)
                 if "prediction" in preds:
                     preds["prediction"] = preds["prediction"][0]

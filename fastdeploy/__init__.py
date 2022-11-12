@@ -7,6 +7,7 @@ except:
 
 import os
 import sys
+import glob
 import subprocess
 
 RECIPE = os.getenv("RECIPE")
@@ -55,6 +56,10 @@ if not RECIPE or not MODE:
         required=False,
     )
 
+    parser.add_argument(
+        "--predictor", type=str, help="predictor to run", required=False
+    )
+
     args = parser.parse_args()
 
     QUEUE_DIR = os.path.join(os.path.abspath(args.recipe), "fastdeploy_dbs")
@@ -86,7 +91,17 @@ if not QUEUE_DIR:
 def loop():
     from ._loop import start_loop
 
-    start_loop()
+    if os.path.exists("predictor.py"):
+        start_loop("predictor.py")
+    elif args.predictor:
+        start_loop(args.predictor)
+    else:
+        print(f"RUN THE FOLLOWING COMMANDS")
+        for _ in sorted(
+            glob.glob("predictor_*.py"),
+            key=lambda x: int(x.split("_")[-1].split(".")[0]),
+        ):
+            print(f"append your command with --predictor {_}")
 
 
 def rest():
@@ -165,8 +180,6 @@ def build(mode="build_rest"):
     dockerfile_lines.append(
         f"RUN cd {recipe_base_name} && python3 -m pip install --no-cache-dir -r requirements.txt"
     )
-
-    
 
     dockerfile_lines.append(
         f"RUN sudo chmod -R a+rw {recipe_base_name} || chmod -R a+rw {recipe_base_name} && cd {recipe_base_name} && python3 predictor.py"

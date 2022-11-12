@@ -5,24 +5,116 @@ import time
 import shutil
 
 from . import _utils
+import importlib
 
-IS_FILE_INPUT = _utils.META_INDEX["IS_FILE_INPUT"]
+
+def get_predictor_and_info(predictor_file_path):
+    predictor_name = os.path.basename(predictor_file_path)
+    predictor = importlib.import_module(os.path.splitext(predictor_name)[0]).predictor
+    predictor_sequence = 0
+    if predictor_name == "predictor.py":
+        is_first = True
+        is_last = True
+    else:
+        predictor_sequence = int(predictor_name.split("predictor_")[1].split(".")[0])
+
+        is_first = not os.path.exists(
+            predictor_file_path.replace(
+                f"predictor_{predictor_sequence}.py",
+                f"predictor_{predictor_sequence - 1}.py",
+            )
+        )
+        is_last = not os.path.exists(
+            predictor_file_path.replace(
+                f"predictor_{predictor_sequence}.py",
+                f"predictor_{predictor_sequence + 1}.py",
+            )
+        )
+
+        predictor_sequence = predictor_sequence - 1
+
+    REQUEST_INDEX, RESULTS_INDEX = _utils.get_request_index_results_index(
+        predictor_sequence
+    )
+
+    if is_last:
+        _utils.META_INDEX["LAST_PREDICTOR_SEQUENCE"] = predictor_sequence
+
+    if is_first:
+        _utils.META_INDEX["FIRST_PREDICTOR_SEQUENCE"] = predictor_sequence
+
+    return (
+        predictor,
+        predictor_sequence,
+        is_first,
+        is_last,
+        REQUEST_INDEX,
+        RESULTS_INDEX,
+    )
 
 
-def start_loop():
-    _utils.META_INDEX["last_prediction_loop_start_time"] = 0
-
+def start_loop(predictor_file_path):
     ACCEPTS_EXTRAS = False
+    IS_FILE_INPUT = False
+
+    (
+        predictor,
+        predictor_sequence,
+        is_first,
+        is_last,
+        REQUEST_INDEX,
+        RESULTS_INDEX,
+    ) = get_predictor_and_info(predictor_file_path=predictor_file_path)
+
     try:
-        from predictor import predictor
+        _utils.META_INDEX[f"last_prediction_loop_start_time_{predictor_sequence}"] = 0
+        if predictor_sequence == 0:
+            _utils.META_INDEX["example_0"] = _utils.example
 
-        try:
-            predictor(_utils.example[:1], extras=[None])
-            ACCEPTS_EXTRAS = True
-        except:
-            pass
+            if isinstance(_utils.example[0], str) and os.path.exists(_utils.example[0]):
+                _utils.META_INDEX["IS_FILE_INPUT"] = True
+            else:
+                _utils.META_INDEX["IS_FILE_INPUT"] = False
 
-        _utils.META_INDEX["ACCEPTS_EXTRAS"] = ACCEPTS_EXTRAS
+            while True:
+                try:
+                    _utils.META_INDEX[f"example_{predictor_sequence}"]
+                    break
+                except:
+                    try:
+                        if _utils.META_INDEX[
+                            f"failed_predictor_{predictor_sequence - 1}"
+                        ]:
+                            exit()
+                    except:
+                        pass
+
+                    time.sleep(2)
+                    pass
+
+            try:
+                predictor(
+                    _utils.META_INDEX[f"example_{predictor_sequence}"][:1],
+                    extras=[None],
+                )
+                ACCEPTS_EXTRAS = True
+            except:
+                try:
+                    predictor(_utils.META_INDEX[f"example_{predictor_sequence}"][:1])
+                    ACCEPTS_EXTRAS = False
+                except:
+                    _utils.META_INDEX[f"failed_predictor_{predictor_sequence}"] = True
+
+            _utils.META_INDEX["ACCEPTS_EXTRAS"] = ACCEPTS_EXTRAS
+
+        if ACCEPTS_EXTRAS:
+            _utils.META_INDEX[f"example_{predictor_sequence + 1}"], extras = predictor(
+                _utils.META_INDEX[f"example_{predictor_sequence}"][:1], extras=[None]
+            )
+        else:
+            _utils.META_INDEX[f"example_{predictor_sequence + 1}"] = predictor(
+                _utils.META_INDEX[f"example_{predictor_sequence}"][:1]
+            )
 
         _utils.logger.info(f'ACCEPTS_EXTRAS: {_utils.META_INDEX["ACCEPTS_EXTRAS"]}')
     except Exception as ex:
@@ -35,19 +127,21 @@ def start_loop():
     """
 
     # warmup
-    _utils.warmup(predictor, _utils.example)
+    _utils.warmup(predictor, _utils.META_INDEX[f"example_{predictor_sequence}"])
 
-    # find optimal batch size and get_time_per _utils.example
+    # find optimal batch size and get_time_per _utils.META_INDEX[f"example_{predictor_sequence}"]
     batch_size, time_per_example = _utils.find_optimum_batch_sizes(
-        predictor, _utils.example
+        predictor, _utils.META_INDEX[f"example_{predictor_sequence}"]
     )
 
     max_wait_time = time_per_example * _utils.MAX_WAIT
 
     # write batch size to temp file for use in generating _run.sh
-    _utils.META_INDEX["batch_size"] = batch_size
-    _utils.META_INDEX["time_per_example"] = time_per_example
-    _utils.logger.info(f"max_wait_time: {max_wait_time}, batch_size: {batch_size}")
+    _utils.META_INDEX[f"batch_size_{predictor_sequence}"] = batch_size
+    _utils.META_INDEX[f"time_per_example_{predictor_sequence}"] = time_per_example
+    _utils.logger.info(
+        f"max_wait_time_{predictor_sequence}: {max_wait_time}, batch_size_{predictor_sequence}: {batch_size}"
+    )
 
     # list of files/data to be processed is tracked here.
     to_process = None
@@ -66,13 +160,15 @@ def start_loop():
         first_sleep_start_time = 0
         __loop_is_sleeping = False
         while True:
-            _utils.META_INDEX["last_prediction_loop_start_time"] = time.time()
-            
-            if len(_utils.REQUEST_INDEX):
+            _utils.META_INDEX[
+                f"last_prediction_loop_start_time_{predictor_sequence}"
+            ] = time.time()
+
+            if len(REQUEST_INDEX):
                 (
                     unique_id,
                     (in_data, unique_id_to_metrics[unique_id], _batch_extra_options),
-                ) = _utils.REQUEST_INDEX.popitem(last=False)
+                ) = REQUEST_INDEX.popitem(last=False)
                 batch_collection_start_time = time.time()
 
                 for __i, _ in enumerate(in_data):
@@ -107,7 +203,7 @@ def start_loop():
                 unique_id_count = len(set(unique_ids))
                 if unique_id_count > 1:
                     _utils.logger.info(
-                        f"Batch of size: {len(batch)}, max_batch_size: {batch_size}, unique_ids: {unique_id_count} collected."
+                        f"predictor_{predictor_sequence} Batch of size: {len(batch)}, max_batch_size: {batch_size}, unique_ids: {unique_id_count} collected."
                     )
                 batch_collection_start_time = 0
                 break
@@ -177,10 +273,12 @@ def start_loop():
             unique_id_wise_results[unique_id].append(pred)
 
         for unique_id, _preds in unique_id_wise_results.items():
-            _utils.RESULTS_INDEX[unique_id] = (_preds, unique_id_to_metrics[unique_id])
+            RESULTS_INDEX[unique_id] = (_preds, unique_id_to_metrics[unique_id])
 
         time.sleep(_utils.PREDICTION_LOOP_SLEEP)
 
 
 if __name__ == "__main__":
-    start_loop()
+    import sys
+
+    start_loop(sys.argv[1])

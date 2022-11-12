@@ -329,18 +329,18 @@ class Health(object):
 
 class Readiness(object):
     def on_get(self, req, resp):
-        total_prediction_time = _utils.META_INDEX["time_per_example"]
+        total_response_time = _utils.META_INDEX["time_per_example"]
         total_requests = 1
         for i in range(min(100, len(_utils.METRICS_CACHE))):
             _, _metrics, _ = _utils.METRICS_CACHE[i]
-            total_prediction_time += (_metrics["prediction_end"]-_metrics["prediction_start"])
+            total_response_time += (_metrics["responded"]-_metrics["received"])
             total_requests += _metrics["predicted_in_batch"]
 
         total_reqs_in_queue = 0
-        for k, v in _utils.REQUEST_INDEX.items():
-            total_reqs_in_queue += len(v[0])
+        for key, value in _utils.REQUEST_INDEX.items():
+            total_reqs_in_queue += len(value[0])
 
-        approx_wait_time = total_reqs_in_queue*(total_prediction_time/total_requests)
+        approx_wait_time = total_reqs_in_queue*(total_response_time/total_requests)
         max_wait_time = float(req.params.get("waittime"))
 
         if (max_wait_time) and (approx_wait_time > max_wait_time):

@@ -342,13 +342,14 @@ class Readiness(object):
             }
         else:
             # If prediction loop started, check for wait time
-            total_requests = 2
-            total_response_time = _utils.META_INDEX["time_per_example"] + (current_time - last_prediction_loop_start_time) # also use time per example and current loop running time as 2 samples.
             last_100_metric = [_utils.METRICS_CACHE[i][1] for i in range(len(_utils.METRICS_CACHE)-1, max(len(_utils.METRICS_CACHE)-100, -1), -1)] # use only last 100 responses for approximation.
+            current_time = time.time()
+
+            total_response_time = _utils.META_INDEX["time_per_example"] + (current_time - last_prediction_loop_start_time) # also use time per example and current loop running time as 2 samples.
+            total_requests = 2
             
             if use_time_based_avg:
                 # Filter samples based on time intervals
-                current_time = time.time()
                 time_samples = float(req.params.get("samples", 10))
 
                 for _metrics in last_100_metric:

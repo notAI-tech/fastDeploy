@@ -329,8 +329,12 @@ class Health(object):
 
 class Readiness(object):
     def on_get(self, req, resp):
+        max_wait_time = float(req.params.get("waittime", _utils.TIMEOUT)) # Incase max wait time is not defined use TIMEOUT as max wait time
+        use_time_based_avg = True if req.params.get("timeavg", "false") == "true" else False
+
+        last_prediction_loop_start_time = _utils.META_INDEX["last_prediction_loop_start_time"]
         
-        if _utils.META_INDEX["last_prediction_loop_start_time"] == 0:
+        if last_prediction_loop_start_time == 0:
             # If prediction loop not started ==> not ready
             resp.status = falcon.HTTP_503
             resp.media = {
@@ -338,19 +342,36 @@ class Readiness(object):
             }
         else:
             # If prediction loop started, check for wait time
-            total_response_time = _utils.META_INDEX["time_per_example"]
-            total_requests = 1
-            for i in range(min(100, len(_utils.METRICS_CACHE))):
-                _, _metrics, _ = _utils.METRICS_CACHE[i]
-                total_response_time += (_metrics["responded"]-_metrics["received"])
-                total_requests += _metrics["predicted_in_batch"]
+            total_requests = 2
+            total_response_time = _utils.META_INDEX["time_per_example"] + (current_time - last_prediction_loop_start_time) # also use time per example and current loop running time as 2 samples.
+            last_100_metric = [_utils.METRICS_CACHE[i][1] for i in range(len(_utils.METRICS_CACHE)-1, max(len(_utils.METRICS_CACHE)-100, -1), -1)] # use only last 100 responses for approximation.
+            
+            if use_time_based_avg:
+                # Filter samples based on time intervals
+                current_time = time.time()
+                time_samples = float(req.params.get("samples", 10))
 
+                for _metrics in last_100_metric:
+                    if (current_time - _metrics["received"]) <= time_samples:
+                        total_response_time += (_metrics["responded"]-_metrics["received"])
+                        total_requests += _metrics["predicted_in_batch"]
+                    else:
+                        break
+            else:
+                # Filter samples based on top N number of samples
+                num_samples = min(int(req.params.get("samples", 100)), len(last_100_metric))
+
+                for i in range(num_samples):
+                    _metrics = last_100_metric[i]
+                    total_response_time += (_metrics["responded"]-_metrics["received"])
+                    total_requests += _metrics["predicted_in_batch"]
+            
+            # Calculate total numbers of reqs in pending reqs queue
             total_reqs_in_queue = 0
             for key, value in _utils.REQUEST_INDEX.items():
                 total_reqs_in_queue += len(value[0])
 
-            approx_wait_time = total_reqs_in_queue*(total_response_time/total_requests)
-            max_wait_time = float(req.params.get("waittime"))
+            approx_wait_time = total_reqs_in_queue*(total_response_time/total_requests) # expected wait time
 
             if (max_wait_time) and (approx_wait_time > max_wait_time):
                     resp.status = falcon.HTTP_503

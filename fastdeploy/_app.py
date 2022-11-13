@@ -26,8 +26,6 @@ while "LAST_PREDICTOR_SEQUENCE" not in _utils.META_INDEX:
 
 LAST_PREDICTOR_SEQUENCE = _utils.META_INDEX["LAST_PREDICTOR_SEQUENCE"]
 
-print("-->", LAST_PREDICTOR_SEQUENCE)
-
 while f"example_{LAST_PREDICTOR_SEQUENCE}" not in _utils.META_INDEX:
     time.sleep(5)
 
@@ -64,7 +62,7 @@ def wait_and_read_pred(unique_id):
     while True:
         try:
             # if result doesn't exist for this uuid,  while loop continues/
-            pred, metrics = RESULTS_INDEX[unique_id]
+            pred = RESULTS_INDEX[unique_id]
             try:
                 response = {"prediction": pred, "success": True}
             # if return dict has any non json serializable values, we str() it
@@ -85,9 +83,8 @@ def wait_and_read_pred(unique_id):
                 break
 
             gevent.time.sleep(TIME_PER_EXAMPLE * 0.501)
-            metrics = {}
 
-    return response, status, metrics
+    return response, status
 
 
 class Infer(object):
@@ -160,18 +157,22 @@ class Infer(object):
 
                             in_data.append(_temp_file_path)
 
-                metrics = {
-                    "received": time.time(),
-                    "prediction_start": -1,
-                    "prediction_end": -1,
-                    "batch_size": len(in_data),
-                    "predicted_in_batch": -1,
-                    "responded": -1,
-                }
+                # metrics = {
+                #     "received": time.time(),
+                #     "prediction_start": -1,
+                #     "prediction_end": -1,
+                #     "batch_size": len(in_data),
+                #     "predicted_in_batch": -1,
+                #     "responded": -1,
+                # }
+
+                _ = _utils.METRICS_CACHE[unique_id]
+                _["received"] = time.time()
+                _["in_size"] = in_data
+                _utils.METRICS_CACHE[unique_id] = _
 
                 REQUEST_INDEX[unique_id] = (
                     in_data,
-                    metrics,
                     [_extra_options_for_predictor.get(_) for _ in _in_file_names],
                 )
 
@@ -181,7 +182,7 @@ class Infer(object):
                     resp.media = {"unique_id": unique_id, "success": True}
                     resp.status = falcon.HTTP_200
                 else:
-                    preds, status, _metrics = wait_and_read_pred(unique_id)
+                    preds, status = wait_and_read_pred(unique_id)
 
                     if not len(_metrics):
                         _metrics = metrics
@@ -364,7 +365,7 @@ class Res(object):
             unique_id = req.media["unique_id"]
             _utils.logger.info(f"unique_id: {unique_id} Result request received.")
             try:
-                pred, metrics = RESULTS_INDEX[unique_id]
+                pred = RESULTS_INDEX[unique_id]
                 resp.media = {"success": True, "prediction": pred}
             except:
                 if unique_id in REQUEST_INDEX:

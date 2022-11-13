@@ -8,8 +8,7 @@ from . import _utils
 import importlib
 
 
-def get_predictor_and_info(predictor_file_path):
-    predictor_name = os.path.basename(predictor_file_path)
+def get_predictor_and_info(predictor_name):
     predictor = importlib.import_module(os.path.splitext(predictor_name)[0]).predictor
     predictor_sequence = 0
     if predictor_name == "predictor.py":
@@ -19,16 +18,10 @@ def get_predictor_and_info(predictor_file_path):
         predictor_sequence = int(predictor_name.split("predictor_")[1].split(".")[0])
 
         is_first = not os.path.exists(
-            predictor_file_path.replace(
-                f"predictor_{predictor_sequence}.py",
-                f"predictor_{predictor_sequence - 1}.py",
-            )
+            f"predictor_{predictor_sequence - 1}.py",
         )
         is_last = not os.path.exists(
-            predictor_file_path.replace(
-                f"predictor_{predictor_sequence}.py",
-                f"predictor_{predictor_sequence + 1}.py",
-            )
+            f"predictor_{predictor_sequence + 1}.py",
         )
 
         predictor_sequence = predictor_sequence - 1
@@ -155,7 +148,6 @@ def start_loop(predictor_file_path):
         batch_extra_options = []
 
         unique_ids = []
-        unique_id_to_metrics = {}
         batch_collection_start_time = time.time()
         first_sleep_start_time = 0
         __loop_is_sleeping = False
@@ -167,7 +159,7 @@ def start_loop(predictor_file_path):
             if len(REQUEST_INDEX):
                 (
                     unique_id,
-                    (in_data, unique_id_to_metrics[unique_id], _batch_extra_options),
+                    (in_data, _batch_extra_options),
                 ) = REQUEST_INDEX.popitem(last=False)
                 batch_collection_start_time = time.time()
 
@@ -246,10 +238,12 @@ def start_loop(predictor_file_path):
 
             pred_end_time = time.time()
 
-            for unique_id in unique_id_to_metrics:
-                unique_id_to_metrics[unique_id]["prediction_start"] = pred_start_time
-                unique_id_to_metrics[unique_id]["prediction_end"] = pred_end_time
-                unique_id_to_metrics[unique_id]["predicted_in_batch"] = len(unique_ids)
+            for unique_id in set(unique_ids):
+                _ = _utils.METRICS_CACHE[unique_id]
+                _["prediction_start"] = pred_start_time
+                _["prediction_end"] = pred_end_time
+                _["predicted_in_batch"] = len(unique_ids)
+                _utils.METRICS_CACHE[unique_id] = _
 
             _utils.logger.info(
                 f"Batch of size: {len(batch)}, max_batch_size: {batch_size} predicted."
@@ -273,7 +267,7 @@ def start_loop(predictor_file_path):
             unique_id_wise_results[unique_id].append(pred)
 
         for unique_id, _preds in unique_id_wise_results.items():
-            RESULTS_INDEX[unique_id] = (_preds, unique_id_to_metrics[unique_id])
+            RESULTS_INDEX[unique_id] = _preds
 
         time.sleep(_utils.PREDICTION_LOOP_SLEEP)
 

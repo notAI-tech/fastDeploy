@@ -100,6 +100,7 @@ def warmup(predictor, example_input, n=3):
 
 def find_optimum_batch_sizes(
     predictor,
+    predictor_sequence,
     example_input,
     max_batch_search_sec=int(os.getenv("MAX_BATCH_SEARCH_SEC", "240")),
 ):
@@ -163,7 +164,9 @@ def find_optimum_batch_sizes(
 
         batch_size_to_time_per_example[batch_size] = time_per_example
 
-        META_INDEX[f"batch_size_to_time_per_example"] = batch_size_to_time_per_example
+        _ = META_INDEX.get("batch_size_to_time_per_example", {})
+        _[predictor_sequence] = batch_size_to_time_per_example
+        META_INDEX["batch_size_to_time_per_example"] = _
 
         # determine which batch size yields the least time per example.
 

@@ -39,8 +39,8 @@ TIME_PER_EXAMPLE = sum(
 )
 IS_FILE_INPUT = _utils.META_INDEX["IS_FILE_INPUT"]
 
-REQUEST_INDEX, __ = _utils.get_request_index_results_index(LAST_PREDICTOR_SEQUENCE)
-__, RESULTS_INDEX = _utils.get_request_index_results_index(0)
+REQUEST_INDEX, __ = _utils.get_request_index_results_index(0)
+__, RESULTS_INDEX = _utils.get_request_index_results_index(LAST_PREDICTOR_SEQUENCE)
 
 
 def wait_and_read_pred(unique_id):
@@ -157,16 +157,7 @@ class Infer(object):
 
                             in_data.append(_temp_file_path)
 
-                # metrics = {
-                #     "received": time.time(),
-                #     "prediction_start": -1,
-                #     "prediction_end": -1,
-                #     "batch_size": len(in_data),
-                #     "predicted_in_batch": -1,
-                #     "responded": -1,
-                # }
-
-                _ = _utils.METRICS_CACHE[unique_id]
+                _ = {}
                 _["received"] = time.time()
                 _["in_size"] = in_data
                 _utils.METRICS_CACHE[unique_id] = _
@@ -176,7 +167,10 @@ class Infer(object):
                     [_extra_options_for_predictor.get(_) for _ in _in_file_names],
                 )
 
-                _utils.META_INDEX["TOTAL_REQUESTS"] += 1
+                _metrics = _utils.METRICS_CACHE[unique_id]
+                _metrics["received"] = time.time()
+                _metrics["in_data"] = in_data
+                _utils.METRICS_CACHE[_utils.META_INDEX] = unique_id
 
                 if is_async_request:
                     resp.media = {"unique_id": unique_id, "success": True}
@@ -184,18 +178,12 @@ class Infer(object):
                 else:
                     preds, status = wait_and_read_pred(unique_id)
 
-                    if not len(_metrics):
-                        _metrics = metrics
-
                     _metrics["responded"] = time.time()
-                    _utils.METRICS_CACHE[len(_utils.METRICS_CACHE)] = (
-                        unique_id,
-                        _metrics,
-                        in_data,
-                    )
 
                     resp.media = preds
                     resp.status = status
+
+                _utils.METRICS_CACHE[unique_id] = _metrics
 
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)
@@ -235,11 +223,11 @@ class Metrics(object):
 
             current_time = time.time()
 
-            n_metrics = len(_utils.METRICS_CACHE)
-            total_requests = n_metrics
-
-            for _ in reversed(range(n_metrics)):
-                unique_id, _metrics, _in_data = _utils.METRICS_CACHE[_]
+            for unique_id in reversed(RESULTS_INDEX):
+                try:
+                    _metrics = _utils.METRICS_CACHE[unique_id]
+                except:
+                    continue
                 # max 5 second loop alowed
                 if time.time() - current_time >= 5:
                     break
@@ -367,6 +355,9 @@ class Res(object):
             try:
                 pred = RESULTS_INDEX[unique_id]
                 resp.media = {"success": True, "prediction": pred}
+                _metrics = _utils.METRICS_CACHE[unique_id]
+                _metrics["responded"] = time.time()
+                _utils.METRICS_CACHE[unique_id] = _metrics
             except:
                 if unique_id in REQUEST_INDEX:
                     resp.media = {"success": None, "reason": "processing"}

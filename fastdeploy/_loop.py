@@ -46,7 +46,7 @@ def get_predictor_and_info(predictor_name):
     )
 
 
-def start_loop(predictor_file_path):
+def start_loop(predictor_name):
     ACCEPTS_EXTRAS = False
     IS_FILE_INPUT = False
 
@@ -57,7 +57,7 @@ def start_loop(predictor_file_path):
         is_last,
         REQUEST_INDEX,
         RESULTS_INDEX,
-    ) = get_predictor_and_info(predictor_file_path=predictor_file_path)
+    ) = get_predictor_and_info(predictor_name)
 
     try:
         _utils.META_INDEX[f"last_prediction_loop_start_time_{predictor_sequence}"] = 0
@@ -124,7 +124,9 @@ def start_loop(predictor_file_path):
 
     # find optimal batch size and get_time_per _utils.META_INDEX[f"example_{predictor_sequence}"]
     batch_size, time_per_example = _utils.find_optimum_batch_sizes(
-        predictor, _utils.META_INDEX[f"example_{predictor_sequence}"]
+        predictor,
+        predictor_sequence,
+        _utils.META_INDEX[f"example_{predictor_sequence}"],
     )
 
     max_wait_time = time_per_example * _utils.MAX_WAIT
@@ -132,6 +134,7 @@ def start_loop(predictor_file_path):
     # write batch size to temp file for use in generating _run.sh
     _utils.META_INDEX[f"batch_size_{predictor_sequence}"] = batch_size
     _utils.META_INDEX[f"time_per_example_{predictor_sequence}"] = time_per_example
+
     _utils.logger.info(
         f"max_wait_time_{predictor_sequence}: {max_wait_time}, batch_size_{predictor_sequence}: {batch_size}"
     )
@@ -206,7 +209,7 @@ def start_loop(predictor_file_path):
                 unique_id_count = len(set(unique_ids))
                 if unique_id_count > 1:
                     _utils.logger.info(
-                        f"Batch of size: {len(batch)}, max_batch_size: {batch_size}, unique_ids: {unique_id_count} collected."
+                        f"predictor_{predictor_sequence} Batch of size: {len(batch)}, max_batch_size: {batch_size}, unique_ids: {unique_id_count} collected."
                     )
                 batch_collection_start_time = 0
                 break
@@ -240,13 +243,18 @@ def start_loop(predictor_file_path):
 
             for unique_id in set(unique_ids):
                 _ = _utils.METRICS_CACHE[unique_id]
-                _["prediction_start"] = pred_start_time
+                _["prediction_start"] = _.get("prediction_start", {})
+                _["prediction_start"][predictor_sequence] = pred_start_time
+
+                _["prediction_end"] = _.get("prediction_end", {})
                 _["prediction_end"] = pred_end_time
+
+                _["predicted_in_batch"] = _.get("predicted_in_batch", {})
                 _["predicted_in_batch"] = len(unique_ids)
                 _utils.METRICS_CACHE[unique_id] = _
 
             _utils.logger.info(
-                f"Batch of size: {len(batch)}, max_batch_size: {batch_size} predicted."
+                f"predictor_{predictor_sequence} Batch of size: {len(batch)}, max_batch_size: {batch_size} predicted."
             )
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)

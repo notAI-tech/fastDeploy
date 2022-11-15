@@ -231,6 +231,63 @@ class Health(object):
             pass
             # time.time() - REQUEST_INDEX[]
 
+class Readiness(object):
+    def on_get(self, req, resp):
+        max_wait_time = float(req.params.get("waittime", _utils.TIMEOUT)) # Incase max wait time is not defined use TIMEOUT as max wait time
+        use_time_based_avg = True if req.params.get("timeavg", "false") == "true" else False
+
+        last_prediction_loop_start_time = _utils.META_INDEX["last_prediction_loop_start_time"]
+        
+        if last_prediction_loop_start_time == 0:
+            # If prediction loop not started ==> not ready
+            resp.status = falcon.HTTP_503
+            resp.media = {
+                "ready_status": f"Not ready, prediction loop not started"
+            }
+        else:
+            # If prediction loop started, check for wait time
+            last_100_metric = [_utils.METRICS_CACHE[i][1] for i in range(len(_utils.METRICS_CACHE)-1, max(len(_utils.METRICS_CACHE)-100, -1), -1)] # use only last 100 responses for approximation.
+            current_time = time.time()
+
+            total_response_time = _utils.META_INDEX["time_per_example"] + (current_time - last_prediction_loop_start_time) # also use time per example and current loop running time as 2 samples.
+            total_requests = 2
+            
+            if use_time_based_avg:
+                # Filter samples based on time intervals
+                time_samples = float(req.params.get("samples", 10))
+
+                for _metrics in last_100_metric:
+                    if (current_time - _metrics["received"]) <= time_samples:
+                        total_response_time += (_metrics["responded"]-_metrics["received"])
+                        total_requests += _metrics["predicted_in_batch"]
+                    else:
+                        break
+            else:
+                # Filter samples based on top N number of samples
+                num_samples = min(int(req.params.get("samples", 100)), len(last_100_metric))
+
+                for i in range(num_samples):
+                    _metrics = last_100_metric[i]
+                    total_response_time += (_metrics["responded"]-_metrics["received"])
+                    total_requests += _metrics["predicted_in_batch"]
+            
+            # Calculate total numbers of reqs in pending reqs queue
+            total_reqs_in_queue = 0
+            for key, value in _utils.REQUEST_INDEX.items():
+                total_reqs_in_queue += len(value[0])
+
+            approx_wait_time = total_reqs_in_queue*(total_response_time/total_requests) # expected wait time
+
+            if (max_wait_time) and (approx_wait_time > max_wait_time):
+                    resp.status = falcon.HTTP_503
+                    resp.media = {
+                        "ready_status": f"Not ready, current wait time is {approx_wait_time}s which is more than max wait time of {max_wait_time}s"
+                    }
+            else:
+                resp.status = falcon.HTTP_200
+                resp.media = {
+                    "ready_status": f"Ready, current wait time is {approx_wait_time}s"
+                }
 
 class Meta(object):
     def on_get(self, req, resp):
@@ -295,12 +352,14 @@ res_api = Res()
 metrics_api = Metrics()
 meta_api = Meta()
 health_api = Health()
+readiness_api = Readiness()
 
 app.add_route("/infer", infer_api)
 app.add_route("/result", res_api)
 app.add_route("/metrics", metrics_api)
 app.add_route("/meta", meta_api)
 app.add_route("/health", health_api)
+app.add_route("/readiness", readiness_api)
 
 
 app.add_static_route(

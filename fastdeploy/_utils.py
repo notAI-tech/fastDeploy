@@ -50,6 +50,20 @@ META_INDEX["BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR"] = BATCH_COLLECTION_SLEEP_IF_EM
 META_INDEX["BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY"] = BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY
 META_INDEX["MANAGER_LOOP_SLEEP"] = MANAGER_LOOP_SLEEP
 META_INDEX["TOTAL_REQUESTS"] = 0
+
+"""
+METRICS_CACHE[unique_id] = {
+    "extras": [],
+    "prediction_start": {0: time.time()},
+    "prediction_end": {0: time.time()},
+    "predicted_in_batch": {0: len(unique_ids)},
+    "result": [],
+    "received": time.time(),
+    "in_data": [],
+    "responded": time.time()
+}
+"""
+
 METRICS_CACHE = Cache(os.path.join(QUEUE_DIR, "metrics_cache"))
 
 REQUEST_INDEX = Index(os.path.join(QUEUE_DIR, f"main.request_index"))

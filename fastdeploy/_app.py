@@ -186,102 +186,7 @@ class Metrics(object):
     def on_get(self, req, resp):
 
         try:
-            end_time = int(req.params.get("from_time", time.time()))
-            total_time = int(req.params.get("total_time", 3600))
-
-            batch_size_to_time_per_example = _utils.META_INDEX[
-                "batch_size_to_time_per_example"
-            ]
-
-            first_end_time = 0
-            all_metrics_in_time_period = {
-                "time_graph_data": {
-                    "labels": [],
-                    "datasets": [
-                        {"name": "Response time", "values": []},
-                        {"name": "Prediction time", "values": []},
-                    ],
-                },
-                "auto_batching_graph_data": {
-                    "labels": [],
-                    "datasets": [
-                        {"name": "Input batch size", "values": []},
-                        {"name": "Dynamically batched to", "values": []},
-                    ],
-                },
-                "index_to_all_meta": {},
-            }
-
-            current_time = time.time()
-
-            for unique_id in reversed(RESULTS_INDEX):
-                try:
-                    _metrics = _utils.METRICS_CACHE[unique_id]
-                except:
-                    continue
-                # max 5 second loop alowed
-                if time.time() - current_time >= 5:
-                    break
-
-                received_time = _metrics["received"]
-                prediction_start = _metrics["prediction_start"]
-                prediction_end = _metrics["prediction_end"]
-                # batch_size = _metrics["batch_size"]
-                batch_size = 2
-                predicted_in_batch = _metrics["predicted_in_batch"]
-                responded_at = _metrics["responded"]
-
-                prediction_time_per_example = (
-                    prediction_end - prediction_start
-                ) / predicted_in_batch
-
-                if current_time - received_time >= total_time:
-                    break
-
-                if received_time <= 0 or responded_at <= 0:
-                    continue
-
-                x_id = total_requests - len(
-                    all_metrics_in_time_period["index_to_all_meta"]
-                )
-
-                all_metrics_in_time_period["auto_batching_graph_data"]["labels"].insert(
-                    0, x_id
-                )
-                all_metrics_in_time_period["auto_batching_graph_data"]["datasets"][0][
-                    "values"
-                ].insert(0, batch_size)
-                all_metrics_in_time_period["auto_batching_graph_data"]["datasets"][1][
-                    "values"
-                ].insert(0, predicted_in_batch)
-
-                all_metrics_in_time_period["time_graph_data"]["labels"].insert(0, x_id)
-                all_metrics_in_time_period["time_graph_data"]["datasets"][0][
-                    "values"
-                ].insert(0, responded_at - received_time)
-                all_metrics_in_time_period["time_graph_data"]["datasets"][1][
-                    "values"
-                ].insert(
-                    0,
-                    batch_size
-                    * (prediction_end - prediction_start)
-                    / predicted_in_batch,
-                )
-
-                all_metrics_in_time_period["index_to_all_meta"][
-                    n_metrics - len(all_metrics_in_time_period["index_to_all_meta"])
-                ] = {
-                    "unique_id": unique_id,
-                    "received_time": str(
-                        datetime.datetime.fromtimestamp(received_time)
-                    ),
-                    "prediction_time_per_example": prediction_time_per_example,
-                    "batch_size": batch_size,
-                    "start_to_end_time": responded_at - received_time,
-                    "predicted_in_batch": predicted_in_batch,
-                }
-
-            resp.media = all_metrics_in_time_period
+            resp.media = {}
             resp.status = falcon.HTTP_200
 
         except Exception as ex:
@@ -303,7 +208,7 @@ class Health(object):
         if stuck_for:
             stuck_for = float(stuck_for)
             last_prediction_loop_start_time = _utils.META_INDEX[
-                "last_prediction_loop_start_time"
+                f"last_prediction_loop_start_time_0"
             ]
             prediction_loop_stuck_for = time.time() - last_prediction_loop_start_time
 

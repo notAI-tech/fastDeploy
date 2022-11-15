@@ -39,8 +39,10 @@ TIME_PER_EXAMPLE = sum(
 )
 IS_FILE_INPUT = _utils.META_INDEX["IS_FILE_INPUT"]
 
-REQUEST_INDEX, __ = _utils.get_request_index_results_index(0)
-__, RESULTS_INDEX = _utils.get_request_index_results_index(LAST_PREDICTOR_SEQUENCE)
+REQUEST_INDEX, RESULTS_INDEX = _utils.get_request_index_results_index(
+    None, is_first=True, is_last=True
+)
+print(REQUEST_INDEX.directory, RESULTS_INDEX.directory)
 
 
 def wait_and_read_pred(unique_id):
@@ -62,27 +64,24 @@ def wait_and_read_pred(unique_id):
     while True:
         try:
             # if result doesn't exist for this uuid,  while loop continues/
-            pred = RESULTS_INDEX[unique_id]
-            try:
-                response = {"prediction": pred, "success": True}
-            # if return dict has any non json serializable values, we str() it
-            except:
-                _utils.logger.info(
-                    f"unique_id: {unique_id} could not json serialize the result."
-                )
-                response = {"prediction": str(pred), "success": True}
+            pred = RESULTS_INDEX.pop(unique_id)
+            response = {"prediction": pred, "success": True}
             status = falcon.HTTP_200
             break
         except:
             # stop in case of timeout
             if time.time() - start_time >= _utils.TIMEOUT:
-                del REQUEST_INDEX[unique_id]
+                try:
+                    REQUEST_INDEX.pop(unique_id)
+                except:
+                    pass
+
                 _utils.logger.warn(
                     f"unique_id: {unique_id} timedout, with timeout {_utils.TIMEOUT}"
                 )
                 break
 
-            gevent.time.sleep(TIME_PER_EXAMPLE * 0.501)
+            gevent.time.sleep(TIME_PER_EXAMPLE * 0.505)
 
     return response, status
 
@@ -157,32 +156,24 @@ class Infer(object):
 
                             in_data.append(_temp_file_path)
 
-                _ = {}
-                _["received"] = time.time()
-                _["in_size"] = in_data
-                _utils.METRICS_CACHE[unique_id] = _
+                _metrics = {}
+                _metrics["received"] = time.time()
+                _metrics["in_data"] = in_data
+                _utils.METRICS_CACHE[unique_id] = _metrics
 
                 REQUEST_INDEX[unique_id] = (
                     in_data,
                     [_extra_options_for_predictor.get(_) for _ in _in_file_names],
                 )
 
-                _metrics = _utils.METRICS_CACHE[unique_id]
-                _metrics["received"] = time.time()
-                _metrics["in_data"] = in_data
-                _utils.METRICS_CACHE[_utils.META_INDEX] = unique_id
-
                 if is_async_request:
                     resp.media = {"unique_id": unique_id, "success": True}
                     resp.status = falcon.HTTP_200
                 else:
-                    preds, status = wait_and_read_pred(unique_id)
+                    resp.media, resp.status = wait_and_read_pred(unique_id)
 
-                    _metrics["responded"] = time.time()
-
-                    resp.media = preds
-                    resp.status = status
-
+                _metrics = _utils.METRICS_CACHE[unique_id]
+                _metrics["responded"] = time.time()
                 _utils.METRICS_CACHE[unique_id] = _metrics
 
         except Exception as ex:
@@ -235,7 +226,8 @@ class Metrics(object):
                 received_time = _metrics["received"]
                 prediction_start = _metrics["prediction_start"]
                 prediction_end = _metrics["prediction_end"]
-                batch_size = _metrics["batch_size"]
+                # batch_size = _metrics["batch_size"]
+                batch_size = 2
                 predicted_in_batch = _metrics["predicted_in_batch"]
                 responded_at = _metrics["responded"]
 
@@ -353,7 +345,7 @@ class Res(object):
             unique_id = req.media["unique_id"]
             _utils.logger.info(f"unique_id: {unique_id} Result request received.")
             try:
-                pred = RESULTS_INDEX[unique_id]
+                pred = RESULTS_INDEX.pop(unique_id)
                 resp.media = {"success": True, "prediction": pred}
                 _metrics = _utils.METRICS_CACHE[unique_id]
                 _metrics["responded"] = time.time()

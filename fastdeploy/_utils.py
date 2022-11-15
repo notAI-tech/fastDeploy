@@ -52,15 +52,41 @@ META_INDEX["MANAGER_LOOP_SLEEP"] = MANAGER_LOOP_SLEEP
 META_INDEX["TOTAL_REQUESTS"] = 0
 METRICS_CACHE = Cache(os.path.join(QUEUE_DIR, "metrics_cache"))
 
+REQUEST_INDEX = Index(os.path.join(QUEUE_DIR, f"main.request_index"))
+RESULTS_INDEX = Index(os.path.join(QUEUE_DIR, f"main.results_index"))
 
-def get_request_index_results_index(predictor_id):
-    _request_index = os.path.join(QUEUE_DIR, f"{predictor_id}.request_index")
-    _results_cache = os.path.join(QUEUE_DIR, f"{predictor_id}.results_cache")
 
-    REQUEST_INDEX = Index(_request_index)
-    RESULTS_INDEX = Cache(_results_cache)
+def get_request_index_results_index(predictor_id, is_first=False, is_last=False):
+    if is_first and is_last:
+        logger.info(
+            f"predictor_{predictor_id}: is_first: {is_first} is_last: {is_last}, request_index, results_index"
+        )
+        return REQUEST_INDEX, RESULTS_INDEX
 
-    return REQUEST_INDEX, RESULTS_INDEX
+    elif is_first:
+        logger.info(
+            f"predictor_{predictor_id}: is_first: {is_first} is_last: {is_last}, request_index, {predictor_id}.intermediate_index"
+        )
+        return REQUEST_INDEX, Index(
+            os.path.join(QUEUE_DIR, f"{predictor_id}.intermediate_index")
+        )
+
+    elif is_last:
+        logger.info(
+            f"predictor_{predictor_id}: is_first: {is_first} is_last: {is_last}, {predictor_id - 1}.intermediate_index, results_index"
+        )
+        return (
+            Index(os.path.join(QUEUE_DIR, f"{predictor_id - 1}.intermediate_index")),
+            RESULTS_INDEX,
+        )
+
+    else:
+        logger.info(
+            f"predictor_{predictor_id}: is_first: {is_first} is_last: {is_last}, {predictor_id - 1}.intermediate_index, {predictor_id - 1}.intermediate_index"
+        )
+        return Index(
+            os.path.join(QUEUE_DIR, f"{predictor_id - 1}.intermediate_index")
+        ), Index(os.path.join(QUEUE_DIR, f"{predictor_id}.intermediate_index"))
 
 
 FASTDEPLOY_UI_PATH = os.getenv(

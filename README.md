@@ -28,15 +28,12 @@ fastdeploy --recipe ./recipes/echo_json/ \
 
 # Run docker image
 docker run -it -p8080:8080 fastdeploy_echo_json
-
 ```
+
+- [serving your model with fastDeploy](https://github.com/notAI-tech/fastDeploy/blob/master/recipe.md)
+- [cURL and Python inference examples](https://github.com/notAI-tech/fastDeploy/blob/master/inference.md)
 
 **fastDeploy monitor**
 - available on localhost:8080 (or --port)
 
 ![](https://raw.githubusercontent.com/notAI-tech/fastDeploy/master/fastDeploy_monitor.png)
-
-
-- https://github.com/notAI-tech/fastDeploy/blob/master/recipe.md Writing a recipe for your prediction script
-- https://github.com/notAI-tech/fastDeploy/blob/master/inference.md cURL and Python inference commands.
-

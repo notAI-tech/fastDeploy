@@ -18,7 +18,7 @@ URL = "https://github.com/notAI-tech/fastDeploy"
 EMAIL = "praneeth@bpraneeth.com"
 AUTHOR = "BEDAPUDI PRANEETH"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "2.2.6"
+VERSION = "2.2.7rc1"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -26,8 +26,7 @@ REQUIRED = [
     "falcon",
     "diskcache",
     "ujson",
-    "gunicorn[gevent]",
-    "gevent-websocket",
+    "gunicorn[gevent]"
 ]
 
 # What packages are optional?

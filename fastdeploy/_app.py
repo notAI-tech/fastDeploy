@@ -346,42 +346,29 @@ app.add_static_route(
 # Backwards compatibility
 app.add_route("/sync", infer_api)
 
-from geventwebsocket import WebSocketApplication
 
+def websocket_handler(env, start_response):
+    if "wsgi.websocket" in env:
+        ws = env["wsgi.websocket"]
 
-class WebSocketInfer(WebSocketApplication):
-    def on_open(self):
-        self.connection_id = f"{uuid.uuid4()}"
-        self.n = 0
-        self.start_time = time.time()
+        connection_id = f"{uuid.uuid4()}"
+        n = 0
+        start_time = time.time()
         _utils.logger.info(f"{self.connection_id} websocket connection opened.")
 
-    def on_message(self, message):
-        self.n += 1
-        try:
-            if message is not None:
-                metrics = {
-                    "received": time.time(),
-                    "prediction_start": -1,
-                    "prediction_end": -1,
-                    "batch_size": 1,
-                    "predicted_in_batch": -1,
-                    "responded": -1,
-                }
-                message_id = f"{self.connection_id}.{self.n}"
-                REQUEST_INDEX[message_id] = ([message], metrics)
-                preds, status, metrics = wait_and_read_pred(message_id)
-                if "prediction" in preds:
-                    preds["prediction"] = preds["prediction"][0]
+        while True:
+            msg = ws.receive()
+            if msg is None:
+                break
 
-                self.ws.send(ujson.dumps(preds))
+            message_id = f"{connection_id}.{n}"
+            REQUEST_INDEX[message_id] = [message]
+            preds, status = wait_and_read_pred(message_id)
+            if "prediction" in preds:
+                preds["prediction"] = preds["prediction"][0]
 
-        except Exception as ex:
-            _utils.logger.exception(ex, exc_info=True)
-            pass
+            ws.send(ujson.dumps(preds))
 
-    def on_close(self, reason):
         _utils.logger.info(
             f"{self.connection_id} websocket connection closed. Time spent: {time.time() - self.start_time} n_mesages: {self.n}"
         )
-        pass

@@ -156,10 +156,12 @@ class Infer(object):
 
                             in_data.append(_temp_file_path)
 
+                _utils.META_INDEX["TO_PROCESS_COUNT"] += len(in_data)
+
                 _metrics = {}
                 _metrics["received"] = time.time()
                 _metrics["in_data"] = in_data
-                _utils.METRICS_CACHE[unique_id] = _metrics
+                _utils.METRICS_INDEX[unique_id] = _metrics
 
                 REQUEST_INDEX[unique_id] = (
                     in_data,
@@ -172,9 +174,9 @@ class Infer(object):
                 else:
                     resp.media, resp.status = wait_and_read_pred(unique_id)
 
-                _metrics = _utils.METRICS_CACHE[unique_id]
+                _metrics = _utils.METRICS_INDEX[unique_id]
                 _metrics["responded"] = time.time()
-                _utils.METRICS_CACHE[unique_id] = _metrics
+                _utils.METRICS_INDEX[unique_id] = _metrics
 
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)
@@ -194,22 +196,19 @@ class Metrics(object):
             pass
 
 
-ALL_META = {}
-for k, v in _utils.META_INDEX.items():
-    ALL_META[k] = v
-
-ALL_META["is_file_input"] = IS_FILE_INPUT
-ALL_META["example"] = _utils.example
-
-
 class Health(object):
     def on_get(self, req, resp):
         stuck_for = req.params.get("stuck")
+        ready_in = min(req.params.get("ready_in", _utils.TIMEOUT), _utils.TIMEOUT)
+
         if stuck_for:
             stuck_for = float(stuck_for)
-            last_prediction_loop_start_time = _utils.META_INDEX[
-                f"last_prediction_loop_start_time_0"
-            ]
+            last_prediction_loop_start_time = min(
+                [
+                    _utils.META_INDEX[f"last_prediction_loop_start_time_{_}"]
+                    for _ in range(LAST_PREDICTOR_SEQUENCE + 1)
+                ]
+            )
             prediction_loop_stuck_for = time.time() - last_prediction_loop_start_time
 
             if last_prediction_loop_start_time:
@@ -227,67 +226,38 @@ class Health(object):
                 resp.status = falcon.HTTP_200
                 resp.media = {"predictor_status": f"prediction loop not started"}
 
-        else:
-            pass
-            # time.time() - REQUEST_INDEX[]
+        elif ready_in:
+            last_prediction_loop_start_time = _utils.META_INDEX[
+                f"last_prediction_loop_start_time_{LAST_PREDICTOR_SEQUENCE}"
+            ]
 
-class Readiness(object):
-    def on_get(self, req, resp):
-        max_wait_time = float(req.params.get("waittime", _utils.TIMEOUT)) # Incase max wait time is not defined use TIMEOUT as max wait time
-        use_time_based_avg = True if req.params.get("timeavg", "false") == "true" else False
+            running_time_per_example = 0
+            for _ in range(LAST_PREDICTOR_SEQUENCE + 1):
+                running_time_per_example += _utils.META_INDEX[
+                    f"running_time_per_example_{_}"
+                ]
 
-        last_prediction_loop_start_time = _utils.META_INDEX["last_prediction_loop_start_time"]
-        
-        if last_prediction_loop_start_time == 0:
-            # If prediction loop not started ==> not ready
-            resp.status = falcon.HTTP_503
-            resp.media = {
-                "ready_status": f"Not ready, prediction loop not started"
-            }
-        else:
-            # If prediction loop started, check for wait time
-            last_100_metric = [_utils.METRICS_CACHE[i][1] for i in range(len(_utils.METRICS_CACHE)-1, max(len(_utils.METRICS_CACHE)-100, -1), -1)] # use only last 100 responses for approximation.
-            current_time = time.time()
+            to_process_count = _utils.META_INDEX["TO_PROCESS_COUNT"]
+            expected_wait_time = (
+                time.time()
+                - last_prediction_loop_start_time
+                + (running_time_per_example * to_process_count)
+            )
 
-            total_response_time = _utils.META_INDEX["time_per_example"] + (current_time - last_prediction_loop_start_time) # also use time per example and current loop running time as 2 samples.
-            total_requests = 2
-            
-            if use_time_based_avg:
-                # Filter samples based on time intervals
-                time_samples = float(req.params.get("samples", 10))
-
-                for _metrics in last_100_metric:
-                    if (current_time - _metrics["received"]) <= time_samples:
-                        total_response_time += (_metrics["responded"]-_metrics["received"])
-                        total_requests += _metrics["predicted_in_batch"]
-                    else:
-                        break
-            else:
-                # Filter samples based on top N number of samples
-                num_samples = min(int(req.params.get("samples", 100)), len(last_100_metric))
-
-                for i in range(num_samples):
-                    _metrics = last_100_metric[i]
-                    total_response_time += (_metrics["responded"]-_metrics["received"])
-                    total_requests += _metrics["predicted_in_batch"]
-            
-            # Calculate total numbers of reqs in pending reqs queue
-            total_reqs_in_queue = 0
-            for key, value in _utils.REQUEST_INDEX.items():
-                total_reqs_in_queue += len(value[0])
-
-            approx_wait_time = total_reqs_in_queue*(total_response_time/total_requests) # expected wait time
-
-            if (max_wait_time) and (approx_wait_time > max_wait_time):
-                    resp.status = falcon.HTTP_503
-                    resp.media = {
-                        "ready_status": f"Not ready, current wait time is {approx_wait_time}s which is more than max wait time of {max_wait_time}s"
-                    }
+            if last_prediction_loop_start_time == 0:
+                resp.status = falcon.HTTP_503
+                resp.media = {"ready_status": f"Not ready, prediction loop not started"}
+            elif expected_wait_time >= ready_in:
+                resp.status = falcon.HTTP_503
+                resp.media = {
+                    "ready_status": f"Not ready, to_process_count: {to_process_count} running_time_per_example: {running_time_per_example}",
+                }
             else:
                 resp.status = falcon.HTTP_200
                 resp.media = {
-                    "ready_status": f"Ready, current wait time is {approx_wait_time}s"
+                    "ready_status": f"Ready, to_process_count: {to_process_count} running_time_per_example: {running_time_per_example}",
                 }
+
 
 class Meta(object):
     def on_get(self, req, resp):
@@ -297,6 +267,13 @@ class Meta(object):
             resp.downloadable_as = os.path.basename(_utils.example[0])
 
         else:
+            ALL_META = {}
+            for k, v in _utils.META_INDEX.items():
+                ALL_META[k] = v
+
+            ALL_META["is_file_input"] = IS_FILE_INPUT
+            ALL_META["example"] = _utils.example
+
             resp.media = ALL_META
             resp.status = falcon.HTTP_200
 
@@ -309,9 +286,9 @@ class Res(object):
             try:
                 pred = RESULTS_INDEX.pop(unique_id)
                 resp.media = {"success": True, "prediction": pred}
-                _metrics = _utils.METRICS_CACHE[unique_id]
+                _metrics = _utils.METRICS_INDEX[unique_id]
                 _metrics["responded"] = time.time()
-                _utils.METRICS_CACHE[unique_id] = _metrics
+                _utils.METRICS_INDEX[unique_id] = _metrics
             except:
                 if unique_id in REQUEST_INDEX:
                     resp.media = {"success": None, "reason": "processing"}
@@ -352,14 +329,12 @@ res_api = Res()
 metrics_api = Metrics()
 meta_api = Meta()
 health_api = Health()
-readiness_api = Readiness()
 
 app.add_route("/infer", infer_api)
 app.add_route("/result", res_api)
 app.add_route("/metrics", metrics_api)
 app.add_route("/meta", meta_api)
 app.add_route("/health", health_api)
-app.add_route("/readiness", readiness_api)
 
 
 app.add_static_route(

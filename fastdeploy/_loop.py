@@ -132,6 +132,9 @@ def start_loop(predictor_name):
         f"predictor_{predictor_sequence}: Predictor loop started batch_size_{predictor_sequence}: {batch_size}"
     )
 
+    TOTAL_PREDICTED_EXAMPLES = 0
+    TOTAL_PREDICTION_TIME = 0
+
     while True:
         # Get the latest list of to process data
         batch = []
@@ -232,6 +235,11 @@ def start_loop(predictor_name):
                 exit()
 
             pred_end_time = time.time()
+            TOTAL_PREDICTED_EXAMPLES += __in_batch_length
+            TOTAL_PREDICTION_TIME += pred_end_time - pred_start_time
+            _utils.META_INDEX[f"running_time_per_example_{predictor_sequence}"] = (
+                TOTAL_PREDICTION_TIME / TOTAL_PREDICTED_EXAMPLES
+            )
 
             _utils.logger.info(
                 f"predictor_{predictor_sequence}: Batch of size: {len(batch)}, max_batch_size: {batch_size} predicted."
@@ -263,7 +271,7 @@ def start_loop(predictor_name):
             else:
                 RESULTS_INDEX[unique_id] = _preds
 
-            _ = _utils.METRICS_CACHE[unique_id]
+            _ = _utils.METRICS_INDEX[unique_id]
             _["extras"] = unique_id_wise_batch_extra_options[unique_id]
             _["prediction_start"] = _.get("prediction_start", {})
             _["prediction_start"][predictor_sequence] = pred_start_time
@@ -277,7 +285,10 @@ def start_loop(predictor_name):
             if is_last:
                 _["result"] = _preds
 
-            _utils.METRICS_CACHE[unique_id] = _
+            _utils.METRICS_INDEX[unique_id] = _
+
+        if is_last:
+            _utils.META_INDEX["TO_PROCESS_COUNT"] -= len(preds)
 
         time.sleep(_utils.PREDICTION_LOOP_SLEEP)
 

@@ -17,7 +17,7 @@ import time
 import shlex
 import shutil
 from datetime import datetime
-from diskcache import Index, Cache
+from diskcache import Index
 
 import sys
 from example import example
@@ -49,10 +49,13 @@ META_INDEX["PREDICTION_LOOP_SLEEP"] = PREDICTION_LOOP_SLEEP
 META_INDEX["BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR"] = BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR
 META_INDEX["BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY"] = BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY
 META_INDEX["MANAGER_LOOP_SLEEP"] = MANAGER_LOOP_SLEEP
-META_INDEX["TOTAL_REQUESTS"] = 0
+try:
+    META_INDEX["TO_PROCESS_COUNT"]
+except:
+    META_INDEX["TO_PROCESS_COUNT"] = 0
 
 """
-METRICS_CACHE[unique_id] = {
+METRICS_INDEX[unique_id] = {
     "extras": [],
     "prediction_start": {0: time.time()},
     "prediction_end": {0: time.time()},
@@ -64,7 +67,7 @@ METRICS_CACHE[unique_id] = {
 }
 """
 
-METRICS_CACHE = Cache(os.path.join(QUEUE_DIR, "metrics_cache"))
+METRICS_INDEX = Index(os.path.join(QUEUE_DIR, "metrics_index"))
 
 REQUEST_INDEX = Index(os.path.join(QUEUE_DIR, f"main.request_index"))
 RESULTS_INDEX = Index(os.path.join(QUEUE_DIR, f"main.results_index"))

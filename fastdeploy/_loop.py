@@ -132,8 +132,8 @@ def start_loop(predictor_name):
         f"predictor_{predictor_sequence}: Predictor loop started batch_size_{predictor_sequence}: {batch_size}"
     )
 
-    TOTAL_PREDICTED_EXAMPLES = 0
-    TOTAL_PREDICTION_TIME = 0
+    LAST_N_PREDICTED_EXAMPLES = []
+    LAST_N_PREDICTION_TIMES = []
 
     while True:
         # Get the latest list of to process data
@@ -235,11 +235,20 @@ def start_loop(predictor_name):
                 exit()
 
             pred_end_time = time.time()
-            TOTAL_PREDICTED_EXAMPLES += __in_batch_length
-            TOTAL_PREDICTION_TIME += pred_end_time - pred_start_time
-            _utils.META_INDEX[f"running_time_per_example_{predictor_sequence}"] = (
-                TOTAL_PREDICTION_TIME / TOTAL_PREDICTED_EXAMPLES
-            )
+
+            LAST_N_PREDICTED_EXAMPLES.append(__in_batch_length)
+            LAST_N_PREDICTION_TIMES.append(pred_end_time - pred_start_time)
+
+            LAST_N_PREDICTED_EXAMPLES = LAST_N_PREDICTED_EXAMPLES[
+                -1 * _utils.RUNNING_TIME_PER_EXAMPLE_AVERAGE_OVER :
+            ]
+            LAST_N_PREDICTION_TIMES = LAST_N_PREDICTION_TIMES[
+                -1 * _utils.RUNNING_TIME_PER_EXAMPLE_AVERAGE_OVER :
+            ]
+
+            _utils.META_INDEX[f"running_time_per_example_{predictor_sequence}"] = sum(
+                LAST_N_PREDICTED_EXAMPLES
+            ) / sum(LAST_N_PREDICTION_TIMES)
 
             _utils.logger.info(
                 f"predictor_{predictor_sequence}: Batch of size: {len(batch)}, max_batch_size: {batch_size} predicted."

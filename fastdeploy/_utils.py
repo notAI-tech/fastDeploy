@@ -42,6 +42,10 @@ BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY = float(
 )
 MANAGER_LOOP_SLEEP = float(os.getenv("MANAGER_LOOP_SLEEP", "8"))
 
+RUNNING_TIME_PER_EXAMPLE_AVERAGE_OVER = int(
+    os.getenv("RUNNING_TIME_PER_EXAMPLE_AVERAGE_OVER", "100")
+)
+
 _meta_index = os.path.join(QUEUE_DIR, f"common.META_INDEX")
 META_INDEX = Index(_meta_index)
 META_INDEX["IS_FILE_INPUT"] = IS_FILE_INPUT
@@ -119,9 +123,6 @@ WORKERS = int(os.getenv("WORKERS", "0"))
 
 TIMEOUT = int(os.getenv("TIMEOUT", "120"))
 
-# if BATCH_SIZE is not 0, will be used as default batch size.
-BATCH_SIZE = int(os.getenv("BATCH_SIZE", "0"))
-
 # Maximum examples allowed in client batch.
 # 0 means unlimited
 MAX_PER_CLIENT_BATCH = int(os.getenv("MAX_PER_CLIENT_BATCH", "0"))
@@ -161,6 +162,12 @@ def find_optimum_batch_sizes(
     previous_time_per_example = pow(2, 64)
 
     possible_batch_sizes = range(16)
+
+    if predictor_sequence == 0:
+        BATCH_SIZE = os.getenv("BATCH_SIZE", os.getenv("BATCH_SIZE_1", 0))
+    else:
+        BATCH_SIZE = os.getenv(f"BATCH_SIZE_{predictor_sequence + 1}", 0)
+
     if BATCH_SIZE:
         possible_batch_sizes = [BATCH_SIZE]
 

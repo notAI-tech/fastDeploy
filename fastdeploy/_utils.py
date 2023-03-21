@@ -164,9 +164,9 @@ def find_optimum_batch_sizes(
     possible_batch_sizes = range(16)
 
     if predictor_sequence == 0:
-        BATCH_SIZE = os.getenv("BATCH_SIZE", os.getenv("BATCH_SIZE_1", 0))
+        BATCH_SIZE = int(os.getenv("BATCH_SIZE", os.getenv("BATCH_SIZE_1", 0)))
     else:
-        BATCH_SIZE = os.getenv(f"BATCH_SIZE_{predictor_sequence + 1}", 0)
+        BATCH_SIZE = int(os.getenv(f"BATCH_SIZE_{predictor_sequence + 1}", 0))
 
     if BATCH_SIZE:
         possible_batch_sizes = [BATCH_SIZE]

@@ -19,14 +19,17 @@ from functools import partial
 
 from . import _utils
 
-_utils.logger.info(f"Waiting for warmup, batch size search to finish.")
-
-while "LAST_PREDICTOR_SEQUENCE" not in _utils.META_INDEX:
-    time.sleep(5)
+if "LAST_PREDICTOR_SEQUENCE" not in _utils.META_INDEX:
+    _utils.logger.info(f"Waiting for warmup, batch size search to finish.")
+    while "LAST_PREDICTOR_SEQUENCE" not in _utils.META_INDEX:
+        time.sleep(5)
 
 LAST_PREDICTOR_SEQUENCE = _utils.META_INDEX["LAST_PREDICTOR_SEQUENCE"]
 
-while f"example_{LAST_PREDICTOR_SEQUENCE}" not in _utils.META_INDEX:
+while (
+    f"example_{LAST_PREDICTOR_SEQUENCE}" not in _utils.META_INDEX
+    or f"time_per_example_{LAST_PREDICTOR_SEQUENCE}" not in _utils.META_INDEX
+):
     time.sleep(5)
 
 ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)

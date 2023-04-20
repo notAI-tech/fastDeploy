@@ -67,11 +67,11 @@ if not RECIPE or not MODE:
     MODE = args.mode
     if MODE == "build_no_loop_rest":
         MODE = "build_rest"
-        os.environ["NO_LOOP"] = True
+        os.environ["NO_LOOP"] = "true"
 
     if MODE == "rest_no_loop":
-        MODE = rest
-        os.environ["NO_LOOP"] = True
+        MODE = "rest"
+        os.environ["NO_LOOP"] = "true"
 
     RECIPE = os.path.abspath(args.recipe)
     BASE = args.base

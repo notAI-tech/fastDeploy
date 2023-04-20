@@ -31,7 +31,7 @@ if not RECIPE or not MODE:
     parser.add_argument(
         "--mode",
         type=str,
-        help='One of, ["loop", "rest", "websocket", "build_rest"]; env: MODE',
+        help='One of, ["loop", "rest", "websocket", "build_rest", "build_rest_no_loop"]; env: MODE',
         required=True,
     )
 
@@ -65,6 +65,10 @@ if not RECIPE or not MODE:
     QUEUE_DIR = os.path.join(os.path.abspath(args.recipe), "fastdeploy_dbs")
 
     MODE = args.mode
+    if MODE == "build_no_loop_rest":
+        MODE = "build_rest"
+        os.environ["NO_LOOP"] = True
+
     RECIPE = os.path.abspath(args.recipe)
     BASE = args.base
     DOCKER_ARGS = args.docker_args
@@ -189,9 +193,15 @@ def build(mode="build_rest"):
     )
 
     if mode == "build_rest":
-        dockerfile_lines.append(
-            f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe {recipe_base_name} --mode loop & python3 -m fastdeploy --recipe {recipe_base_name} --mode rest"] \n'
-        )
+        if os.getenv("NO_LOOP"):
+            dockerfile_lines.append(
+                f'CMD ["ulimit -n 1000000 && NO_LOOP=true python3 -m fastdeploy --recipe {recipe_base_name} --mode rest"] \n'
+            )
+
+        else:
+            dockerfile_lines.append(
+                f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe {recipe_base_name} --mode loop & python3 -m fastdeploy --recipe {recipe_base_name} --mode rest"] \n'
+            )
     elif mode == "build_websocket":
         dockerfile_lines.append(
             f'CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe {recipe_base_name} --mode loop & python3 -m fastdeploy --recipe {recipe_base_name} --mode websocket"] \n'

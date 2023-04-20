@@ -47,6 +47,13 @@ REQUEST_INDEX, RESULTS_INDEX = _utils.get_request_index_results_index(
 )
 print(REQUEST_INDEX.directory, RESULTS_INDEX.directory)
 
+NO_LOOP_MODE = False
+if os.getenv("NO_LOOP").lower() == "true":
+    NO_LOOP_MODE = True
+
+if NO_LOOP_MODE:
+    from predictor import predictor
+
 
 def wait_and_read_pred(unique_id):
     """
@@ -159,27 +166,31 @@ class Infer(object):
 
                             in_data.append(_temp_file_path)
 
-                _utils.META_INDEX["TO_PROCESS_COUNT"] += len(in_data)
-
-                _metrics = {}
-                _metrics["received"] = time.time()
-                _metrics["in_data"] = in_data
-                _utils.METRICS_INDEX[unique_id] = _metrics
-
-                REQUEST_INDEX[unique_id] = (
-                    in_data,
-                    [_extra_options_for_predictor.get(_) for _ in _in_file_names],
-                )
-
-                if is_async_request:
-                    resp.media = {"unique_id": unique_id, "success": True}
+                if NO_LOOP_MODE:
+                    resp.media = {"success": True, "prediction": predictor(in_data)}
                     resp.status = falcon.HTTP_200
                 else:
-                    resp.media, resp.status = wait_and_read_pred(unique_id)
+                    _utils.META_INDEX["TO_PROCESS_COUNT"] += len(in_data)
 
-                _metrics = _utils.METRICS_INDEX[unique_id]
-                _metrics["responded"] = time.time()
-                _utils.METRICS_INDEX[unique_id] = _metrics
+                    _metrics = {}
+                    _metrics["received"] = time.time()
+                    _metrics["in_data"] = in_data
+                    _utils.METRICS_INDEX[unique_id] = _metrics
+
+                    REQUEST_INDEX[unique_id] = (
+                        in_data,
+                        [_extra_options_for_predictor.get(_) for _ in _in_file_names],
+                    )
+
+                    if is_async_request:
+                        resp.media = {"unique_id": unique_id, "success": True}
+                        resp.status = falcon.HTTP_200
+                    else:
+                        resp.media, resp.status = wait_and_read_pred(unique_id)
+
+                    _metrics = _utils.METRICS_INDEX[unique_id]
+                    _metrics["responded"] = time.time()
+                    _utils.METRICS_INDEX[unique_id] = _metrics
 
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)

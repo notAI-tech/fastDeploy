@@ -23,8 +23,13 @@ NO_LOOP_MODE = False
 if os.getenv("NO_LOOP").lower() == "true":
     NO_LOOP_MODE = True
 
+ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
+
+
 if NO_LOOP_MODE:
     from predictor import predictor
+
+    IS_FILE_INPUT = False
 
 else:
     if "LAST_PREDICTOR_SEQUENCE" not in _utils.META_INDEX:
@@ -39,8 +44,6 @@ else:
         or f"time_per_example_{LAST_PREDICTOR_SEQUENCE}" not in _utils.META_INDEX
     ):
         time.sleep(5)
-
-    ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)
 
     TIME_PER_EXAMPLE = sum(
         [

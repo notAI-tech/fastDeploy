@@ -31,7 +31,7 @@ if not RECIPE or not MODE:
     parser.add_argument(
         "--mode",
         type=str,
-        help='One of, ["loop", "rest", "websocket", "build_rest", "build_rest_no_loop"]; env: MODE',
+        help='One of, ["loop", "rest", "rest_no_loop", "websocket", "build_rest", "build_rest_no_loop"]; env: MODE',
         required=True,
     )
 
@@ -67,6 +67,10 @@ if not RECIPE or not MODE:
     MODE = args.mode
     if MODE == "build_no_loop_rest":
         MODE = "build_rest"
+        os.environ["NO_LOOP"] = True
+
+    if MODE == "rest_no_loop":
+        MODE = rest
         os.environ["NO_LOOP"] = True
 
     RECIPE = os.path.abspath(args.recipe)

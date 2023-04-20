@@ -27,8 +27,6 @@ jobs:
     - name: Build fastdeploy-ui
       run: |
         cd fastdeploy-ui
-        npm install
-        npm run build
         mv public ../fastdeploy/fastdeploy-ui
         du -hs ../fastdeploy/fastdeploy-ui
 

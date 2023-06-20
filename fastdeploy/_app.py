@@ -20,7 +20,7 @@ from functools import partial
 from . import _utils
 
 NO_LOOP_MODE = False
-if os.getenv("NO_LOOP").lower() == "true":
+if os.getenv("NO_LOOP", "false").lower() == "true":
     NO_LOOP_MODE = True
 
 ONLY_ASYNC = os.getenv("ONLY_ASYNC", False)

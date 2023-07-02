@@ -103,9 +103,9 @@ def wait_and_read_pred(unique_id):
 class Infer(object):
     def on_post(self, req, resp):
         try:
-            unique_id = str(uuid.uuid4())
-
             req_params = req.params
+            unique_id = str(req_params.get("unique_id", str(uuid.uuid4())))
+
             is_async_request = ONLY_ASYNC or req_params.get("async")
 
             _extra_options_for_predictor = {}

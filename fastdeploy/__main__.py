@@ -144,6 +144,7 @@ def rest():
         "worker_connections": 1000,
         "worker_class": "gevent",
         "timeout": TIMEOUT,
+        "allow_redirects": True
     }
 
     print(f"fastDeploy active at http://{host}:{port}")

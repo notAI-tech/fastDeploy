@@ -17,16 +17,13 @@ import time
 import shlex
 import shutil
 from datetime import datetime
-from diskcache import Index
+from liteindex import DefinedIndex
 
 import sys
-from example import example
-
-IS_FILE_INPUT = False
 try:
-    IS_FILE_INPUT = os.path.exists(example[0])
+    from example import example
 except:
-    pass
+    raise Exception("example.py not found. Please follow the instructions in README.md")
 
 from . import QUEUE_DIR, QUEUE_NAME
 
@@ -46,89 +43,76 @@ RUNNING_TIME_PER_EXAMPLE_AVERAGE_OVER = int(
     os.getenv("RUNNING_TIME_PER_EXAMPLE_AVERAGE_OVER", "100")
 )
 
-_meta_index = os.path.join(QUEUE_DIR, f"common.META_INDEX")
-META_INDEX = Index(_meta_index)
-META_INDEX["IS_FILE_INPUT"] = IS_FILE_INPUT
-META_INDEX["PREDICTION_LOOP_SLEEP"] = PREDICTION_LOOP_SLEEP
-META_INDEX["BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR"] = BATCH_COLLECTION_SLEEP_IF_EMPTY_FOR
-META_INDEX["BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY"] = BATCH_COLLECTION_SLEEP_FOR_IF_EMPTY
-META_INDEX["MANAGER_LOOP_SLEEP"] = MANAGER_LOOP_SLEEP
-try:
-    META_INDEX["TO_PROCESS_COUNT"]
-except:
-    META_INDEX["TO_PROCESS_COUNT"] = 0
+PREDICTOR_SEQUENCE_TO_FILES = {}
 
-"""
-METRICS_INDEX[unique_id] = {
-    "extras": [],
-    "prediction_start": {0: time.time()},
-    "prediction_end": {0: time.time()},
-    "predicted_in_batch": {0: len(unique_ids)},
-    "result": [],
-    "received": time.time(),
-    "in_data": [],
-    "responded": time.time()
-}
-"""
+predictor_files = [_ for _ in glob.glob("predictor*.py") if _ == "predictor.py" or _.split("predictor_")[1].split(".")[0].isdigit()]
 
-METRICS_INDEX = Index(os.path.join(QUEUE_DIR, "metrics_index"))
-
-REQUEST_INDEX = Index(os.path.join(QUEUE_DIR, f"main.request_index"))
-RESULTS_INDEX = Index(os.path.join(QUEUE_DIR, f"main.results_index"))
-
-
-def get_request_index_results_index(predictor_id, is_first=False, is_last=False):
-    if is_first and is_last:
-        logger.info(
-            f"predictor_{predictor_id}: is_first: {is_first} is_last: {is_last}, request_index, results_index"
-        )
-        return REQUEST_INDEX, RESULTS_INDEX
-
-    elif is_first:
-        logger.info(
-            f"predictor_{predictor_id}: is_first: {is_first} is_last: {is_last}, request_index, {predictor_id}.intermediate_index"
-        )
-        return REQUEST_INDEX, Index(
-            os.path.join(QUEUE_DIR, f"{predictor_id}.intermediate_index")
-        )
-
-    elif is_last:
-        logger.info(
-            f"predictor_{predictor_id}: is_first: {is_first} is_last: {is_last}, {predictor_id - 1}.intermediate_index, results_index"
-        )
-        return (
-            Index(os.path.join(QUEUE_DIR, f"{predictor_id - 1}.intermediate_index")),
-            RESULTS_INDEX,
-        )
-
+for f in sorted(predictor_files, key=lambda x: int(x.split("predictor_")[1].split(".")[0] if x != "predictor.py" else 0)):
+    if f == "predictor.py":
+        PREDICTOR_SEQUENCE_TO_FILES[0] = f
     else:
-        logger.info(
-            f"predictor_{predictor_id}: is_first: {is_first} is_last: {is_last}, {predictor_id - 1}.intermediate_index, {predictor_id - 1}.intermediate_index"
-        )
-        return Index(
-            os.path.join(QUEUE_DIR, f"{predictor_id - 1}.intermediate_index")
-        ), Index(os.path.join(QUEUE_DIR, f"{predictor_id}.intermediate_index"))
+        PREDICTOR_SEQUENCE_TO_FILES[len(PREDICTOR_SEQUENCE_TO_FILES)] = f
 
+PREDICTOR_FILE_TO_SEQUENCE = {v: k for k, v in PREDICTOR_SEQUENCE_TO_FILES.items()}
 
-FASTDEPLOY_UI_PATH = os.getenv(
-    "FASTDEPLOYUI",
-    os.path.join(os.path.split(os.path.abspath(__file__))[0], "fastdeploy-ui"),
+LAST_PREDICTOR_SEQUENCE = max(PREDICTOR_SEQUENCE_TO_FILES.keys())
+
+PREDICTOR_META_INDEX = DefinedIndex("predictor_meta_index", schema={
+    # sleep times, warmup and batch sizes
+        "prediction_loop_sleep": "number",
+        "batch_collection_sleep_if_empty_for": "number",
+        "batch_collection_sleep_for_if_empty": "number",
+        "manager_loop_sleep": "number",
+        "batch_size_to_time_per_example": "json",
+        "max_wait": "number",
+        "optimum_batch_size": "number",
+        "optimium_time_per_example": "number",
+        "warmup_done": "boolean",
+
+    # predictor meta info
+        "is_first_predictor": "boolean",
+        "is_last_predictor": "boolean",
+        "predictor_name": "string",
+        "predictor_sequence": "number",
+    }, 
+    db_path=os.path.join(QUEUE_DIR, f"meta_index.db")
 )
 
-# No real use in making these configurable.
+MAIN_INDEX = DefinedIndex("main_index", schema={
+        **{
+            "is_async_request": "boolean",
+            "last_predictor_sequence": "number",
+            "last_predictor_success": "boolean",
+            "-1.outputs": "other",
+            "-1.predicted_at": "number",
+            "-1.received_at": "number",
+            "-1.predicted_in_batch_of": "number",
+        },
+        **{f"{_}.outputs": "other" for _ in PREDICTOR_SEQUENCE_TO_FILES},
+        **{f"{_}.predicted_at": "number" for _ in PREDICTOR_SEQUENCE_TO_FILES},
+        **{f"{_}.received_at": "number" for _ in PREDICTOR_SEQUENCE_TO_FILES},
+        **{f"{_}.predicted_in_batch_of": "number" for _ in PREDICTOR_SEQUENCE_TO_FILES}
+    },
+    db_path=os.path.join(QUEUE_DIR, f"main_index.db")
+)
+
+print(MAIN_INDEX.schema)
+
+BLOB_INDEX = DefinedIndex("blob_index", schema={
+    "blob": "blob",
+    "type": "string"
+}, db_path=os.path.join(QUEUE_DIR, f"blob_index.db"))
+
 
 # Number of gunicorn workers to use
 # Keep 0 for auto selection
 WORKERS = int(os.getenv("WORKERS", "0"))
 
-TIMEOUT = int(os.getenv("TIMEOUT", "120"))
+TIMEOUT = int(os.getenv("TIMEOUT", "0"))
 
 # Maximum examples allowed in client batch.
 # 0 means unlimited
 MAX_PER_CLIENT_BATCH = int(os.getenv("MAX_PER_CLIENT_BATCH", "0"))
-
-# The loop will wait for time_per_example * MAX_WAIT for batching.
-MAX_WAIT = float(os.getenv("MAX_WAIT", 0.2))
 
 
 def warmup(predictor, example_input, n=3):
@@ -146,18 +130,8 @@ def find_optimum_batch_sizes(
     predictor,
     predictor_sequence,
     example_input,
-    max_batch_search_sec=int(os.getenv("MAX_BATCH_SEARCH_SEC", "240")),
+    max_batch_search_sec=int(os.getenv("MAX_BATCH_SEARCH_SEC", "30")),
 ):
-    """
-    Finds the optimum batch size for a predictor function with the given example input.
-
-    :param predictor: predictor function. Should have two inputs, a list of examples and batch size.
-    :param example_input: example input for the predictor.
-    :param max_batch_search_sec: max time to spend on batch size search in seconds.
-
-    :return batch_size: optimal batch size to be used
-    :return time_per_example: approx time taken per example.
-    """
     time_per_example = None
     previous_time_per_example = pow(2, 64)
 

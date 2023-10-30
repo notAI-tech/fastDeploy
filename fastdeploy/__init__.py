@@ -190,7 +190,7 @@ def build(mode="build_rest"):
     )
 
     dockerfile_lines.append(
-        f"RUN sudo chmod -R a+rw {recipe_base_name} || chmod -R a+rw {recipe_base_name} && cd {recipe_base_name} && python3 predictor.py"
+        f"RUN if command -v sudo > /dev/null; then sudo chmod -R a+rw {recipe_base_name}; else chmod -R a+rw {recipe_base_name}; fi && cd {recipe_base_name} && python3 predictor.py"
     )
 
     dockerfile_lines.append(

@@ -96,8 +96,6 @@ MAIN_INDEX = DefinedIndex("main_index", schema={
     db_path=os.path.join(QUEUE_DIR, f"main_index.db")
 )
 
-print(MAIN_INDEX.schema)
-
 BLOB_INDEX = DefinedIndex("blob_index", schema={
     "blob": "blob",
     "type": "string"

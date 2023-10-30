@@ -35,8 +35,6 @@ def start_loop(predictor_name):
                 ]
             ).items():
 
-            print(data)
-
             __lock_unique_ids.append(unique_id)
             unique_id_wise_input_count[unique_id] = len(data[f"{predictor_sequence - 1}.outputs"])
             input_batch += data[f"{predictor_sequence - 1}.outputs"]

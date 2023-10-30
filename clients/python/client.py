@@ -34,3 +34,5 @@ if __name__ == "__main__":
     x = client.infer_background(["this", "is", "some", "data"])
 
     print(x.result())
+
+    print(client.infer(["this", "is", "some", "data"]))

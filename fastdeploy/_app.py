@@ -46,14 +46,13 @@ class Infer(object):
 
                 while True:
                     current_results = _utils.MAIN_INDEX.get(unique_id, 
-                                            # select_keys=[
-                                            #     f"{_utils.LAST_PREDICTOR_SEQUENCE}.outputs",
-                                            #     "last_predictor_success",
-                                            #     "last_predictor_sequence"
-                                            # ]
+                                            select_keys=[
+                                                f"{_utils.LAST_PREDICTOR_SEQUENCE}.outputs",
+                                                "last_predictor_success",
+                                                "last_predictor_sequence"
+                                            ]
                                         )[unique_id]
                     
-                    print(current_results)
                     if current_results["last_predictor_success"] is True and current_results["last_predictor_sequence"] == _utils.LAST_PREDICTOR_SEQUENCE:
                         response = {"success": True, "unique_id": unique_id, "prediction": current_results[f"{_utils.LAST_PREDICTOR_SEQUENCE}.outputs"]}
                         response_status = falcon.HTTP_200

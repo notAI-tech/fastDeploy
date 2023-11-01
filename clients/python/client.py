@@ -1,5 +1,6 @@
 import requests
 import msgpack
+import pickle
 import uuid
 
 import concurrent.futures as futures
@@ -13,11 +14,17 @@ class FDClient:
         assert isinstance(data, (list, tuple)), "Data must be of type list or tuple"
 
         unique_id = str(uuid.uuid4()) if not unique_id else unique_id
+        is_pickled = False
+        try:
+            data = msgpack.packb(data, use_bin_type=True)
+        except:
+            data = msgpack.packb(pickle.dumps(data), use_bin_type=True)
+            is_pickled = True
 
         response = requests.post(
             f"{self.server_url}/infer",
-            params={"unique_id": unique_id, "async": True},
-            data=msgpack.packb(data, use_bin_type=True),
+            params={"unique_id": unique_id, "async": True, "pickled": is_pickled},
+            data=data,
             headers={"Content-Type": "application/msgpack"},
         )
 

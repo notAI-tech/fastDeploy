@@ -1,4 +1,5 @@
 from gevent import monkey
+
 monkey.patch_all()
 
 import os
@@ -14,7 +15,8 @@ from functools import partial
 from . import _utils
 from . import _infer
 
-ONLY_ASYNC = bool(os.getenv("ONLY_ASYNC", False))
+ONLY_ASYNC = os.environ.get("ONLY_ASYNC", "0") == "1"
+
 
 class Infer(object):
     def __init__(self):
@@ -33,21 +35,22 @@ class Infer(object):
             unique_id=unique_id,
             is_pickled_input=is_pickled_input,
             is_compressed=is_compressed,
+            is_async_request=is_async_request,
         )
-        
+
         resp.data = response
         resp.content_type = "application/msgpack"
         resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
+
 
 app = falcon.App(
     cors_enable=True,
     middleware=falcon.CORSMiddleware(
         allow_origins=_utils.ALLOWED_ORIGINS, allow_credentials=_utils.ALLOWED_ORIGINS
-    )
+    ),
 )
 
 infer_api = Infer()
 
 app.add_route("/infer", infer_api)
 app.add_route("/sync", infer_api)
-

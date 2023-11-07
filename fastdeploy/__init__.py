@@ -113,7 +113,7 @@ def loop():
 
 
 def rest():
-    from ._app import app
+    from ._rest import app
     import gunicorn.app.base
 
     class StandaloneApplication(gunicorn.app.base.BaseApplication):
@@ -144,7 +144,7 @@ def rest():
         "worker_connections": 1000,
         "worker_class": "gevent",
         "timeout": TIMEOUT,
-        "allow_redirects": True
+        "allow_redirects": True,
     }
 
     print(f"fastDeploy active at http://{host}:{port}")
@@ -153,7 +153,7 @@ def rest():
 
 
 def websocket():
-    from ._app import websocket_handler
+    from ._rest import websocket_handler
     from ._ws import WebSocketHandler
     from gevent.pywsgi import WSGIServer
 
@@ -245,7 +245,6 @@ if MODE == "loop":
     loop()
 
 elif MODE == "rest":
-
     rest()
 
 elif MODE == "build_rest":

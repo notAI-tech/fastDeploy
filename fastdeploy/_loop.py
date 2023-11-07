@@ -22,8 +22,6 @@ def start_loop(predictor_name):
     unique_id_wise_input_count = {}
 
     while True:
-        __lock_unique_ids = []
-
         for unique_id, data in _utils.MAIN_INDEX.search(
                 query={
                     "last_predictor_sequence": predictor_sequence - 1,
@@ -32,20 +30,13 @@ def start_loop(predictor_name):
                 n=optimal_batch_size,
                 select_keys=[
                     f"{predictor_sequence - 1}.outputs",
-                ]
+                ],
+                update={"last_predictor_sequence": predictor_sequence, "last_predictor_success": None}
             ).items():
 
-            __lock_unique_ids.append(unique_id)
             unique_id_wise_input_count[unique_id] = len(data[f"{predictor_sequence - 1}.outputs"])
             input_batch += data[f"{predictor_sequence - 1}.outputs"]
 
-        _utils.MAIN_INDEX.update({
-            unique_id: {
-                "last_predictor_success": None,
-                "last_predictor_sequence": predictor_sequence,
-            } for unique_id in __lock_unique_ids
-        })
-        
         current_batch_length = len(input_batch)
 
         if time.time() - last_batch_collection_started_at < max_wait_time_for_batch_collection:

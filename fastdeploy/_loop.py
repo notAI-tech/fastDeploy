@@ -37,6 +37,7 @@ def start_loop(predictor_name):
             update={
                 "last_predictor_sequence": predictor_sequence,
                 "last_predictor_success": None,
+                f"{predictor_sequence}.received_at": time.time(),
             },
         ).items():
             unique_id_wise_input_count[unique_id] = len(

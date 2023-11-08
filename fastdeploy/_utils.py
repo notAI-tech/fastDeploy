@@ -10,23 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 import os
-import uuid
 import glob
 import json
 import time
-import shlex
-import shutil
 from datetime import datetime
 from liteindex import DefinedIndex
-
-import sys
 
 try:
     from example import example
 except:
     raise Exception("example.py not found. Please follow the instructions in README.md")
 
-from . import QUEUE_DIR, QUEUE_NAME
+QUEUE_DIR = os.getenv("QUEUE_DIR", "fastdeploy_dbs")
 
 ONLY_ASYNC = bool(os.getenv("ONLY_ASYNC", False))
 
@@ -109,13 +104,6 @@ MAIN_INDEX = DefinedIndex(
     },
     db_path=os.path.join(QUEUE_DIR, f"main_index.db"),
 )
-
-BLOB_INDEX = DefinedIndex(
-    "blob_index",
-    schema={"blob": "blob", "type": "string"},
-    db_path=os.path.join(QUEUE_DIR, f"blob_index.db"),
-)
-
 
 # Number of gunicorn workers to use
 # Keep 0 for auto selection

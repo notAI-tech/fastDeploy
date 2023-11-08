@@ -8,17 +8,17 @@ from . import _utils
 import importlib
 
 
-def start_loop(predictor_name):
+def start_loop(predictor_name, max_batch_size):
     predictor = importlib.import_module(os.path.splitext(predictor_name)[0]).predictor
     predictor_sequence = _utils.PREDICTOR_FILE_TO_SEQUENCE[predictor_name]
 
-    optimal_batch_size = 8
+    max_batch_size = 8
 
     last_batch_collection_started_at = 0
     max_wait_time_for_batch_collection = 0.1
 
     _utils.logger.info(
-        f"Imported predictor: {predictor_name} predictor_sequence: {predictor_sequence}, optimal_batch_size: {optimal_batch_size}, max_wait_time_for_batch_collection: {max_wait_time_for_batch_collection}"
+        f"Imported predictor: {predictor_name} predictor_sequence: {predictor_sequence}, max_batch_size: {max_batch_size}, max_wait_time_for_batch_collection: {max_wait_time_for_batch_collection}"
     )
 
     input_batch = []
@@ -30,7 +30,7 @@ def start_loop(predictor_name):
                 "last_predictor_sequence": predictor_sequence - 1,
                 "last_predictor_success": True,
             },
-            n=optimal_batch_size,
+            n=max_batch_size,
             select_keys=[
                 f"{predictor_sequence - 1}.outputs",
             ],
@@ -51,14 +51,14 @@ def start_loop(predictor_name):
             time.time() - last_batch_collection_started_at
             < max_wait_time_for_batch_collection
         ):
-            if current_batch_length / optimal_batch_size < 0.5:
+            if current_batch_length / max_batch_size < 0.5:
                 time.sleep(0.01)
                 continue
 
         last_predictor_success = False
         received_at = time.time()
         try:
-            results = predictor(input_batch)
+            results = predictor(input_batch, batch_size=max_batch_size)
             last_predictor_success = True
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)

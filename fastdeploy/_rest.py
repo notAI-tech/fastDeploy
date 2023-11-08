@@ -43,11 +43,16 @@ class Infer(object):
         resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
 
 
-class OpenMetrics(object):
+class PrometheusMetrics(object):
     def on_get(self, req, resp):
-        resp.content_type = "text/plain; version=0.0.4"
-        resp.data = _utils.get_metrics()
+        metric_output = f"""# HELP pending_requests The number of pending requests.
+        # TYPE pending_requests gauge
+        pending_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": None, "last_predictor_success": True})}
+        """
+
         resp.status = falcon.HTTP_200
+        resp.content_type = "text/plain; version=0.0.4"
+
 
 app = falcon.App(
     cors_enable=True,

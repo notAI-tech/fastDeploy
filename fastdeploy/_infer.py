@@ -113,6 +113,10 @@ class Infer:
                         ],
                         "reason": None,
                     }
+
+                    _utils.MAIN_INDEX.update(
+                        {unique_id: {"-1.predicted_at": time.time()}}
+                    )
                     break
                 elif current_results["last_predictor_success"] is False:
                     response = {

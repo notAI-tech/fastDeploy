@@ -45,13 +45,18 @@ class Infer(object):
 
 class PrometheusMetrics(object):
     def on_get(self, req, resp):
-        metric_output = f"""# HELP pending_requests The number of pending requests.
+        prometheus_text = f"""# HELP pending_requests The number of pending requests.
         # TYPE pending_requests gauge
         pending_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": None, "last_predictor_success": True})}
+
+        # HELP failed_requests The number of failed requests.
+        # TYPE failed_requests gauge
+        failed_requests {_utils.MAIN_INDEX.count(query={"last_predictor_success": False})}
         """
 
         resp.status = falcon.HTTP_200
         resp.content_type = "text/plain; version=0.0.4"
+        resp.body = prometheus_text
 
 
 app = falcon.App(
@@ -62,6 +67,8 @@ app = falcon.App(
 )
 
 infer_api = Infer()
+prometheus_metrics = PrometheusMetrics()
 
 app.add_route("/infer", infer_api)
 app.add_route("/sync", infer_api)
+app.add_route("/prometheus_metrics", prometheus_metrics)

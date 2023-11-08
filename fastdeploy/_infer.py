@@ -83,6 +83,7 @@ class Infer:
                         "-1.outputs": inputs,
                         "-1.received_at": request_received_at,
                         "-1.predicted_in_batch_of": len(inputs),
+                        "-1.predicted_at": 0,
                         "is_async_request": is_async_request,
                         "last_predictor_sequence": -1,
                         "last_predictor_success": True,

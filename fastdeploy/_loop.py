@@ -52,7 +52,7 @@ def start_loop(predictor_name):
             < max_wait_time_for_batch_collection
         ):
             if current_batch_length / optimal_batch_size < 0.5:
-                time.sleep(0.05)
+                time.sleep(0.02)
                 continue
 
         last_predictor_success = False

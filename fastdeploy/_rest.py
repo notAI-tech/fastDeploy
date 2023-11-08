@@ -43,6 +43,12 @@ class Infer(object):
         resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
 
 
+class OpenMetrics(object):
+    def on_get(self, req, resp):
+        resp.content_type = "text/plain; version=0.0.4"
+        resp.data = _utils.get_metrics()
+        resp.status = falcon.HTTP_200
+
 app = falcon.App(
     cors_enable=True,
     middleware=falcon.CORSMiddleware(

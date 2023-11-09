@@ -16,6 +16,7 @@ class FDClient:
     def __init__(self, server_url):
         self.server_url = server_url
         self.local_storage = threading.local()
+        self.request_session = requests.Session()
 
     @property
     def _compressor(self):
@@ -46,7 +47,7 @@ class FDClient:
             data = pickle.dumps(data, protocol=5)
             is_pickled = True
 
-        response = requests.post(
+        response = self.request_session.post(
             f"{self.server_url}/infer",
             params={
                 "unique_id": unique_id,
@@ -76,6 +77,13 @@ class FDClient:
         with futures.ThreadPoolExecutor() as executor:
             future = executor.submit(self.infer, data)
         return future
+    
+    def infer_background_multiple(self, data_list, unique_ids=None):
+        with futures.ThreadPoolExecutor() as executor:
+            futures_list = []
+            for data in data_list:
+                futures_list.append(executor.submit(self.infer, data))
+        return futures_list
 
 
 if __name__ == "__main__":

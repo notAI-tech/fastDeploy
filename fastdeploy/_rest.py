@@ -63,12 +63,7 @@ class PrometheusMetrics(object):
         resp.text = prometheus_text
 
 
-app = falcon.App(
-    cors_enable=True,
-    middleware=falcon.CORSMiddleware(
-        allow_origins=_utils.ALLOWED_ORIGINS, allow_credentials=_utils.ALLOWED_ORIGINS
-    ),
-)
+app = falcon.App(cors_enable=True, middleware=falcon.CORSMiddleware(allow_origins="*", allow_credentials="*"))
 
 infer_api = Infer()
 prometheus_metrics = PrometheusMetrics()

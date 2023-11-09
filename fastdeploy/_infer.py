@@ -11,7 +11,7 @@ class Infer:
     def __init__(self):
         self.local_storage = threading.local()
         self.result_polling_interval = 0.01
-        self.max_batch_size = _utils.MAX_PER_CLIENT_BATCH
+        self.max_batch_size = 0
 
     @property
     def _compressor(self):

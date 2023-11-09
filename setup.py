@@ -21,12 +21,7 @@ REQUIRES_PYTHON = ">=3.6.0"
 VERSION = "3.0.0rc1"
 
 # What packages are required for this module to be executed?
-REQUIRED = [
-    "falcon",
-    "liteindex",
-    "zstandard",
-    "gunicorn[gevent]"
-]
+REQUIRED = ["falcon", "liteindex", "zstandard", "gunicorn[gevent]"]
 
 # What packages are optional?
 EXTRAS = {

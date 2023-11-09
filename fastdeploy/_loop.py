@@ -8,17 +8,46 @@ from . import _utils
 import importlib
 
 
-def start_loop(predictor_name, max_batch_size):
+def start_loop(predictor_name=os.getenv("PREDICTOR_NAME"), optimal_batch_size=int(os.getenv("OPTIMAL_BATCH_SIZE"))):
     predictor = importlib.import_module(os.path.splitext(predictor_name)[0]).predictor
     predictor_sequence = _utils.PREDICTOR_FILE_TO_SEQUENCE[predictor_name]
 
-    max_batch_size = 8
+    if predictor_sequence == 0:
+        example = _utils.example
+    else:
+        while True:
+            try:
+                example = _utils.META_INDEX.get(f"{predictor_sequence - 1}", select_keys=["example_output"])[f"{predictor_sequence - 1}"]["example_output"]
+                if example is not None:
+                    break
+            except:
+                time.sleep(1)
 
+
+    _utils.warmup(predictor, example)
+
+    optimal_batch_size, time_per_example = _utils.calculate_optimum_batch_sizes(predictor, predictor_sequence, example, optimal_batch_size)
+
+    _utils.META_INDEX.update(
+        {f"{predictor_sequence}": {
+            "optimal_batch_size": optimal_batch_size,
+            "time_per_example": time_per_example,
+            "predictor_name": predictor_name,
+            "predictor_sequence": predictor_sequence,
+            "optimal_batch_size": optimal_batch_size,
+            "request_poll_time": 0.01,
+            "example_output": example,
+            "status": "running",
+        }}
+    )
+
+    # warmup
     last_batch_collection_started_at = 0
-    max_wait_time_for_batch_collection = 0.1
+    max_wait_time_for_batch_collection = 0.01
+    
 
     _utils.logger.info(
-        f"Imported predictor: {predictor_name} predictor_sequence: {predictor_sequence}, max_batch_size: {max_batch_size}, max_wait_time_for_batch_collection: {max_wait_time_for_batch_collection}"
+        f"Imported predictor: {predictor_name} predictor_sequence: {predictor_sequence}, optimal_batch_size: {optimal_batch_size}, max_wait_time_for_batch_collection: {max_wait_time_for_batch_collection}"
     )
 
     input_batch = []
@@ -30,7 +59,7 @@ def start_loop(predictor_name, max_batch_size):
                 "last_predictor_sequence": predictor_sequence - 1,
                 "last_predictor_success": True,
             },
-            n=max_batch_size,
+            n=optimal_batch_size,
             select_keys=[
                 f"{predictor_sequence - 1}.outputs",
             ],
@@ -47,18 +76,22 @@ def start_loop(predictor_name, max_batch_size):
 
         current_batch_length = len(input_batch)
 
+        if current_batch_length == 0:
+            time.sleep(0.01)
+            continue
+
         if (
             time.time() - last_batch_collection_started_at
             < max_wait_time_for_batch_collection
         ):
-            if current_batch_length / max_batch_size < 0.5:
+            if current_batch_length / optimal_batch_size < 0.5:
                 time.sleep(0.01)
                 continue
 
         last_predictor_success = False
         received_at = time.time()
         try:
-            results = predictor(input_batch, batch_size=max_batch_size)
+            results = predictor(input_batch, batch_size=optimal_batch_size)
             last_predictor_success = True
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)

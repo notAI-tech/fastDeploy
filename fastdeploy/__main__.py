@@ -42,30 +42,37 @@ parser.add_argument(
         example: workers:3, timeout:480
 
         REST
-            max_allowed_batch_size: integer max batch size for the predictor, default=0
+            max_request_batch_size: integer max number of inputs in a batch, default=0 (None)
             workers: integer number of workers, default=3
             timeout: seconds after which request will fail, default=480
             host: host for the REST server, default=localhost
             port: port for the REST server, default=8080
+            only_async: true/false, default=false
+            result_poll_time: seconds to wait before polling for results, default=0.01
+
 
         LOOP
-            max_batch_size: integer max batch size for the predictor, default=0 (auto)
+            optimal_batch_size: integer max batch size for the predictor, default=0 (auto)
             predictor_name: predictor.py or predictor_N.py, name of the predictor run in the loop, default: predictor.py
+            request_poll_time: seconds to wait before polling for requests, default=0.01
     """,
     required=False,
-    default="max_allowed_batch_size:0,workers:3,timeout:480,host:localhost,port:8080,predictor_name:predictor.py,max_batch_size:0",
+    default="max_request_batch_size:0,workers:3,timeout:480,host:localhost,port:8080,predictor_name:predictor.py,optimal_batch_size:0",
 )
 
 args = parser.parse_args()
 
 CONFIG = {
-    "max_allowed_batch_size": 0,
-    "workers": 3,
-    "timeout": 480,
-    "host": "localhost",
-    "port": 8080,
-    "predictor_name": "predictor.py",
-    "max_batch_size": 0,
+    # rest config
+    "max_request_batch_size": int(os.getenv("MAX_REQUEST_BATCH_SIZE", "0")),
+    "workers": int(os.getenv("WORKERS", "3")),
+    "timeout": int(os.getenv("TIMEOUT", "480")),
+    "host": os.getenv("HOST", "localhost"),
+    "port": int(os.getenv("PORT", "8080")),
+
+    # predictor config
+    "predictor_name": os.getenv("PREDICTOR_NAME", "predictor.py"),
+    "optimal_batch_size": int(os.getenv("OPTIMAL_BATCH_SIZE", "0")),
 }
 
 if args.config:
@@ -78,6 +85,9 @@ if args.config:
             CONFIG[k.strip()] = int(v.strip())
         except:
             CONFIG[k.strip()] = v.strip()
+
+for k, v in CONFIG.items():
+    os.environ[k.upper()] = str(v)
 
 sys.path.append(os.path.abspath(args.recipe))
 os.chdir(os.path.abspath(args.recipe))
@@ -104,7 +114,7 @@ except:
 def loop():
     from ._loop import start_loop
 
-    start_loop(max_batch_size=0, predictor_name=CONFIG["predictor_name"])
+    start_loop()
 
 
 def rest():

@@ -7,7 +7,7 @@ on:
   push:
     branches: [ master ]
     paths:
-      - 'aaaasetup.py'
+      - 'setup.py'
 
 jobs:
   deploy:

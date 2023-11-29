@@ -76,6 +76,7 @@ CONFIG = {
     "host": os.getenv("HOST", "0.0.0.0"),
     "port": int(os.getenv("PORT", "8080")),
     "only_async": os.getenv("ONLY_ASYNC", "false").lower() == "true",
+    
     # predictor config
     "predictor_name": os.getenv("PREDICTOR_NAME", "predictor.py"),
     "optimal_batch_size": int(os.getenv("OPTIMAL_BATCH_SIZE", "0")),

@@ -1,7 +1,14 @@
-<p align="center">
-    <h1 align="center">fastDeploy</h1>
-    <p align="center">Deploy DL/ ML inference pipelines with minimal extra code.</p>
-</p>
+## fastDeploy
+
+- Deploy any python inference pipeline with minimal extra code
+- Auto batching of concurrent inputs is enabled out of the box
+- Promethues metrics (open metrics) are exposed for monitoring
+- helpful TUI for building optimal docker image
+- pre-built recipes for popular pipelines (huggingface, fastai, pytorch, tensorflow, etc)
+- chained inference pipelines are supported out of the box
+- optimized REST, websocket and rpc apis are exposed for inference
+- inputs and intermediate outputs are stored in an ultra-fast disk-backed index for fault tolerance
+
 
 **Installation:** 
 ```bash
@@ -16,19 +23,53 @@ fastdeploy --help
 python -m fastdeploy --help
 
 # Start prediction "loop" for recipe "echo_json"
-fastdeploy --recipe ./echo_json --mode loop
+fastdeploy --loop --recipe recipes/echo_json
 
 # Start rest apis for recipe "echo_json"
-fastdeploy --recipe ./echo_json --mode rest
+fastdeploy --rest --recipe recipes/echo_json
 
-# Auto genereate dockerfile and build docker image. --base is docker base
-fastdeploy --recipe ./recipes/echo_json/ \
- --mode build_rest --base python:3.6-slim
-# fastdeploy_echo_json built!
+# Writes the dockerfile for recipe "echo_json"
+# and builds the docker image if docker is installed
+fastdeploy --build --recipe recipes/echo_json
 
 # Run docker image
 docker run -it -p8080:8080 fastdeploy_echo_json
 ```
 
-- [serving your model with fastDeploy](https://github.com/notAI-tech/fastDeploy/blob/master/recipe.md)
-- [cURL and Python inference examples](https://github.com/notAI-tech/fastDeploy/blob/master/inference.md)
+#### Serving your pipeline with fastdeploy
+- Create a recipe folder with the following structure:
+```
+recipe_folder/
+├── example.py
+├── predictor.py
+├── requirements.txt (optional)
+└── extras.sh (optional)
+```
+
+- `example.py`
+
+```python
+name = "your_app_or_model_name"
+
+example = [
+    example_object_1,
+    example_object_2,
+]
+```
+
+- `predictor.py`
+
+```python
+# Whatever code and imports you need to load your model and make predictions
+
+# predictor function must be defined exactly as below
+# batch_size is the optimal batch size for your model
+# inputs length may or may not be equal to batch_size
+# len(outputs) == len(inputs)
+def predictor(inputs, batch_size=1):
+    return outputs
+```
+
+- `requirements.txt` (optional): all python dependencies for your pipeline
+
+- `extras.sh` (optional): any bash commands to run before installing requirements.txt

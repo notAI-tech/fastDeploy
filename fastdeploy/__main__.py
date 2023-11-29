@@ -36,6 +36,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--build",
+    help="""Build docker image""",
+    required=False,
+    action="store_true",
+)
+
+parser.add_argument(
     "--config",
     type=str,
     help="""

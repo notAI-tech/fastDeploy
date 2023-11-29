@@ -7,7 +7,6 @@
 - pre-built recipes for popular pipelines (huggingface, fastai, pytorch, tensorflow, etc)
 - chained inference pipelines are supported out of the box
 - optimized REST, websocket and rpc apis are exposed for inference
-- inputs and intermediate outputs are stored in an ultra-fast disk-backed index for fault tolerance
 
 
 **Installation:** 

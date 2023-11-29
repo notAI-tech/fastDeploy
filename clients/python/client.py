@@ -12,13 +12,17 @@ import concurrent.futures as futures
 
 
 class FDClient:
-    def __init__(self, server_url):
+    def __init__(self, server_url, compression=True):
         self.server_url = server_url
         self.local_storage = threading.local()
-        self.request_session = requests.Session()
+        self.requests_session = requests.Session()
+        self.compression = compression
 
     @property
     def _compressor(self):
+        if self.compression is False:
+            return None
+
         if (
             not hasattr(self.local_storage, "compressor")
             or self.local_storage.compressor is None
@@ -28,6 +32,9 @@ class FDClient:
 
     @property
     def _decompressor(self):
+        if self.compression is False:
+            return None
+
         if (
             not hasattr(self.local_storage, "decompressor")
             or self.local_storage.decompressor is None
@@ -42,7 +49,7 @@ class FDClient:
 
         data = pickle.dumps(data, protocol=5)
 
-        response = self.request_session.post(
+        response = self.requests_session.post(
             f"{self.server_url}/infer",
             params={
                 "unique_id": unique_id,

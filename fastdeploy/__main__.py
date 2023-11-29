@@ -64,7 +64,7 @@ parser.add_argument(
             request_poll_time: seconds to wait before polling for requests, default=0.01
     """,
     required=False,
-    default="max_request_batch_size:0,workers:3,timeout:480,host:localhost,port:8080,predictor_name:predictor.py,optimal_batch_size:0",
+    default="max_request_batch_size:0,workers:3,timeout:480,host:localhost,port:8080,predictor_name:predictor.py,optimal_batch_size:0,keep_alive:60",
 )
 
 args = parser.parse_args()
@@ -79,6 +79,7 @@ CONFIG = {
     # predictor config
     "predictor_name": os.getenv("PREDICTOR_NAME", "predictor.py"),
     "optimal_batch_size": int(os.getenv("OPTIMAL_BATCH_SIZE", "0")),
+    "keep_alive": int(os.getenv("KEEP_ALIVE", "60")),
 }
 
 if args.config:
@@ -157,6 +158,8 @@ def rest():
         "worker_class": "gevent",
         "timeout": CONFIG["timeout"],
         "allow_redirects": True,
+        "keepalive": CONFIG["keep_alive"],
+        "keep_alive": CONFIG["keep_alive"],
     }
 
     print(

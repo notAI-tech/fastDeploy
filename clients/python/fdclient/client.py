@@ -54,7 +54,7 @@ class FDClient:
             params={
                 "unique_id": unique_id,
                 "async": is_async,
-                "pickled": True,
+                "input_type": "pickle",
                 "compressed": True if zstandard is not None else False,
             },
             data=self._compressor.compress(data) if zstandard is not None else data,
@@ -85,11 +85,25 @@ class FDClient:
 
 if __name__ == "__main__":
     client = FDClient("http://localhost:8080")
+
+    s = time.time()
+    print("infer", client.infer(["this", "is", "some", "data"]), time.time() - s)
+
+    s = time.time()
     x = client.infer_background(["this", "is", "some", "data"])
+    print("infer_background", x.result(), time.time() - s)
 
-    print(x.result())
+    s = time.time()
 
-    for _ in range(10):
-        s = time.time()
-        client.infer(["this", "is", "some", "data"])
-        print(time.time() - s)
+    print(
+        "infer_background_multiple 40",
+        len(
+            [
+                _.result()
+                for _ in client.infer_background_multiple(
+                    [["this", "is", "some", "data"]] * 40
+                )
+            ]
+        ),
+        time.time() - s,
+    )

@@ -24,19 +24,30 @@ class Infer(object):
         unique_id = str(req.params.get("unique_id", uuid.uuid4()))
 
         is_async_request = ONLY_ASYNC or req.params.get("async", "f")[0].lower() == "t"
-        is_pickled_input = req.params.get("pickled", "f")[0].lower() == "t"
         is_compressed = req.params.get("compressed", "f")[0].lower() == "t"
+        input_type = req.params.get("input_type", "json")
 
         success, response = self._infer.infer(
             inputs=req.stream.read(),
             unique_id=unique_id,
-            is_pickled_input=is_pickled_input,
+            input_type=input_type,
             is_compressed=is_compressed,
             is_async_request=is_async_request,
         )
 
-        resp.data = response
-        resp.content_type = "application/msgpack"
+        if is_compressed:
+            resp.data = response
+            resp.content_type = "application/octet-stream"
+
+        elif input_type == "json":
+            resp.media = response
+        elif input_type == "pickle":
+            resp.data = response
+            resp.content_type = "application/pickle"
+        elif input_type == "msgpack":
+            resp.data = response
+            resp.content_type = "application/msgpack"
+
         resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
 
 

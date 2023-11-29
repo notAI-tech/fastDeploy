@@ -1,1 +1,0 @@
-example = ["sample.pdf"]

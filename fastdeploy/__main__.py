@@ -52,19 +52,18 @@ parser.add_argument(
             max_request_batch_size: integer max number of inputs in a batch, default=0 (None)
             workers: integer number of workers, default=3
             timeout: seconds after which request will fail, default=480
-            host: host for the REST server, default=localhost
+            host: host for the REST server, default=0.0.0.0
             port: port for the REST server, default=8080
             only_async: true/false, default=false
-            result_poll_time: seconds to wait before polling for results, default=0.01
 
 
         LOOP
-            optimal_batch_size: integer max batch size for the predictor, default=0 (auto)
             predictor_name: predictor.py or predictor_N.py, name of the predictor run in the loop, default: predictor.py
-            request_poll_time: seconds to wait before polling for requests, default=0.01
+            optimal_batch_size: integer max batch size for the predictor, default=0 (auto)
+            keep_alive: gunicorn gevent keep alive, default=60
     """,
     required=False,
-    default="max_request_batch_size:0,workers:3,timeout:480,host:localhost,port:8080,predictor_name:predictor.py,optimal_batch_size:0,keep_alive:60",
+    default="max_request_batch_size:0,workers:3,timeout:480,host:0.0.0.0,port:8080,only_async=false,predictor_name:predictor.py,optimal_batch_size:0,keep_alive:60",
 )
 
 args = parser.parse_args()
@@ -74,8 +73,9 @@ CONFIG = {
     "max_request_batch_size": int(os.getenv("MAX_REQUEST_BATCH_SIZE", "0")),
     "workers": int(os.getenv("WORKERS", "3")),
     "timeout": int(os.getenv("TIMEOUT", "480")),
-    "host": os.getenv("HOST", "localhost"),
+    "host": os.getenv("HOST", "0.0.0.0"),
     "port": int(os.getenv("PORT", "8080")),
+    "only_async": os.getenv("ONLY_ASYNC", "false").lower() == "true",
     # predictor config
     "predictor_name": os.getenv("PREDICTOR_NAME", "predictor.py"),
     "optimal_batch_size": int(os.getenv("OPTIMAL_BATCH_SIZE", "0")),

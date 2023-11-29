@@ -84,7 +84,7 @@ CONFIG = {
 if args.config:
     for config in args.config.split(","):
         try:
-            k, v = config.strip().split(":")
+            k, v = config.replace("=", ":").strip().split(":")
         except:
             continue
 

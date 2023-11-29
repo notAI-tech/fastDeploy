@@ -1,38 +1,38 @@
-# What is a Recipe?
+### Serving your pipeline with fastdeploy
 
-- To serve your model via fastDeploy, files `example.py`, `predictor.py` and optional `requirements.txt`, `extras.sh` needs to be added to your existing scripts.
-- These files make up `recipe` for fastDeploy
-
-# predictor.py
-
-```python
-# YOUR MODEL LOADING CODE HERE
-
-def predictor.py(list_of_inputs, batch_size=1):
-    # inputs can be python objects (string/list/dict..) (text models) or file_paths (image/speech models)
-    # run prediction on list of inputs here
-    # batch_size is the optional batch_size param you can pass to your keras/tensorflow/pytorch model
-    # You can ignore batch_size and loop over list_of_inputs and and predict one by one too
-    # output shoud be JSON serializable (strings/lists/dicts/ints/floats ..)
-    
-    return list_of_outputs
-    
+- Create a recipe folder with the following structure:
+```
+recipe_folder/
+├── example.py
+├── predictor.py
+├── requirements.txt (optional)
+└── extras.sh (optional)
 ```
 
-
-# example.py
+- `example.py`
 
 ```python
-example = [INPUT]
-# INPUT can be string/lsit/dict (REST API will accept JSON) anything your scripts need.
-# INPUT can also be file path (in which case the REST API will accept multi-part posts), in which case you can keep example file next to example.py and INPUT = example file name
+name = "your_app_or_model_name"
+
+example = [
+    example_object_1,
+    example_object_2,
+]
 ```
 
-# requirements.txt 
-- optional. Needed only for building a docker image with fastdeploy
-- Python requirements for containerizing your recipe using docker.
+- `predictor.py`
 
-# extras.sh
-- optional
-- If you have requirements like opencv which require some apt-get or any commands to be run to correctly work, list all those commands in extras.sh
+```python
+# Whatever code and imports you need to load your model and make predictions
 
+# predictor function must be defined exactly as below
+# batch_size is the optimal batch size for your model
+# inputs length may or may not be equal to batch_size
+# len(outputs) == len(inputs)
+def predictor(inputs, batch_size=1):
+    return outputs
+```
+
+- `requirements.txt` (optional): all python dependencies for your pipeline
+
+- `extras.sh` (optional): any bash commands to run before installing requirements.txt

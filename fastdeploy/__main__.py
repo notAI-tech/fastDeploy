@@ -87,6 +87,10 @@ if args.config:
             k, v = config.strip().split(":")
         except:
             continue
+
+        if os.getenv(k.upper()) is not None:
+            continue
+
         try:
             CONFIG[k.strip()] = int(v.strip())
         except:

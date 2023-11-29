@@ -69,7 +69,6 @@ CONFIG = {
     "timeout": int(os.getenv("TIMEOUT", "480")),
     "host": os.getenv("HOST", "localhost"),
     "port": int(os.getenv("PORT", "8080")),
-
     # predictor config
     "predictor_name": os.getenv("PREDICTOR_NAME", "predictor.py"),
     "optimal_batch_size": int(os.getenv("OPTIMAL_BATCH_SIZE", "0")),

@@ -49,14 +49,13 @@ FIRST_PREDICTOR_SEQUENCE = min(PREDICTOR_SEQUENCE_TO_FILES.keys())
 META_INDEX = DefinedIndex(
     "meta_index",
     schema={
-            "optimal_batch_size": "number",
-            "time_per_example": "number",
-            "predictor_name": "string",
-            "predictor_sequence": "number",
-            "optimal_batch_size": "number",
-            "request_poll_time": "number",
-            "example_output": "other",
-            "status": "string",
+        "optimal_batch_size": "number",
+        "time_per_example": "number",
+        "predictor_name": "string",
+        "predictor_sequence": "number",
+        "request_poll_time": "number",
+        "example_output": "other",
+        "status": "string",
     },
     db_path=os.path.join("fastdeploy_dbs", f"main_index.db"),
 )
@@ -81,6 +80,7 @@ MAIN_INDEX = DefinedIndex(
     db_path=os.path.join("fastdeploy_dbs", f"main_index.db"),
 )
 
+
 def warmup(predictor, example_input, n=3):
     """
     Run warmup prediction on the model.
@@ -97,10 +97,13 @@ def calculate_optimum_batch_sizes(
     predictor_sequence,
     example_input,
     max_batch_size,
-    max_batch_search_sec=30
+    max_batch_search_sec=10,
 ):
-
-    search_over_batch_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024] if max_batch_size == 0 else [max_batch_size]
+    search_over_batch_sizes = (
+        [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        if max_batch_size == 0
+        else [max_batch_size]
+    )
 
     time_per_example = 0
     max_batch_size = 0
@@ -108,9 +111,8 @@ def calculate_optimum_batch_sizes(
     for batch_size in search_over_batch_sizes:
         logger.info(f"Trying batch size: {batch_size}")
         start = time.time()
-        inputs = example_input * batch_size
-        predictor(inputs[:batch_size], batch_size=batch_size)
-        end = time.time() - start
+        predictor((example_input * batch_size)[:batch_size], batch_size=batch_size)
+        end = time.time()
 
         _time_per_example = (end - start) / batch_size
 
@@ -125,7 +127,8 @@ def calculate_optimum_batch_sizes(
         else:
             break
 
-    logger.info(f"{PREDICTOR_SEQUENCE_TO_FILES[predictor_sequence]}: Optimum batch size: {max_batch_size}, time_per_example: {time_per_example}")
+    logger.info(
+        f"{PREDICTOR_SEQUENCE_TO_FILES[predictor_sequence]}: Optimum batch size: {max_batch_size}, time_per_example: {time_per_example}"
+    )
 
     return max_batch_size, time_per_example
-

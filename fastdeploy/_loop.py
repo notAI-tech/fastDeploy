@@ -8,7 +8,10 @@ from . import _utils
 import importlib
 
 
-def start_loop(predictor_name=os.getenv("PREDICTOR_NAME"), optimal_batch_size=int(os.getenv("OPTIMAL_BATCH_SIZE"))):
+def start_loop(
+    predictor_name=os.getenv("PREDICTOR_NAME"),
+    optimal_batch_size=int(os.getenv("OPTIMAL_BATCH_SIZE")),
+):
     predictor = importlib.import_module(os.path.splitext(predictor_name)[0]).predictor
     predictor_sequence = _utils.PREDICTOR_FILE_TO_SEQUENCE[predictor_name]
 
@@ -17,37 +20,42 @@ def start_loop(predictor_name=os.getenv("PREDICTOR_NAME"), optimal_batch_size=in
     else:
         while True:
             try:
-                example = _utils.META_INDEX.get(f"{predictor_sequence - 1}", select_keys=["example_output"])[f"{predictor_sequence - 1}"]["example_output"]
+                example = _utils.META_INDEX.get(
+                    f"{predictor_sequence - 1}", select_keys=["example_output"]
+                )[f"{predictor_sequence - 1}"]["example_output"]
                 if example is not None:
                     break
             except:
                 time.sleep(1)
 
-
     _utils.warmup(predictor, example)
 
-    optimal_batch_size, time_per_example = _utils.calculate_optimum_batch_sizes(predictor, predictor_sequence, example, optimal_batch_size)
-
-    _utils.META_INDEX.update(
-        {f"{predictor_sequence}": {
-            "optimal_batch_size": optimal_batch_size,
-            "time_per_example": time_per_example,
-            "predictor_name": predictor_name,
-            "predictor_sequence": predictor_sequence,
-            "optimal_batch_size": optimal_batch_size,
-            "request_poll_time": 0.01,
-            "example_output": example,
-            "status": "running",
-        }}
+    optimal_batch_size, time_per_example = _utils.calculate_optimum_batch_sizes(
+        predictor, predictor_sequence, example, optimal_batch_size
     )
 
-    # warmup
+    _utils.META_INDEX.update(
+        {
+            f"{predictor_sequence}": {
+                "optimal_batch_size": optimal_batch_size,
+                "time_per_example": time_per_example,
+                "predictor_name": predictor_name,
+                "predictor_sequence": predictor_sequence,
+                "request_poll_time": 0.01,
+                "example_output": example,
+                "status": "running",
+            }
+        }
+    )
+
     last_batch_collection_started_at = 0
-    max_wait_time_for_batch_collection = 0.01
-    
+
+    # max_wait_time_for_batch_collection
+    # is the time after which the loop will start processing the batch even if the batch is not full
+    max_wait_time_for_batch_collection = time_per_example * 0.2
 
     _utils.logger.info(
-        f"Imported predictor: {predictor_name} predictor_sequence: {predictor_sequence}, optimal_batch_size: {optimal_batch_size}, max_wait_time_for_batch_collection: {max_wait_time_for_batch_collection}"
+        f"Imported predictor: {predictor_name} predictor_sequence: {predictor_sequence}, optimal_batch_size: {optimal_batch_size}, time_per_example: {time_per_example}"
     )
 
     input_batch = []
@@ -85,7 +93,7 @@ def start_loop(predictor_name=os.getenv("PREDICTOR_NAME"), optimal_batch_size=in
             < max_wait_time_for_batch_collection
         ):
             if current_batch_length / optimal_batch_size < 0.5:
-                time.sleep(0.01)
+                time.sleep(max_wait_time_for_batch_collection / 2)
                 continue
 
         last_predictor_success = False

@@ -4,7 +4,6 @@ except:
     zstandard = None
 import threading
 import requests
-import msgpack
 import pickle
 import uuid
 import time
@@ -24,7 +23,7 @@ class FDClient:
             not hasattr(self.local_storage, "compressor")
             or self.local_storage.compressor is None
         ):
-            self.local_storage.compressor = zstandard.ZstdCompressor(level=3)
+            self.local_storage.compressor = zstandard.ZstdCompressor(level=-1)
         return self.local_storage.compressor
 
     @property
@@ -36,48 +35,39 @@ class FDClient:
             self.local_storage.decompressor = zstandard.ZstdDecompressor()
         return self.local_storage.decompressor
 
-    def infer(self, data, unique_id=None):
+    def infer(self, data, unique_id=None, is_async=False):
         assert isinstance(data, (list, tuple)), "Data must be of type list or tuple"
 
         unique_id = str(uuid.uuid4()) if not unique_id else unique_id
-        is_pickled = False
-        try:
-            data = msgpack.packb(data, use_bin_type=True)
-        except:
-            data = pickle.dumps(data, protocol=5)
-            is_pickled = True
+
+        data = pickle.dumps(data, protocol=5)
 
         response = self.request_session.post(
             f"{self.server_url}/infer",
             params={
                 "unique_id": unique_id,
-                "async": True,
-                "pickled": is_pickled,
-                "compressed": "1" if zstandard is not None else "0",
+                "async": is_async,
+                "pickled": True,
+                "compressed": True if zstandard is not None else False,
             },
             data=self._compressor.compress(data) if zstandard is not None else data,
-            headers={"Content-Type": "application/msgpack"},
+            headers={"Content-Type": "application/octet-stream"},
         )
 
-        if is_pickled:
-            return pickle.loads(
-                self._decompressor.decompress(response.content)
-                if zstandard is not None
-                else response.content
-            )
-        else:
-            return msgpack.unpackb(
-                self._decompressor.decompress(response.content)
-                if zstandard is not None
-                else response.content,
-                raw=False,
-            )
+        return pickle.loads(
+            self._decompressor.decompress(response.content)
+            if zstandard is not None
+            else response.content
+        )
+
+    def infer_async(self, data, unique_id=None):
+        return self.infer(data, unique_id, is_async=True)
 
     def infer_background(self, data, unique_id=None):
         with futures.ThreadPoolExecutor() as executor:
             future = executor.submit(self.infer, data)
         return future
-    
+
     def infer_background_multiple(self, data_list, unique_ids=None):
         with futures.ThreadPoolExecutor() as executor:
             futures_list = []

@@ -1,5 +1,6 @@
 import os
 import time
+import json
 import pickle
 import msgpack
 import zstandard
@@ -83,7 +84,7 @@ class Infer:
         elif input_type == "msgpack":
             response = msgpack.packb(response, use_bin_type=True)
         elif input_type == "json":
-            response = json.dumps(response)
+            pass
 
         if is_compressed:
             response = self._compressor.compress(response)

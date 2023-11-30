@@ -57,6 +57,7 @@ docker run -it -p8080:8080 fastdeploy_echo_json
 ### Where to use fastDeploy?
 
 - to deploy any non ultra light weight models i.e: most DL models, >50ms inference time per example
+- if the model/pipeline benefits from batch inference, fastDeploy is perfect for your use-case
 - if you are going to have individual inputs (example, user's search input which needs to be vectorized or image to be classified)
 - in the case of individual inputs, requests coming in at close intervals will be batched together and sent to the model as a batch
 - perfect for creating internal micro services separating your model, pre and post processing from business logic

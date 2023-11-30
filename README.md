@@ -1,4 +1,5 @@
 ## fastDeploy
+#### easy and performant micro-services for Python Deep Learning inference pipelines
 
 - Deploy any python inference pipeline with minimal extra code
 - Auto batching of concurrent inputs is enabled out of the box

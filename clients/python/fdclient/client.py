@@ -2,11 +2,18 @@ try:
     import zstandard
 except:
     zstandard = None
+
+try:
+    import msgpack
+except:
+    msgpack = None
+
 import threading
 import requests
 import pickle
 import uuid
 import time
+import json
 
 import concurrent.futures as futures
 
@@ -16,7 +23,8 @@ class FDClient:
         self.server_url = server_url
         self.local_storage = threading.local()
         self.requests_session = requests.Session()
-        self.compression = compression
+        self.compression = compression if zstandard is not None else False
+        self.input_type = "pickle" if self.requests_session.get(f"{self.server_url}/meta", params={"is_pickle_allowed": ""}).json()["is_pickle_allowed"] else "msgpack" if msgpack is not None else "json"
 
     @property
     def _compressor(self):
@@ -47,25 +55,45 @@ class FDClient:
 
         unique_id = str(uuid.uuid4()) if not unique_id else unique_id
 
-        data = pickle.dumps(data, protocol=5)
+        if self.input_type == "pickle":
+            data = pickle.dumps(data, protocol=5)
+        elif self.input_type == "msgpack":
+            data = msgpack.packb(data, use_bin_type=True)
+        else:
+            data = json.dumps(data)
 
         response = self.requests_session.post(
             f"{self.server_url}/infer",
             params={
                 "unique_id": unique_id,
                 "async": is_async,
-                "input_type": "pickle",
+                "input_type": self.input_type,
                 "compressed": True if zstandard is not None else False,
             },
             data=self._compressor.compress(data) if zstandard is not None else data,
             headers={"Content-Type": "application/octet-stream"},
         )
 
-        return pickle.loads(
-            self._decompressor.decompress(response.content)
-            if zstandard is not None
-            else response.content
-        )
+        if self.input_type == "pickle":
+            return pickle.loads(
+                self._decompressor.decompress(response.content)
+                if zstandard is not None
+                else response.content
+            )
+        elif self.input_type == "msgpack":
+            return msgpack.unpackb(
+                self._decompressor.decompress(response.content)
+                if zstandard is not None
+                else response.content,
+                raw=False,
+                use_list=False,
+            )
+        else:
+            return json.loads(
+                self._decompressor.decompress(response.content)
+                if zstandard is not None
+                else response.content
+            )
 
     def infer_async(self, data, unique_id=None):
         return self.infer(data, unique_id, is_async=True)

@@ -55,6 +55,7 @@ parser.add_argument(
             host: host for the REST server, default=0.0.0.0
             port: port for the REST server, default=8080
             only_async: true/false, default=false
+            allow_pickle: true/false, default=true
 
 
         LOOP
@@ -63,7 +64,7 @@ parser.add_argument(
             keep_alive: gunicorn gevent keep alive, default=60
     """,
     required=False,
-    default="max_request_batch_size:0,workers:3,timeout:480,host:0.0.0.0,port:8080,only_async=false,predictor_name:predictor.py,optimal_batch_size:0,keep_alive:60",
+    default="max_request_batch_size:0,workers:3,timeout:480,host:0.0.0.0,port:8080,only_async=false,allow_pickle=true,predictor_name:predictor.py,optimal_batch_size:0,keep_alive:60",
 )
 
 args = parser.parse_args()
@@ -76,6 +77,7 @@ CONFIG = {
     "host": os.getenv("HOST", "0.0.0.0"),
     "port": int(os.getenv("PORT", "8080")),
     "only_async": os.getenv("ONLY_ASYNC", "false").lower() == "true",
+    "allow_pickle": os.getenv("ALLOW_PICKLE", "true").lower() == "true",
     
     # predictor config
     "predictor_name": os.getenv("PREDICTOR_NAME", "predictor.py"),

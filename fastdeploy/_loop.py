@@ -52,7 +52,7 @@ def start_loop(
 
     # max_wait_time_for_batch_collection
     # is the time after which the loop will start processing the batch even if the batch is not full
-    max_wait_time_for_batch_collection = time_per_example * 0.2
+    max_wait_time_for_batch_collection = max(0.003, time_per_example * 0.25)
 
     _utils.logger.info(
         f"Imported predictor: {predictor_name} predictor_sequence: {predictor_sequence}, optimal_batch_size: {optimal_batch_size}, time_per_example: {time_per_example}"
@@ -85,7 +85,7 @@ def start_loop(
         current_batch_length = len(input_batch)
 
         if current_batch_length == 0:
-            time.sleep(0.01)
+            time.sleep(max_wait_time_for_batch_collection)
             continue
 
         if (

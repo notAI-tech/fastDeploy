@@ -1,4 +1,4 @@
-### Serving your pipeline with fastdeploy
+### Serving your pipeline with fastdeploy [example](https://github.com/notAI-tech/fastDeploy/tree/master/recipes/echo)
 
 - Create a recipe folder with the following structure:
 ```
@@ -36,3 +36,36 @@ def predictor(inputs, batch_size=1):
 - `requirements.txt` (optional): all python dependencies for your pipeline
 
 - `extras.sh` (optional): any bash commands to run before installing requirements.txt
+
+- #### start the loop
+
+```bash
+fastdeploy --loop --recipe recipes/echo_chained
+```
+
+- #### start the server
+
+```bash
+fastdeploy --rest --recipe recipes/echo_chained
+```
+
+
+### Chained recipe [example](https://github.com/notAI-tech/fastDeploy/tree/master/recipes/echo_chained)
+- Chained recipe means you have multiple predictor_X.py which are chained sequentially
+- `predictor_1.py` will be called first, then `predictor_2.py` and so on
+- Each predictor_X.py must have a predictor function defined as above
+- Each predictor_X.py is run separately i.e: can be in different virtualenvs
+
+- #### start all the loops
+
+```bash
+fastdeploy --loop --recipe recipes/echo_chained --config "predictor_name:predictor_1.py"
+
+fastdeploy --loop --recipe recipes/echo_chained --config "predictor_name:predictor_2.py"
+```
+
+- #### start the server
+
+```bash
+fastdeploy --rest --recipe recipes/echo_chained
+```

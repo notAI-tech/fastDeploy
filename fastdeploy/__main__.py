@@ -67,7 +67,7 @@ parser.add_argument(
             base: base image for docker, default=python:3.8-slim
     """,
     required=False,
-    default="max_request_batch_size=0,workers=3,timeout=480,host=0.0.0.0,port=8080,only_async=false,allow_pickle=true,predictor_name=predictor.py,optimal_batch_siz=0,keep_alive=60,base=python:3.8-slim",
+    default="max_request_batch_size=0,workers=3,timeout=480,host=0.0.0.0,port=8080,only_async=false,allow_pickle=true,predictor_name=predictor.py,optimal_batch_size=0,keep_alive=60,base=python:3.8-slim",
 )
 
 args = parser.parse_args()
@@ -184,6 +184,9 @@ def build_docker_image():
     f.write(
         f"""FROM {CONFIG['base']}
 RUN python3 -m pip install --upgrade --no-cache-dir pip fastdeploy
+
+ENV {' '.join([f"{k.upper()}={v}" for k, v in CONFIG.items()])}
+
 ADD . /recipe
 WORKDIR /recipe
 {'' if not os.path.exists("extras.sh") else 'RUN chmod +x /recipe/extras.sh && /recipe/extras.sh'}

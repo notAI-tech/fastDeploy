@@ -1,0 +1,14 @@
+FROM python:3.8-slim
+RUN python3 -m pip install --upgrade --no-cache-dir pip fastdeploy
+
+ENV MAX_REQUEST_BATCH_SIZE=0 WORKERS=3 TIMEOUT=480 HOST=0.0.0.0 PORT=8080 ONLY_ASYNC=false ALLOW_PICKLE=true PREDICTOR_NAME=predictor.py OPTIMAL_BATCH_SIZE=0 KEEP_ALIVE=60 BASE=python:3.8-slim
+
+ADD . /recipe
+WORKDIR /recipe
+
+RUN python3 -m pip install --no-cache-dir -r /recipe/requirements.txt
+RUN cd /recipe && python3 -c "from predictor import predictor; from example import example; predictor(example)"
+
+ENTRYPOINT ["/bin/sh", "-c"]
+
+CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --loop & python3 -m fastdeploy --recipe /recipe --rest"]

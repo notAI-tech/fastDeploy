@@ -191,7 +191,7 @@ ADD . /recipe
 WORKDIR /recipe
 {'' if not os.path.exists("extras.sh") else 'RUN chmod +x /recipe/extras.sh && /recipe/extras.sh'}
 RUN python3 -m pip install --no-cache-dir -r /recipe/requirements.txt
-RUN cd /recipe && python3 predictor.py
+RUN cd /recipe && python3 -c "from predictor import predictor; from example import example; predictor(example)"
 
 ENTRYPOINT ["/bin/sh", "-c"]
 

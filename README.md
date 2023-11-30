@@ -20,9 +20,9 @@ pip install --upgrade fastdeploy fdclient
 #### Start fastDeploy server on a recipe:
 ```bash
 # Invoke fastdeploy 
-fastdeploy --help
-# or
 python -m fastdeploy --help
+# or
+fastdeploy --help
 
 # Start prediction "loop" for recipe "echo_json"
 fastdeploy --loop --recipe recipes/echo_json
@@ -43,6 +43,7 @@ fastdeploy --rest --recipe recipes/echo_json
 ```bash
 # Write the dockerfile for recipe "echo_json"
 # and builds the docker image if docker is installed
+# base defaults to python:3.8-slim
 fastdeploy --build --recipe recipes/echo_json
 
 # Run docker image

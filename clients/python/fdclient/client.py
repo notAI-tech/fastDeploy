@@ -114,11 +114,13 @@ class FDClient:
 if __name__ == "__main__":
     client = FDClient("http://localhost:8080")
 
-    s = time.time()
-    print("infer", client.infer(["this", "is", "some", "data"]), time.time() - s)
+    print(client.input_type)
 
     s = time.time()
-    x = client.infer_background(["this", "is", "some", "data"])
+    print("infer", client.infer(["this", "is", "some", b"data"]), time.time() - s)
+
+    s = time.time()
+    x = client.infer_background(["this", "is", b"some", "data"])
     print("infer_background", x.result(), time.time() - s)
 
     s = time.time()
@@ -129,7 +131,7 @@ if __name__ == "__main__":
             [
                 _.result()
                 for _ in client.infer_background_multiple(
-                    [["this", "is", "some", "data"]] * 40
+                    [["this", b"is", "some", "data"]] * 40
                 )
             ]
         ),

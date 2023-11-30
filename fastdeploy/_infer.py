@@ -23,7 +23,11 @@ for predictor_file, predictor_sequence in _utils.PREDICTOR_FILE_TO_SEQUENCE.item
 
 
 class Infer:
-    def __init__(self, timeout=float(os.getenv("TIMEOUT", 0)), allow_pickle=os.getenv("ALLOW_PICKLE", "true").lower() == "true"):
+    def __init__(
+        self,
+        timeout=float(os.getenv("TIMEOUT", 0)),
+        allow_pickle=os.getenv("ALLOW_PICKLE", "true").lower() == "true",
+    ):
         self.local_storage = threading.local()
         self.result_polling_interval = max(
             0.0001, _utils.META_INDEX.math("time_per_example", "sum") * 0.2
@@ -52,7 +56,7 @@ class Infer:
     def read_inputs(self, inputs, input_type, is_compressed):
         if self.allow_pickle is False and input_type == "pickle":
             return None
-            
+
         if input_type == "pickle":
             inputs = pickle.loads(
                 inputs if not is_compressed else self._decompressor.decompress(inputs)

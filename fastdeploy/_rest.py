@@ -80,12 +80,20 @@ class Health(object):
 class Meta(object):
     def on_get(self, req, resp):
         resp.status = falcon.HTTP_200
-        
+
         if "is_pickle_allowed" in req.params:
-            resp.media = {"is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower() == "true"}
+            resp.media = {
+                "is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower() == "true"
+            }
 
         else:
-            resp.media = {"name": _utils.recipe_name,"example": _utils.example, "is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower() == "true", "timeout": os.getenv("TIMEOUT")}
+            resp.media = {
+                "name": _utils.recipe_name,
+                "example": _utils.example,
+                "is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower()
+                == "true",
+                "timeout": os.getenv("TIMEOUT"),
+            }
 
 
 app = falcon.App(

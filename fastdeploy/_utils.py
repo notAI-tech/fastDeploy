@@ -24,7 +24,7 @@ except:
 try:
     from example import name as recipe_name
 except:
-    recipe_name = os.path.basename(os.getcwd()).strip('/')
+    recipe_name = os.path.basename(os.getcwd()).strip("/")
 
 
 PREDICTOR_SEQUENCE_TO_FILES = {}

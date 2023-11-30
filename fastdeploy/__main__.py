@@ -46,7 +46,7 @@ parser.add_argument(
     "--config",
     type=str,
     help="""
-        example: workers:3, timeout:480
+        example usage: --config "workers=3, timeout:480, allow_pickle=true"
 
         REST
             max_request_batch_size: integer max number of inputs in a batch, default=0 (None)
@@ -62,9 +62,12 @@ parser.add_argument(
             predictor_name: predictor.py or predictor_N.py, name of the predictor run in the loop, default: predictor.py
             optimal_batch_size: integer max batch size for the predictor, default=0 (auto)
             keep_alive: gunicorn gevent keep alive, default=60
+        
+        DOCKER
+            base: base image for docker, default=python:3.8-slim
     """,
     required=False,
-    default="max_request_batch_size:0,workers:3,timeout:480,host:0.0.0.0,port:8080,only_async=false,allow_pickle=true,predictor_name:predictor.py,optimal_batch_size:0,keep_alive:60",
+    default="max_request_batch_size=0,workers=3,timeout=480,host=0.0.0.0,port=8080,only_async=false,allow_pickle=true,predictor_name=predictor.py,optimal_batch_siz=0,keep_alive=60,base=python:3.8-slim",
 )
 
 args = parser.parse_args()
@@ -78,17 +81,18 @@ CONFIG = {
     "port": int(os.getenv("PORT", "8080")),
     "only_async": os.getenv("ONLY_ASYNC", "false").lower() == "true",
     "allow_pickle": os.getenv("ALLOW_PICKLE", "true").lower() == "true",
-    
     # predictor config
     "predictor_name": os.getenv("PREDICTOR_NAME", "predictor.py"),
     "optimal_batch_size": int(os.getenv("OPTIMAL_BATCH_SIZE", "0")),
     "keep_alive": int(os.getenv("KEEP_ALIVE", "60")),
+    # building docker config
+    "base": os.getenv("BASE", "python:3.8-slim"),
 }
 
 if args.config:
     for config in args.config.split(","):
         try:
-            k, v = config.replace("=", ":").strip().split(":")
+            k, v = config.strip().split("=")
         except:
             continue
 
@@ -172,8 +176,41 @@ def rest():
     StandaloneApplication(app, options).run()
 
 
+def build_docker_image():
+    if not os.path.exists("requirements.txt"):
+        raise Exception("requirements.txt not found")
+
+    f = open("fastDeploy.auto_dockerfile", "w")
+    f.write(
+        f"""FROM {CONFIG['base']}
+RUN python3 -m pip install --upgrade --no-cache-dir pip fastdeploy
+ADD . /recipe
+WORKDIR /recipe
+{'' if not os.path.exists("extras.sh") else 'RUN chmod +x /recipe/extras.sh && /recipe/extras.sh'}
+RUN python3 -m pip install --no-cache-dir -r /recipe/requirements.txt
+RUN cd /recipe && python3 predictor.py
+
+ENTRYPOINT ["/bin/sh", "-c"]
+
+CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --loop & python3 -m fastdeploy --recipe /recipe --rest"]
+"""
+    )
+    f.flush()
+    f.close()
+
+    print(f"Dockerfile generated at {os.path.abspath('fastDeploy.auto_dockerfile')}")
+
+    print(
+        f"Run `docker build -f fastDeploy.auto_dockerfile -t <image_name:tag> {os.path.abspath('.')}` to build the image"
+    )
+    exit()
+
+
 if args.loop:
     loop()
 
 elif args.rest:
     rest()
+
+elif args.build:
+    build_docker_image()

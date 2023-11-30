@@ -21,6 +21,12 @@ try:
 except:
     raise Exception("example.py not found. Please follow the instructions in README.md")
 
+try:
+    from example import name as recipe_name
+except:
+    recipe_name = os.path.basename(os.getcwd()).strip('/')
+
+
 PREDICTOR_SEQUENCE_TO_FILES = {}
 
 predictor_files = [

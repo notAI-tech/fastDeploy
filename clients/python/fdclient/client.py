@@ -56,7 +56,7 @@ class FDClient:
         unique_id = str(uuid.uuid4()) if not unique_id else unique_id
 
         if self.input_type == "pickle":
-            data = pickle.dumps(data, protocol=5)
+            data = pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL)
         elif self.input_type == "msgpack":
             data = msgpack.packb(data, use_bin_type=True)
         else:

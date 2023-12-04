@@ -67,6 +67,6 @@ docker run -it -p8080:8080 fastdeploy_echo_json
 
 ### Where not to use fastDeploy?
 - non cpu/gpu heavy models that are better of running parallely rather than in batch
-- if your predictor calls some external API or uploads to s3 etc
+- if your predictor calls some external API or uploads to s3 etc in a blocking way
 - io heavy non batching use cases (eg: query ES or db for each input)
 - for these cases better to directly do from rest api code (instead of consumer producer mechanism) so that high concurrency can be achieved

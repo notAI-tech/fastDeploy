@@ -26,11 +26,11 @@ python -m fastdeploy --help
 # or
 fastdeploy --help
 
-# Start prediction "loop" for recipe "echo_json"
-fastdeploy --loop --recipe recipes/echo_json
+# Start prediction "loop" for recipe "echo"
+fastdeploy --loop --recipe recipes/echo
 
-# Start rest apis for recipe "echo_json"
-fastdeploy --rest --recipe recipes/echo_json
+# Start rest apis for recipe "echo"
+fastdeploy --rest --recipe recipes/echo
 ```
 
 #### Send a request and get predictions:
@@ -43,13 +43,13 @@ fastdeploy --rest --recipe recipes/echo_json
 
 #### auto generate dockerfile and build docker image:
 ```bash
-# Write the dockerfile for recipe "echo_json"
+# Write the dockerfile for recipe "echo"
 # and builds the docker image if docker is installed
 # base defaults to python:3.8-slim
-fastdeploy --build --recipe recipes/echo_json
+fastdeploy --build --recipe recipes/echo
 
 # Run docker image
-docker run -it -p8080:8080 fastdeploy_echo_json
+docker run -it -p8080:8080 fastdeploy_echo
 ```
 
 #### Serving your model (recipe):

@@ -17,7 +17,7 @@ pip install --upgrade fastdeploy fdclient
 # fdclient is optional, only needed if you want to use python client
 ```
 
-#### [CLI explained](https://github.com/notAI-tech/fastDeploy/cli.md)
+#### [CLI explained](https://github.com/notAI-tech/fastDeploy/blob/master/cli.md)
 
 #### Start fastDeploy server on a recipe: 
 ```bash
@@ -35,7 +35,7 @@ fastdeploy --rest --recipe recipes/echo_json
 
 #### Send a request and get predictions:
 
-- [Python client usage](https://github.com/notAI-tech/fastDeploy/blob/master/cli.md)
+- [Python client usage](https://github.com/notAI-tech/fastDeploy/blob/master/clients/python/README.md)
 
 - [curl usage]()
 

@@ -69,7 +69,7 @@ fastdeploy --rest --recipe ./recipes/echo
 | host | host for the REST server |
 | port | port for the REST server | 8080 |
 | only_async | true/false |
-| allow_pickle | true/false | true |
+| allow_pickle | true/false - use for disallowing pickle protocol when expecting external inputs | true |
 | keep_alive | gunicorn gevent keep alive | 60 |
 
 

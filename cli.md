@@ -66,9 +66,9 @@ fastdeploy --rest --recipe ./recipes/echo
 | max_request_batch_size | integer max number of inputs in a batch | 0 (None) |
 | workers | integer number of workers | 3 |
 | timeout | seconds after which request will fail | 480 |
-| host | host for the REST server |
+| host | host for the REST server | 0.0.0.0 |
 | port | port for the REST server | 8080 |
-| only_async | true/false |
+| only_async | true/false | false |
 | allow_pickle | true/false - use for disallowing pickle protocol when expecting external inputs | true |
 | keep_alive | gunicorn gevent keep alive | 60 |
 

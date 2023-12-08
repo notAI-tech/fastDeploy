@@ -56,12 +56,12 @@ parser.add_argument(
             port: port for the REST server, default=8080
             only_async: true/false, default=false
             allow_pickle: true/false, default=true
+            keep_alive: gunicorn gevent keep alive, default=60
 
 
         LOOP
             predictor_name: predictor.py or predictor_N.py, name of the predictor run in the loop, default: predictor.py
             optimal_batch_size: integer max batch size for the predictor, default=0 (auto)
-            keep_alive: gunicorn gevent keep alive, default=60
         
         DOCKER
             base: base image for docker, default=python:3.8-slim

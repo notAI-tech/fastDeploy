@@ -33,7 +33,6 @@ class FDClient:
             if msgpack is not None
             else "json"
         )
-        self._thread_pool_executor = None
 
     @property
     def _compressor(self):
@@ -138,9 +137,7 @@ class FDClient:
         ]
 
     def __close__(self):
-        self._thread_pool_executor.shutdown(
-            wait=False
-        ) if self._thread_pool_executor is not None else None
+        self._thread_pool_executor.shutdown(wait=False, cancel_futures=True)
 
     def __del__(self):
         self.__close__()

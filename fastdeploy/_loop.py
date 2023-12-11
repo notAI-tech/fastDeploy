@@ -61,7 +61,19 @@ def start_loop(
     input_batch = []
     unique_id_wise_input_count = {}
 
+    __last_deletion_run_at = time.time()
+
     while True:
+        if time.time() - __last_deletion_run_at >= 60:
+            # delete older than 15 min, all successful and returned predictions from main index
+            _utils.MAIN_INDEX.delete(
+                query={
+                    "last_predictor_success": True,
+                    "-1.predicted_at": {"$lt": time.time() - 900},
+                }
+            )
+            __last_deletion_run_at = time.time()
+
         for unique_id, data in _utils.MAIN_INDEX.search(
             query={
                 "last_predictor_sequence": predictor_sequence - 1,

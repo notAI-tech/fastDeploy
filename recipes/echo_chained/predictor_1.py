@@ -6,7 +6,7 @@ import time
 # Load your models, import your local scripts
 # modify the code inside predictor function.
 
-SLEEP_TIME = float(os.getenv("SLEEP_TIME", "0.2"))
+SLEEP_TIME = float(os.getenv("SLEEP_TIME", "0.1"))
 
 def predictor(input_list, batch_size=1):
     output_list = []

@@ -24,7 +24,16 @@ class FDClient:
         self.local_storage = threading.local()
         self.requests_session = requests.Session()
         self.compression = compression if zstandard is not None else False
-        self.input_type = "pickle" if self.requests_session.get(f"{self.server_url}/meta", params={"is_pickle_allowed": ""}).json()["is_pickle_allowed"] else "msgpack" if msgpack is not None else "json"
+        self.input_type = (
+            "pickle"
+            if self.requests_session.get(
+                f"{self.server_url}/meta", params={"is_pickle_allowed": ""}
+            ).json()["is_pickle_allowed"]
+            else "msgpack"
+            if msgpack is not None
+            else "json"
+        )
+        self._thread_pool_executor = None
 
     @property
     def _compressor(self):
@@ -37,6 +46,27 @@ class FDClient:
         ):
             self.local_storage.compressor = zstandard.ZstdCompressor(level=-1)
         return self.local_storage.compressor
+
+    @property
+    def _decompressor(self):
+        if self.compression is False:
+            return None
+
+        if (
+            not hasattr(self.local_storage, "decompressor")
+            or self.local_storage.decompressor is None
+        ):
+            self.local_storage.decompressor = zstandard.ZstdDecompressor()
+        return self.local_storage.decompressor
+
+    @property
+    def _thread_pool_executor(self):
+        if (
+            not hasattr(self.local_storage, "thread_pool_executor")
+            or self.local_storage.thread_pool_executor is None
+        ):
+            self.local_storage.thread_pool_executor = futures.ThreadPoolExecutor(32)
+        return self.local_storage.thread_pool_executor
 
     @property
     def _decompressor(self):
@@ -99,16 +129,21 @@ class FDClient:
         return self.infer(data, unique_id, is_async=True)
 
     def infer_background(self, data, unique_id=None):
-        with futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(self.infer, data)
-        return future
+        return self._thread_pool_executor.submit(self.infer, data, unique_id)
 
     def infer_background_multiple(self, data_list, unique_ids=None):
-        with futures.ThreadPoolExecutor() as executor:
-            futures_list = []
-            for data in data_list:
-                futures_list.append(executor.submit(self.infer, data))
-        return futures_list
+        return [
+            self.infer_background(data, unique_ids[i] if unique_ids else None)
+            for i, data in enumerate(data_list)
+        ]
+
+    def __close__(self):
+        self._thread_pool_executor.shutdown(
+            wait=False
+        ) if self._thread_pool_executor is not None else None
+
+    def __del__(self):
+        self.__close__()
 
 
 if __name__ == "__main__":

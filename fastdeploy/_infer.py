@@ -35,6 +35,9 @@ class Infer:
         )
         self.timeout = timeout
         self.allow_pickle = allow_pickle
+        _utils.logger.info(
+            f"result_polling_interval: {self.result_polling_interval} timeout: {self.timeout}"
+        )
 
     @property
     def _compressor(self):
@@ -212,9 +215,9 @@ class Infer:
                                 is_compressed,
                                 input_type,
                             )
-                            break
 
-                        time.sleep(self.result_polling_interval)
+                    time.sleep(self.result_polling_interval)
+
         except Exception as ex:
             return self.create_response(
                 {

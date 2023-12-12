@@ -62,6 +62,7 @@ def start_loop(
     unique_id_wise_input_count = {}
 
     __last_deletion_run_at = time.time()
+    __last_vaccum_run_at = time.time()
 
     while True:
         if time.time() - __last_deletion_run_at >= 60:
@@ -76,6 +77,10 @@ def start_loop(
                 }
             )
             __last_deletion_run_at = time.time()
+
+            if time.time() - __last_vaccum_run_at >= 600:
+                _utils.MAIN_INDEX.vacuum()
+                __last_vaccum_run_at = time.time()
 
         for unique_id, data in _utils.MAIN_INDEX.search(
             query={

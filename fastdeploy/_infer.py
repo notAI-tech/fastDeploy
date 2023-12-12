@@ -219,6 +219,7 @@ class Infer:
                     time.sleep(self.result_polling_interval)
 
         except Exception as ex:
+            _utils.logger.exception(ex, exc_info=True)
             return self.create_response(
                 {
                     "success": False,

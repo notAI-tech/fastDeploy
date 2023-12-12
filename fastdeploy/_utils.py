@@ -96,8 +96,10 @@ def warmup(predictor, example_input, n=3):
     :param n: number of warmup predictions to be run. defaults to 3
     """
     logger.info("Warming up .. ")
-    for _ in range(n):
+    for _ in range(n - 1):
         predictor(example_input)
+
+    return predictor(example_input)
 
 
 def calculate_optimum_batch_sizes(

@@ -28,7 +28,7 @@ def start_loop(
             except:
                 time.sleep(1)
 
-    _utils.warmup(predictor, example)
+    example_output = _utils.warmup(predictor, example)
 
     optimal_batch_size, time_per_example = _utils.calculate_optimum_batch_sizes(
         predictor, predictor_sequence, example, optimal_batch_size
@@ -42,7 +42,7 @@ def start_loop(
                 "predictor_name": predictor_name,
                 "predictor_sequence": predictor_sequence,
                 "request_poll_time": 0.01,
-                "example_output": example,
+                "example_output": example_output,
                 "status": "running",
             }
         }

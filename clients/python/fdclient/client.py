@@ -159,13 +159,11 @@ if __name__ == "__main__":
 
     print(
         "infer_background_multiple 40",
-        len(
-            [
-                _.result()
-                for _ in client.infer_background_multiple(
-                    [["this", b"is", "some", "data"]] * 40
-                )
-            ]
-        ),
+        [
+            _.result()['success']
+            for _ in client.infer_background_multiple(
+                [["this", b"is", "some", "data"]] * 40
+            )
+        ],
         time.time() - s,
     )

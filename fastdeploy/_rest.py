@@ -63,7 +63,7 @@ class PrometheusMetrics(object):
 
         # HELP successful_requests The number of failed requests.
         # TYPE successful_requests gauge
-        successful_requests {_utils.MAIN_INDEX.count(query={"last_predictor_success": True, "-1.predicted_at": {"$gt": 0}})}
+        successful_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": {"$ne": 0}, "last_predictor_success": True})}
         """
 
         resp.status = falcon.HTTP_200

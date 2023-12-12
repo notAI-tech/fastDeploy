@@ -86,7 +86,8 @@ MAIN_INDEX = DefinedIndex(
     db_path=os.path.join("fastdeploy_dbs", f"main_index.db"),
 )
 
-MAIN_INDEX.optimize_for_query(["last_predictor_sequence", "last_predictor_success"])
+MAIN_INDEX.optimize_for_query(["last_predictor_success", "last_predictor_sequence"])
+MAIN_INDEX.optimize_for_query(["-1.predicted_at", "last_predictor_success"])
 
 
 def warmup(predictor, example_input, n=3):

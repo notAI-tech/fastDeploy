@@ -68,16 +68,19 @@ def start_loop(
             # delete older than 15 min, all successful and returned predictions from main index
             _utils.MAIN_INDEX.delete(
                 query={
+                    f"-1.predicted_at": {
+                        "$ne": 0,
+                        "$lt": time.time() - 15 * 60,
+                    },
                     "last_predictor_success": True,
-                    "-1.predicted_at": {"$lt": time.time() - 900},
                 }
             )
             __last_deletion_run_at = time.time()
 
         for unique_id, data in _utils.MAIN_INDEX.search(
             query={
-                "last_predictor_sequence": predictor_sequence - 1,
                 "last_predictor_success": True,
+                "last_predictor_sequence": predictor_sequence - 1,
             },
             n=optimal_batch_size,
             select_keys=[
@@ -116,6 +119,13 @@ def start_loop(
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)
             results = [None] * current_batch_length
+
+        if len(results) != current_batch_length:
+            raise Exception(
+                f"Predictor returned {len(results)} results for {current_batch_length} inputs",
+                input_batch,
+                results,
+            )
 
         predicted_at = time.time()
 

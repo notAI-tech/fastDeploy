@@ -61,10 +61,12 @@ export KEEP_ALIVE=60
 fastdeploy --rest --recipe ./recipes/echo
 ```
 
+#### --config options explained
+
 | Config | Description | Default |
 | --- | --- | --- |
-| max_request_batch_size | integer max number of inputs in a batch | 0 (None) |
-| workers | integer number of workers | 3 |
+| max_request_batch_size | integer max number of inputs in a batch. useful when exposing to outside directly to limit max number of inputs that can be in a request | 0 (None) |
+| workers | number of rest api gunicorn workers. 3 is more than enoough generally | 3 |
 | timeout | seconds after which request will fail | 480 |
 | host | host for the REST server | 0.0.0.0 |
 | port | port for the REST server | 8080 |

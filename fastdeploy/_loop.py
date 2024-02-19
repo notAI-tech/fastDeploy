@@ -136,16 +136,19 @@ def start_loop(
 
         unique_id_wise_results = {}
 
+        total_input_count_till_now = 0
         for unique_id, input_count in unique_id_wise_input_count.items():
             unique_id_wise_results[unique_id] = {
-                f"{predictor_sequence}.outputs": results[:input_count],
+                f"{predictor_sequence}.outputs": results[
+                    total_input_count_till_now : total_input_count_till_now
+                    + input_count
+                ],
                 f"{predictor_sequence}.predicted_at": predicted_at,
                 "last_predictor_success": last_predictor_success,
                 f"{predictor_sequence}.received_at": received_at,
                 f"{predictor_sequence}.predicted_in_batch_of": current_batch_length,
             }
-
-            results = results[input_count:]
+            total_input_count_till_now += input_count
 
         _utils.MAIN_INDEX.update(unique_id_wise_results)
 

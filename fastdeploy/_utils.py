@@ -86,6 +86,9 @@ MAIN_INDEX = DefinedIndex(
     db_path=os.path.join("fastdeploy_dbs", f"main_index.db"),
 )
 
+META_INDEX.clear()
+MAIN_INDEX.clear()
+
 MAIN_INDEX.optimize_for_query(["last_predictor_success", "last_predictor_sequence"])
 MAIN_INDEX.optimize_for_query(["-1.predicted_at", "last_predictor_success"])
 
@@ -143,3 +146,46 @@ def calculate_optimum_batch_sizes(
     )
 
     return max_batch_size, time_per_example
+
+
+def check_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y(
+    last_x_seconds, max_percentage_of_failed_requests
+):
+    time_before_x_seconds = time.time() - last_x_seconds
+    requests_received_in_last_x_seconds = MAIN_INDEX.count(
+        query={"-1.received_at": {"$gte": time_before_x_seconds}}
+    )
+
+    if requests_received_in_last_x_seconds == 0:
+        return False
+
+    requests_received_in_last_x_seconds_that_failed = MAIN_INDEX.count(
+        query={
+            "-1.received_at": {"$gte": time_before_x_seconds},
+            "last_predictor_success": False,
+        }
+    )
+
+    if (
+        requests_received_in_last_x_seconds_that_failed
+        / requests_received_in_last_x_seconds
+    ) * 100 >= max_percentage_of_failed_requests:
+        return True
+
+    return False
+
+
+def check_if_requests_older_than_x_seconds_pending(x):
+    time_before_x_seconds = time.time() - x
+
+    requests_older_than_x_seconds_pending = MAIN_INDEX.count(
+        query={
+            "-1.received_at": {"$lte": time_before_x_seconds},
+            "-1.predicted_at": 0,
+            "last_predictor_success": {"$ne": False},
+        }
+    )
+
+    if requests_older_than_x_seconds_pending > 0:
+        return True
+    return False

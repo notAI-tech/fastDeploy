@@ -53,26 +53,89 @@ class Infer(object):
 
 class PrometheusMetrics(object):
     def on_get(self, req, resp):
-        _LAST_X_SECONDS = 300
+        _LAST_X_SECONDS = int(req.params.get("last_x_seconds", 60))
+        CURRENT_TIME = time.time()
         LAST_X_SECONDS = time.time() - _LAST_X_SECONDS
+
         requests_received_in_last_x_seconds = _utils.MAIN_INDEX.count(
-            query={"-1.received_at": {"$gt": LAST_X_SECONDS}}
+            query={"-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME}}
         )
 
         requests_received_in_last_x_seconds_that_failed = _utils.MAIN_INDEX.count(
             query={
-                "-1.received_at": {"$gt": LAST_X_SECONDS},
-                "last_predictor_success": False
+                "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                "last_predictor_success": False,
             }
         )
 
         requests_received_in_last_x_seconds_that_are_pending = _utils.MAIN_INDEX.count(
-            query={"-1.predicted_at": 0, "last_predictor_success": {"$ne": False}}
+            query={
+                "-1.predicted_at": 0,
+                "last_predictor_success": {"$ne": False},
+                "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+            }
         )
 
-        requests_received_in_last_x_seconds_that_are_successful = _utils.MAIN_INDEX.count(
-            query={"-1.predicted_at": {"$ne": 0}, "last_predictor_success": True}
+        requests_received_in_last_x_seconds_that_are_successful = (
+            _utils.MAIN_INDEX.count(
+                query={
+                    "-1.predicted_at": {"$ne": 0},
+                    "last_predictor_success": True,
+                    "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                }
+            )
         )
+
+        avg_total_time_per_req_for_reqs_in_last_x_seconds = 0
+
+        __sum_of_received_at = _utils.MAIN_INDEX.math(
+            "-1.received_at",
+            "sum",
+            query={
+                "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                "-1.predicted_at": {"$ne": 0},
+            },
+        )
+
+        __sum_of_predicted_at = _utils.MAIN_INDEX.math(
+            "-1.predicted_at",
+            "sum",
+            query={
+                "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                "-1.predicted_at": {"$ne": 0},
+            },
+        )
+
+        if __sum_of_received_at and __sum_of_predicted_at:
+            avg_total_time_per_req_for_reqs_in_last_x_seconds = (
+                __sum_of_predicted_at - __sum_of_received_at
+            ) / requests_received_in_last_x_seconds_that_are_successful
+
+        avg_actual_total_time_per_req_for_reqs_in_last_x_seconds = 0
+
+        for executor_n in [0]:
+            _temp_sum_of_received_at = _utils.MAIN_INDEX.math(
+                f"{executor_n}.received_at",
+                "sum",
+                query={
+                    "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                    "-1.predicted_at": {"$ne": 0},
+                },
+            )
+
+            _temp_sum_of_predicted_at = _utils.MAIN_INDEX.math(
+                f"{executor_n}.predicted_at",
+                "sum",
+                query={
+                    "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                    "-1.predicted_at": {"$ne": 0},
+                },
+            )
+
+            if _temp_sum_of_received_at and _temp_sum_of_predicted_at:
+                avg_actual_total_time_per_req_for_reqs_in_last_x_seconds = (
+                    _temp_sum_of_predicted_at - _temp_sum_of_received_at
+                ) / requests_received_in_last_x_seconds_that_are_successful
 
         prometheus_text = f"""# HELP pending_requests The number of pending requests.
         # TYPE pending_requests gauge
@@ -93,6 +156,26 @@ class PrometheusMetrics(object):
         # HELP requests_received_in_last_x_seconds_that_failed The number of requests received in last {_LAST_X_SECONDS} seconds that failed.
         # TYPE requests_received_in_last_x_seconds_that_failed gauge
         requests_received_in_last_x_seconds_that_failed {requests_received_in_last_x_seconds_that_failed}
+
+        # HELP requests_received_in_last_x_seconds_that_are_pending The number of requests received in last {_LAST_X_SECONDS} seconds that are pending.
+        # TYPE requests_received_in_last_x_seconds_that_are_pending gauge
+        requests_received_in_last_x_seconds_that_are_pending {requests_received_in_last_x_seconds_that_are_pending}
+
+        # HELP requests_received_in_last_x_seconds_that_are_successful The number of requests received in last {_LAST_X_SECONDS} seconds that are successful.
+        # TYPE requests_received_in_last_x_seconds_that_are_successful gauge
+        requests_received_in_last_x_seconds_that_are_successful {requests_received_in_last_x_seconds_that_are_successful}
+
+        # HELP avg_total_time_per_req_for_reqs_in_last_x_seconds The average total time per request for requests in last {_LAST_X_SECONDS} seconds.
+        # TYPE avg_total_time_per_req_for_reqs_in_last_x_seconds gauge
+        avg_total_time_per_req_for_reqs_in_last_x_seconds {avg_total_time_per_req_for_reqs_in_last_x_seconds}
+
+        # HELP avg_actual_total_time_per_req_for_reqs_in_last_x_seconds The average actual total time per request for requests in last {_LAST_X_SECONDS} seconds.
+        # TYPE avg_actual_total_time_per_req_for_reqs_in_last_x_seconds gauge
+        avg_actual_total_time_per_req_for_reqs_in_last_x_seconds {avg_actual_total_time_per_req_for_reqs_in_last_x_seconds}
+
+        # HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.
+        # TYPE requests_received_in_last_x_seconds gauge
+        requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
         """
 
         resp.status = falcon.HTTP_200
@@ -102,69 +185,56 @@ class PrometheusMetrics(object):
 
 class Health(object):
     def on_get(self, req, resp):
-        fail_if_any_request_takes_more_than_x_seconds_param = req.params.get(
-            "fail_if_any_request_takes_more_than_x_seconds", None
+        fail_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y_param = req.params.get(
+            "fail_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y",
+            None,
         )
 
-        fail_if_percentage_of_requests_failed_in_last_x_seconds_param = req.params.get(
-            "fail_if_percentage_of_requests_failed_in_last_x_seconds", None
+        fail_if_requests_older_than_x_seconds_pending_param = req.params.get(
+            "fail_if_requests_older_than_x_seconds_pending", None
         )
 
-        if fail_if_percentage_of_requests_failed_in_last_x_seconds_param:
-            fail_if_percentage_of_requests_failed_in_last_x_seconds_param = fail_if_percentage_of_requests_failed_in_last_x_seconds_param.split(",")
-            x_seconds_back_time = time.time() - int(
-                fail_if_percentage_of_requests_failed_in_last_x_seconds_param[1]
+        fail_if_up_time_more_than_x_seconds_param = req.params.get(
+            "fail_if_up_time_more_than_x_seconds", None
+        )
+
+        is_predictor_is_up_param = req.params.get("is_predictor_is_up", None)
+
+        if fail_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y_param:
+            (
+                x,
+                y,
+            ) = fail_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y_param.split(
+                ","
             )
-
-            max_percentage_of_failed_requests = int(
-                fail_if_percentage_of_requests_failed_in_last_x_seconds_param[0]
-            )
-
-            requests_received_in_last_x_seconds = _utils.MAIN_INDEX.count(
-                query={"-1.received_at": {"$gt": x_seconds_back_time}}
-            )
-            requests_received_in_last_x_seconds_that_failed = _utils.MAIN_INDEX.count(
-                query={
-                    "-1.received_at": {"$gt": x_seconds_back_time},
-                    "last_predictor_success": False
-                }
-            )
-
-            if requests_received_in_last_x_seconds and (requests_received_in_last_x_seconds_that_failed / requests_received_in_last_x_seconds) * 100 >= max_percentage_of_failed_requests:
-                resp.status = falcon.HTTP_503
-                resp.media = {
-                    "status": "error",
-                    "message": f"More than {max_percentage_of_failed_requests}% of requests failed in last {fail_if_percentage_of_requests_failed_in_last_x_seconds_param[1]} seconds."
-                }
-                return
-
-
-        if fail_if_any_request_takes_more_than_x_seconds_param:
-            x_seconds_back_time = time.time() - int(
-                fail_if_any_request_takes_more_than_x_seconds_param
-            )
-
-            if _utils.MAIN_INDEX.count(
-                query={
-                    "-1.received_at": {"$lt": x_seconds_back_time},
-                    "-1.predicted_at": 0,
-                    "last_predictor_success": {
-                        "$ne": False
-                    }
-                }
+            x, y = int(x), int(y)
+            if _utils.check_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y(
+                x, y
             ):
                 resp.status = falcon.HTTP_503
                 resp.media = {
-                    "status": "error",
-                    "message": f"Request took more than {fail_if_any_request_takes_more_than_x_seconds_param} seconds to process."
+                    "reason": f"More than {y}% requests failed in last {x} seconds"
                 }
-                return
-        
-            fail_if_percentage_of_requests_failed_in_last_x_seconds_param = req.params.get(
-                "fail_if_percentage_of_requests_failed_in_same_x_seconds", None
-            )
+            return
 
-        
+        elif fail_if_requests_older_than_x_seconds_pending_param:
+            if _utils.check_if_requests_older_than_x_seconds_pending(
+                int(fail_if_requests_older_than_x_seconds_pending_param)
+            ):
+                resp.status = falcon.HTTP_503
+                resp.media = {
+                    "reason": f"Requests older than {fail_if_requests_older_than_x_seconds_pending_param} seconds are pending"
+                }
+            return
+
+        elif fail_if_up_time_more_than_x_seconds_param:
+            if time.time() - Infer.started_at_time > int(
+                fail_if_up_time_more_than_x_seconds_param
+            ):
+                resp.status = falcon.HTTP_503
+                resp.media = {
+                    "reason": f"Up time more than {fail_if_up_time_more_than_x_seconds_param} seconds"
+                }
 
         resp.status = falcon.HTTP_200
         resp.media = {"status": "ok"}

@@ -8,6 +8,8 @@ import threading
 
 from . import _utils
 
+started_at_time = time.time()
+
 for predictor_file, predictor_sequence in _utils.PREDICTOR_FILE_TO_SEQUENCE.items():
     log_printed = False
     while True:
@@ -15,6 +17,7 @@ for predictor_file, predictor_sequence in _utils.PREDICTOR_FILE_TO_SEQUENCE.item
             time_per_example = _utils.META_INDEX.get(
                 f"{predictor_sequence}", select_keys=["time_per_example"]
             )[f"{predictor_sequence}"]["time_per_example"]
+            started_at_time = time.time()
             break
         except:
             if not log_printed:
@@ -24,6 +27,8 @@ for predictor_file, predictor_sequence in _utils.PREDICTOR_FILE_TO_SEQUENCE.item
 
 
 class Infer:
+    started_at_time = started_at_time
+
     def __init__(
         self,
         timeout=float(os.getenv("TIMEOUT", 0)),

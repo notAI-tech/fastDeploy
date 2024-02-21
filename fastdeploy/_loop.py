@@ -100,7 +100,7 @@ def start_loop(
             unique_id_wise_input_count[unique_id] = len(
                 data[f"{predictor_sequence - 1}.outputs"]
             )
-            input_batch += data[f"{predictor_sequence - 1}.outputs"]
+            input_batch.extend(data[f"{predictor_sequence - 1}.outputs"])
 
         current_batch_length = len(input_batch)
 

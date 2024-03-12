@@ -137,7 +137,8 @@ class PrometheusMetrics(object):
                     _temp_sum_of_predicted_at - _temp_sum_of_received_at
                 ) / requests_received_in_last_x_seconds_that_are_successful
 
-        prometheus_text = f"""# HELP pending_requests The number of pending requests.
+        prometheus_text = f"""
+        # HELP pending_requests The number of pending requests.
         # TYPE pending_requests gauge
         pending_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": 0, "last_predictor_success": True})}
 
@@ -176,7 +177,7 @@ class PrometheusMetrics(object):
         # HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.
         # TYPE requests_received_in_last_x_seconds gauge
         requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
-        """
+        """.strip()
 
         resp.status = falcon.HTTP_200
         resp.content_type = "text/plain; version=0.0.4"

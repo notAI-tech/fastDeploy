@@ -18,14 +18,14 @@ URL = "https://github.com/notAI-tech/fastDeploy"
 EMAIL = "praneeth@bpraneeth.com"
 AUTHOR = "BEDAPUDI PRANEETH"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "3.0.6"
+VERSION = "3.0.7"
 
 # What packages are required for this module to be executed?
-REQUIRED = ["falcon", "liteindex", "zstandard", "gunicorn[gevent]", "msgpack"]
+REQUIRED = ["falcon", "liteindex", "zstandard", "gunicorn[gevent]"]
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
+    'msgpack': ['msgpack'],
 }
 
 # The rest you shouldn't have to touch too much :)

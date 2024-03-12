@@ -138,45 +138,45 @@ class PrometheusMetrics(object):
                 ) / requests_received_in_last_x_seconds_that_are_successful
 
         prometheus_text = f"""
-        # HELP pending_requests The number of pending requests.
-        # TYPE pending_requests gauge
-        pending_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": 0, "last_predictor_success": True})}
+# HELP pending_requests The number of pending requests.
+# TYPE pending_requests gauge
+pending_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": 0, "last_predictor_success": True})}
 
-        # HELP failed_requests The number of failed requests.
-        # TYPE failed_requests gauge
-        failed_requests {_utils.MAIN_INDEX.count(query={"last_predictor_success": False})}
+# HELP failed_requests The number of failed requests.
+# TYPE failed_requests gauge
+failed_requests {_utils.MAIN_INDEX.count(query={"last_predictor_success": False})}
 
-        # HELP successful_requests The number of failed requests.
-        # TYPE successful_requests gauge
-        successful_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": {"$ne": 0}, "last_predictor_success": True})}
+# HELP successful_requests The number of failed requests.
+# TYPE successful_requests gauge
+successful_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": {"$ne": 0}, "last_predictor_success": True})}
 
-        # HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.
-        # TYPE requests_received_in_last_x_seconds gauge
-        requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
+# HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.
+# TYPE requests_received_in_last_x_seconds gauge
+requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
 
-        # HELP requests_received_in_last_x_seconds_that_failed The number of requests received in last {_LAST_X_SECONDS} seconds that failed.
-        # TYPE requests_received_in_last_x_seconds_that_failed gauge
-        requests_received_in_last_x_seconds_that_failed {requests_received_in_last_x_seconds_that_failed}
+# HELP requests_received_in_last_x_seconds_that_failed The number of requests received in last {_LAST_X_SECONDS} seconds that failed.
+# TYPE requests_received_in_last_x_seconds_that_failed gauge
+requests_received_in_last_x_seconds_that_failed {requests_received_in_last_x_seconds_that_failed}
 
-        # HELP requests_received_in_last_x_seconds_that_are_pending The number of requests received in last {_LAST_X_SECONDS} seconds that are pending.
-        # TYPE requests_received_in_last_x_seconds_that_are_pending gauge
-        requests_received_in_last_x_seconds_that_are_pending {requests_received_in_last_x_seconds_that_are_pending}
+# HELP requests_received_in_last_x_seconds_that_are_pending The number of requests received in last {_LAST_X_SECONDS} seconds that are pending.
+# TYPE requests_received_in_last_x_seconds_that_are_pending gauge
+requests_received_in_last_x_seconds_that_are_pending {requests_received_in_last_x_seconds_that_are_pending}
 
-        # HELP requests_received_in_last_x_seconds_that_are_successful The number of requests received in last {_LAST_X_SECONDS} seconds that are successful.
-        # TYPE requests_received_in_last_x_seconds_that_are_successful gauge
-        requests_received_in_last_x_seconds_that_are_successful {requests_received_in_last_x_seconds_that_are_successful}
+# HELP requests_received_in_last_x_seconds_that_are_successful The number of requests received in last {_LAST_X_SECONDS} seconds that are successful.
+# TYPE requests_received_in_last_x_seconds_that_are_successful gauge
+requests_received_in_last_x_seconds_that_are_successful {requests_received_in_last_x_seconds_that_are_successful}
 
-        # HELP avg_total_time_per_req_for_reqs_in_last_x_seconds The average total time per request for requests in last {_LAST_X_SECONDS} seconds.
-        # TYPE avg_total_time_per_req_for_reqs_in_last_x_seconds gauge
-        avg_total_time_per_req_for_reqs_in_last_x_seconds {avg_total_time_per_req_for_reqs_in_last_x_seconds}
+# HELP avg_total_time_per_req_for_reqs_in_last_x_seconds The average total time per request for requests in last {_LAST_X_SECONDS} seconds.
+# TYPE avg_total_time_per_req_for_reqs_in_last_x_seconds gauge
+avg_total_time_per_req_for_reqs_in_last_x_seconds {avg_total_time_per_req_for_reqs_in_last_x_seconds}
 
-        # HELP avg_actual_total_time_per_req_for_reqs_in_last_x_seconds The average actual total time per request for requests in last {_LAST_X_SECONDS} seconds.
-        # TYPE avg_actual_total_time_per_req_for_reqs_in_last_x_seconds gauge
-        avg_actual_total_time_per_req_for_reqs_in_last_x_seconds {avg_actual_total_time_per_req_for_reqs_in_last_x_seconds}
+# HELP avg_actual_total_time_per_req_for_reqs_in_last_x_seconds The average actual total time per request for requests in last {_LAST_X_SECONDS} seconds.
+# TYPE avg_actual_total_time_per_req_for_reqs_in_last_x_seconds gauge
+avg_actual_total_time_per_req_for_reqs_in_last_x_seconds {avg_actual_total_time_per_req_for_reqs_in_last_x_seconds}
 
-        # HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.
-        # TYPE requests_received_in_last_x_seconds gauge
-        requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
+# HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.
+# TYPE requests_received_in_last_x_seconds gauge
+requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
         """.strip()
 
         resp.status = falcon.HTTP_200

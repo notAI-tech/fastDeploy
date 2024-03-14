@@ -2,7 +2,12 @@ import os
 import time
 import json
 import pickle
-import msgpack
+
+try:
+    import msgpack
+except:
+    msgpack = None
+
 import zstandard
 import threading
 

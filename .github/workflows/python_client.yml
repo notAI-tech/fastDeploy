@@ -27,6 +27,9 @@ jobs:
       run: python -m build
       working-directory: clients/python
     
+    - name: Move package
+      run: mv clients/python/dist ./
+    
     - name: Publish
       uses: pypa/gh-action-pypi-publish@release/v1
 

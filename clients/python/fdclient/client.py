@@ -19,15 +19,15 @@ import concurrent.futures as futures
 
 
 class FDClient:
-    def __init__(self, server_url, compression=True):
-        assert (
-            server_url.startswith("http://") or server_url.startswith("https://")
+    def __init__(self, server_url, compression=True, request_timeout=None):
+        assert server_url.startswith("http://") or server_url.startswith(
+            "https://"
         ), "Server URL must start with http:// or https://"
 
         assert (
             server_url.count("/") == 2
         ), "Server URL must be in the format http(s)://<ip>:<port>"
-        
+
         self.server_url = server_url
         self.local_storage = threading.local()
         self.requests_session = requests.Session()
@@ -41,6 +41,7 @@ class FDClient:
             if msgpack is not None
             else "json"
         )
+        self.request_timeout = request_timeout
 
     @property
     def _compressor(self):
@@ -109,6 +110,7 @@ class FDClient:
             },
             data=self._compressor.compress(data) if zstandard is not None else data,
             headers={"Content-Type": "application/octet-stream"},
+            timeout=self.request_timeout,
         )
 
         if self.input_type == "pickle":
@@ -168,7 +170,7 @@ if __name__ == "__main__":
     print(
         "infer_background_multiple 40",
         [
-            _.result()['success']
+            _.result()["success"]
             for _ in client.infer_background_multiple(
                 [["this", b"is", "some", "data"]] * 40
             )

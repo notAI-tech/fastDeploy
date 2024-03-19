@@ -7,9 +7,17 @@ import time
 import uuid
 import pickle
 import falcon
+import importlib
 
 from . import _utils
 from . import _infer
+
+try:
+    get_prometheus_metrics = importlib.import_module(
+        "extra_prometheus_metrics"
+    ).get_prometheus_metrics
+except ImportError:
+    get_prometheus_metrics = None
 
 ONLY_ASYNC = os.environ.get("ONLY_ASYNC", "f")[0].lower() == "t"
 
@@ -178,6 +186,21 @@ avg_actual_total_time_per_req_for_reqs_in_last_x_seconds {avg_actual_total_time_
 # TYPE requests_received_in_last_x_seconds gauge
 requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
         """.strip()
+
+        if get_prometheus_metrics is not None:
+            extra_prometheus_metrics_data = get_prometheus_metrics()
+
+            if extra_prometheus_metrics_data:
+                extra_prometheus_texts = []
+                for metric_name, metric_data in extra_prometheus_metrics_data.items():
+                    extra_prometheus_texts.append(
+                        f"""
+# HELP {metric_name} {metric_data['help']}
+# TYPE {metric_name} {metric_data['type']}
+{metric_name} {metric_data['value']}
+                    """.strip()
+                    )
+                prometheus_text += "\n\n" + "\n\n".join(extra_prometheus_texts)
 
         resp.status = falcon.HTTP_200
         resp.content_type = "text/plain; version=0.0.4"

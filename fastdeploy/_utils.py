@@ -14,7 +14,7 @@ import glob
 import json
 import time
 from datetime import datetime
-from liteindex import DefinedIndex
+from liteindex import DefinedIndex, KVIndex
 
 try:
     from example import example
@@ -66,6 +66,9 @@ META_INDEX = DefinedIndex(
     db_path=os.path.join("fastdeploy_dbs", f"main_index.db"),
 )
 
+KV_STORE = KVIndex(os.path.join("fastdeploy_dbs", f"kv_store.db"))
+KV_STORE.clear()
+
 MAIN_INDEX = DefinedIndex(
     "main_index",
     schema={
@@ -85,9 +88,6 @@ MAIN_INDEX = DefinedIndex(
     },
     db_path=os.path.join("fastdeploy_dbs", f"main_index.db"),
 )
-
-META_INDEX.clear()
-MAIN_INDEX.clear()
 
 MAIN_INDEX.optimize_for_query(["last_predictor_success", "last_predictor_sequence"])
 MAIN_INDEX.optimize_for_query(["-1.predicted_at", "last_predictor_success"])

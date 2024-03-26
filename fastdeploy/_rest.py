@@ -283,6 +283,18 @@ class Meta(object):
             }
 
 
+class Failed(object):
+    def on_get(self, req, resp):
+        last_n_failed = int(req.params.get("last_n_failed", 10))
+        failed_inputs = _utils.MAIN_INDEX.search(
+            query={"last_predictor_success": False},
+            n=last_n_failed,
+            select_keys=["-1.inputs"]
+        )
+        
+        resp.media = failed_inputs
+
+
 app = falcon.App(
     cors_enable=True,
     middleware=falcon.CORSMiddleware(allow_origins="*", allow_credentials="*"),

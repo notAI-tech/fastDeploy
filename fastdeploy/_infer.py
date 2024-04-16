@@ -85,6 +85,12 @@ class Infer:
             inputs = json.loads(
                 inputs if not is_compressed else self._decompressor.decompress(inputs)
             )
+
+            # for backward compatibility
+            try:
+                inputs = inputs["data"]
+            except:
+                pass
         else:
             inputs = None
 

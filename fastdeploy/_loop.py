@@ -12,6 +12,8 @@ def start_loop(
     predictor_name=os.getenv("PREDICTOR_NAME"),
     optimal_batch_size=int(os.getenv("OPTIMAL_BATCH_SIZE")),
 ):
+    # Load the predictor_name predictor
+    timeout_time = float(os.getenv("TIMEOUT", 0))
     predictor = importlib.import_module(os.path.splitext(predictor_name)[0]).predictor
     predictor_sequence = _utils.PREDICTOR_FILE_TO_SEQUENCE[predictor_name]
 
@@ -28,6 +30,7 @@ def start_loop(
             except:
                 time.sleep(1)
 
+    # warmup
     example_output = _utils.warmup(predictor, example)
 
     optimal_batch_size, time_per_example = _utils.calculate_optimum_batch_sizes(
@@ -82,10 +85,17 @@ def start_loop(
                 _utils.MAIN_INDEX.vaccum()
                 __last_vaccum_run_at = time.time()
 
+        """
+        To be processed by the predictor, the data should have:
+        1. last_predictor_success: True
+        2. last_predictor_sequence: predictor_sequence - 1
+        3. received_at: within timeout. if any record older than timeout is in pipeline, no point processing it, so ignore it.
+        """
         for unique_id, data in _utils.MAIN_INDEX.search(
             query={
                 "last_predictor_success": True,
                 "last_predictor_sequence": predictor_sequence - 1,
+                "-1.received_at": {"$gte": time.time() - timeout_time},
             },
             n=optimal_batch_size,
             select_keys=[

@@ -289,9 +289,9 @@ class Failed(object):
         failed_inputs = _utils.MAIN_INDEX.search(
             query={"last_predictor_success": False},
             n=last_n_failed,
-            select_keys=["-1.inputs"]
+            select_keys=["-1.inputs"],
         )
-        
+
         resp.media = failed_inputs
 
 

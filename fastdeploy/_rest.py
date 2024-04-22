@@ -65,6 +65,13 @@ class PrometheusMetrics(object):
         CURRENT_TIME = time.time()
         LAST_X_SECONDS = time.time() - _LAST_X_SECONDS
 
+        number_of_requests_timedout_in_last_x_seconds = _utils.MAIN_INDEX.count(
+            query={
+                "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                "timedout_in_queue": True,
+            }
+        )
+
         requests_received_in_last_x_seconds = _utils.MAIN_INDEX.count(
             query={"-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME}}
         )
@@ -161,6 +168,10 @@ successful_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": {"$ne": 0
 # HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.
 # TYPE requests_received_in_last_x_seconds gauge
 requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
+
+# HELP number_of_requests_timedout_in_last_x_seconds The number of requests timedout at predictor(s) in last {_LAST_X_SECONDS} seconds.
+# TYPE number_of_requests_timedout_in_last_x_seconds gauge
+number_of_requests_timedout_in_last_x_seconds {number_of_requests_timedout_in_last_x_seconds}
 
 # HELP requests_received_in_last_x_seconds_that_failed The number of requests received in last {_LAST_X_SECONDS} seconds that failed.
 # TYPE requests_received_in_last_x_seconds_that_failed gauge

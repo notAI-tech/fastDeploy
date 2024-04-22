@@ -85,6 +85,14 @@ def start_loop(
                 _utils.MAIN_INDEX.vaccum()
                 __last_vaccum_run_at = time.time()
 
+        _utils.MAIN_INDEX.search(
+            query={
+                "-1.predicted_at": 0,
+                "-1.received_at": {"$lt": time.time() - timeout_time},
+            },
+            update={"timedout_in_queue": True},
+        )
+
         """
         To be processed by the predictor, the data should have:
         1. last_predictor_success: True
@@ -95,7 +103,7 @@ def start_loop(
             query={
                 "last_predictor_success": True,
                 "last_predictor_sequence": predictor_sequence - 1,
-                "-1.received_at": {"$gte": time.time() - timeout_time},
+                "timedout_in_queue": {"$ne": True},
             },
             n=optimal_batch_size,
             select_keys=[

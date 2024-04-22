@@ -55,13 +55,13 @@ FIRST_PREDICTOR_SEQUENCE = min(PREDICTOR_SEQUENCE_TO_FILES.keys())
 META_INDEX = DefinedIndex(
     "meta_index",
     schema={
-        "optimal_batch_size": "number",
-        "time_per_example": "number",
-        "predictor_name": "string",
-        "predictor_sequence": "number",
-        "request_poll_time": "number",
-        "example_output": "other",
-        "status": "string",
+        "optimal_batch_size": DefinedIndex.Type.number,
+        "time_per_example": DefinedIndex.Type.number,
+        "predictor_name": DefinedIndex.Type.string,
+        "predictor_sequence": DefinedIndex.Type.number,
+        "request_poll_time": DefinedIndex.Type.number,
+        "example_output": DefinedIndex.Type.other,
+        "status": DefinedIndex.Type.string,
     },
     db_path=os.path.join("fastdeploy_dbs", f"main_index.db"),
 )
@@ -73,13 +73,14 @@ MAIN_INDEX = DefinedIndex(
     "main_index",
     schema={
         **{
-            "is_async_request": "boolean",
-            "last_predictor_sequence": "number",
-            "last_predictor_success": "boolean",
-            "-1.outputs": "other",
-            "-1.predicted_at": "number",
-            "-1.received_at": "number",
-            "-1.predicted_in_batch_of": "number",
+            "is_async_request": DefinedIndex.Type.boolean,
+            "last_predictor_sequence": DefinedIndex.Type.number,
+            "last_predictor_success": DefinedIndex.Type.boolean,
+            "-1.outputs": DefinedIndex.Type.other,
+            "-1.predicted_at": DefinedIndex.Type.number,
+            "-1.received_at": DefinedIndex.Type.number,
+            "-1.predicted_in_batch_of": DefinedIndex.Type.number,
+            "timedout_in_queue": DefinedIndex.Type.boolean,
         },
         **{f"{_}.outputs": "other" for _ in PREDICTOR_SEQUENCE_TO_FILES},
         **{f"{_}.predicted_at": "number" for _ in PREDICTOR_SEQUENCE_TO_FILES},
@@ -90,8 +91,10 @@ MAIN_INDEX = DefinedIndex(
 )
 
 MAIN_INDEX.optimize_for_query(
-    ["last_predictor_success", "last_predictor_sequence", "-1.received_at"]
+    ["last_predictor_success", "last_predictor_sequence", "timedout_in_queue"]
 )
+MAIN_INDEX.optimize_for_query(["-1.received_at", "timedout_in_queue"])
+MAIN_INDEX.optimize_for_query(["-1.predicted_at", "-1.received_at"])
 MAIN_INDEX.optimize_for_query(["-1.predicted_at", "last_predictor_success"])
 MAIN_INDEX.optimize_for_query(["-1.received_at", "last_predictor_success"])
 

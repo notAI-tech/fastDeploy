@@ -61,7 +61,9 @@ class Infer(object):
 
 class PrometheusMetrics(object):
     def on_get(self, req, resp):
-        _LAST_X_SECONDS = int(req.params.get("last_x_seconds", 60))
+        _LAST_X_SECONDS = int(
+            req.params.get("last_x_seconds", int(os.getenv("LAST_X_SECONDS", 60)))
+        )
         CURRENT_TIME = time.time()
         LAST_X_SECONDS = time.time() - _LAST_X_SECONDS
 

@@ -3,18 +3,17 @@ import time
 import json
 import pickle
 
-try:
-    import msgpack
-except:
-    msgpack = None
-
+import msgpack
 import zstandard
+
 import threading
 
 from . import _utils
 
 started_at_time = time.time()
 
+# make sure all predictors are running before starting the inference server
+# if any are not yet started/ still loading then wait for them to start
 for predictor_file, predictor_sequence in _utils.PREDICTOR_FILE_TO_SEQUENCE.items():
     log_printed = False
     while True:
@@ -49,6 +48,12 @@ class Infer:
             f"result_polling_interval: {self.result_polling_interval} timeout: {self.timeout}"
         )
 
+        _utils.logger.info(f"""fastDeploy configuration:
+        result_polling_interval: {self.result_polling_interval}
+        timeout: {self.timeout}
+        allow_pickle: {self.allow_pickle}
+        """)
+
     @property
     def _compressor(self):
         if (
@@ -67,20 +72,26 @@ class Infer:
             self.local_storage.decompressor = zstandard.ZstdDecompressor()
         return self.local_storage.decompressor
 
-    def read_inputs(self, inputs, input_type, is_compressed):
-        if self.allow_pickle is False and input_type == "pickle":
-            return None
-
+    def read_inputs(self, unique_id, inputs, input_type, is_compressed):
         if input_type == "pickle":
+            if not self.allow_pickle:
+                _utils.logger.warning(f"{unique_id}: tried to use pickle input, but pickle is disallowed")
+                raise Exception("pickle input disallowed, use msgpack or json")
+
             inputs = pickle.loads(
                 inputs if not is_compressed else self._decompressor.decompress(inputs)
             )
+            _utils.logger.debug(f"pickle input read")
+
         elif input_type == "msgpack":
             inputs = msgpack.unpackb(
                 inputs if not is_compressed else self._decompressor.decompress(inputs),
                 use_list=False,
                 raw=False,
             )
+
+            _utils.logger.debug(f"{unique_id}: msgpack input read")
+
         elif input_type == "json":
             inputs = json.loads(
                 inputs if not is_compressed else self._decompressor.decompress(inputs)
@@ -91,12 +102,16 @@ class Infer:
                 inputs = inputs["data"]
             except:
                 pass
+
+            _utils.logger.debug(f"{unique_id}: json input read")
+
         else:
-            inputs = None
+            _utils.logger.warning(f"{unique_id}: input_type {input_type} not supported")
+            raise Exception(f"input_type {input_type} not supported")
 
         return inputs
 
-    def create_response(self, response, is_compressed, input_type):
+    def create_response(self, unique_id, response, is_compressed, input_type):
         success = response["success"]
         if input_type == "pickle":
             response = pickle.dumps(response)
@@ -106,6 +121,7 @@ class Infer:
             pass
 
         if is_compressed:
+            _utils.logger.debug(f"{unique_id}: compressing response")
             response = self._compressor.compress(response)
 
         return success, response
@@ -115,16 +131,18 @@ class Infer:
         inputs: bytes,
         unique_id: str,
         input_type: str,
-        is_compressed: bool,
-        is_async_request: bool,
+        is_compressed: bool
     ):
         try:
             request_received_at = time.time()
+            _utils.logger.debug(f"{unique_id}: reading inputs")
 
-            inputs = self.read_inputs(inputs, input_type, is_compressed)
+            inputs = self.read_inputs(unique_id, inputs, input_type, is_compressed)
 
             if inputs is None:
+                _utils.logger.warning(f"{unique_id}: inputs are None")
                 return self.create_response(
+                    unique_id,
                     {
                         "success": False,
                         "reason": f"inputs have to be {'pickle,' if self.allow_pickle else ''} msgpack or json",
@@ -136,7 +154,9 @@ class Infer:
                 )
 
             if not isinstance(inputs, (list, tuple)):
+                _utils.logger.warning(f"{unique_id}: inputs have to be a list or tuple")
                 return self.create_response(
+                    unique_id,
                     {
                         "success": False,
                         "reason": "inputs have to be a list or tuple",
@@ -148,7 +168,9 @@ class Infer:
                 )
 
             if not inputs:
+                _utils.logger.debug(f"{unique_id}: empty inputs")
                 return self.create_response(
+                    unique_id,
                     {
                         "success": True,
                         "reason": "empty inputs",
@@ -160,6 +182,7 @@ class Infer:
                 )
 
             else:
+                # -1 is the predictor sequence for the rest server, basically where the request originates
                 _utils.MAIN_INDEX.update(
                     {
                         unique_id: {
@@ -167,13 +190,15 @@ class Infer:
                             "-1.received_at": request_received_at,
                             "-1.predicted_in_batch_of": len(inputs),
                             "-1.predicted_at": 0,
-                            "is_async_request": is_async_request,
                             "last_predictor_sequence": -1,
                             "last_predictor_success": True,
                         }
                     }
                 )
 
+                _utils.logger.debug(f"{unique_id}: added to request queue")
+
+                # in a while loop, wait for the predictor(s) to finish
                 while True:
                     current_results = _utils.MAIN_INDEX.get(
                         unique_id,
@@ -192,7 +217,11 @@ class Infer:
                         _utils.MAIN_INDEX.update(
                             {unique_id: {"-1.predicted_at": time.time()}}
                         )
+
+                        _utils.logger.debug(f"{unique_id}: predictor finished")
+
                         return self.create_response(
+                            unique_id,
                             {
                                 "success": True,
                                 "unique_id": unique_id,
@@ -205,7 +234,9 @@ class Infer:
                             input_type,
                         )
                     elif current_results["last_predictor_success"] is False:
+                        _utils.logger.warning(f"{unique_id}: predictor failed at {current_results['last_predictor_sequence']}")
                         return self.create_response(
+                            unique_id,
                             {
                                 "success": False,
                                 "reason": f"prediction failed predictor {current_results['last_predictor_sequence']}",
@@ -221,7 +252,9 @@ class Infer:
                             and self.timeout
                             and time.time() - request_received_at >= self.timeout
                         ):
+                            _utils.logger.debug(f"{unique_id}: predictor timedout at {current_results['last_predictor_sequence']}")
                             return self.create_response(
+                                unique_id,
                                 {
                                     "success": False,
                                     "reason": "timeout",
@@ -237,6 +270,7 @@ class Infer:
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)
             return self.create_response(
+                unique_id,
                 {
                     "success": False,
                     "reason": str(ex),

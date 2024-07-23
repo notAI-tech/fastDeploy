@@ -19,9 +19,6 @@ try:
 except ImportError:
     get_prometheus_metrics = None
 
-ONLY_ASYNC = os.environ.get("ONLY_ASYNC", "f")[0].lower() == "t"
-
-
 class Infer(object):
     def __init__(self):
         self._infer = _infer.Infer()
@@ -31,7 +28,6 @@ class Infer(object):
 
         unique_id = str(req.params.get("unique_id", uuid.uuid4()))
 
-        is_async_request = ONLY_ASYNC or req.params.get("async", "f")[0].lower() == "t"
         is_compressed = req.params.get("compressed", "f")[0].lower() == "t"
         input_type = req.params.get("input_type", "json")
 
@@ -39,8 +35,7 @@ class Infer(object):
             inputs=req.stream.read(),
             unique_id=unique_id,
             input_type=input_type,
-            is_compressed=is_compressed,
-            is_async_request=is_async_request,
+            is_compressed=is_compressed
         )
 
         if is_compressed:
@@ -295,10 +290,9 @@ class Meta(object):
 
             resp.media = {
                 "name": _utils.recipe_name,
-                "example": __example
-                "is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower()
-                == "true",
-                "timeout": os.getenv("TIMEOUT"),
+                "example": __example,
+                "is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower() == "true",
+                "timeout": os.getenv("TIMEOUT")
             }
 
 

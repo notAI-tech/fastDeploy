@@ -21,11 +21,10 @@ REQUIRES_PYTHON = ">=3.6.0"
 VERSION = "3.0.14"
 
 # What packages are required for this module to be executed?
-REQUIRED = ["falcon", "liteindex", "zstandard", "gunicorn[gevent]"]
+REQUIRED = ["falcon", "liteindex", "zstandard", "gunicorn[gevent]", "msgpack"]
 
 # What packages are optional?
 EXTRAS = {
-    'msgpack': ['msgpack'],
 }
 
 # The rest you shouldn't have to touch too much :)

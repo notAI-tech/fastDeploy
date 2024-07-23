@@ -287,9 +287,15 @@ class Meta(object):
             }
 
         else:
+            try:
+                json.dumps(_utils.example)
+                __example = _utils.example
+            except:
+                __example = None
+
             resp.media = {
                 "name": _utils.recipe_name,
-                "example": _utils.example,
+                "example": __example
                 "is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower()
                 == "true",
                 "timeout": os.getenv("TIMEOUT"),

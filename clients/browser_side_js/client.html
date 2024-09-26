@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FDClient Test with Multiple File Upload and Download</title>
+    <script src="https://unpkg.com/@msgpack/msgpack@2.8.0/dist.es5+umd/msgpack.min.js"></script>
+    <style>
+        main {
+            width: 80%;
+            margin: 20px auto;
+        }
+        #fileList, #downloadList {
+            margin-top: 10px;
+        }
+        #result {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+    <script>
+        // FDClient class implementation
+        class FDClient {
+            constructor(serverUrl, compression = true, requestTimeout = null) {
+                if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                    throw new Error("Server URL must start with http:// or https://");
+                }
+                if ((serverUrl.match(/\//g) || []).length !== 2) {
+                    throw new Error("Server URL must be in the format http(s)://<ip>:<port>");
+                }
+                this.serverUrl = serverUrl;
+                this.compression = compression;
+                this.requestTimeout = requestTimeout;
+                this.inputType = 'msgpack';
+            }
+
+            async infer(data, uniqueId = null, isAsync = false) {
+                if (!Array.isArray(data)) {
+                    throw new Error("Data must be of type array");
+                }
+
+                uniqueId = uniqueId || crypto.randomUUID();
+
+                let packedData = MessagePack.encode(data);
+
+                const params = new URLSearchParams({
+                    unique_id: uniqueId,
+                    async: isAsync,
+                    input_type: this.inputType,
+                    compressed: false,
+                });
+
+                const response = await fetch(`${this.serverUrl}/infer?${params}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/octet-stream',
+                    },
+                    body: packedData,
+                    signal: this.requestTimeout ? AbortSignal.timeout(this.requestTimeout) : undefined,
+                });
+
+                return await MessagePack.decodeAsync(response.body);
+            }
+        }
+
+        let client;
+
+        function initClient() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            client = new FDClient(serverUrl);
+            console.log("Client initialized with server URL:", serverUrl);
+        }
+
+        function updateFileList() {
+            const fileInput = document.getElementById('fileInput');
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            for (let file of fileInput.files) {
+                const li = document.createElement('li');
+                li.textContent = `${file.name} (${file.type || 'unknown'}) - ${file.size} bytes`;
+                fileList.appendChild(li);
+            }
+        }
+
+        function byteArrayToHexString(byteArray) {
+            return Array.from(byteArray, function(byte) {
+                return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+            }).join(' ');
+        }
+
+        function createDownloadLink(filename, content) {
+            const blob = new Blob([content], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.textContent = `Download ${filename}`;
+            return a;
+        }
+
+        async function testInfer() {
+            if (!client) {
+                alert("Please initialize the client first!");
+                return;
+            }
+
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length === 0) {
+                alert("Please select at least one file!");
+                return;
+            }
+
+            try {
+                const fileContents = await Promise.all(
+                    Array.from(fileInput.files).map(file => 
+                        new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = e => resolve(new Uint8Array(e.target.result));
+                            reader.onerror = reject;
+                            reader.readAsArrayBuffer(file);
+                        })
+                    )
+                );
+
+                console.time('infer');
+                const result = await client.infer(fileContents);
+                console.timeEnd('infer');
+                
+                if (result && result.prediction && Array.isArray(result.prediction)) {
+                    const downloadList = document.getElementById('downloadList');
+                    downloadList.innerHTML = '';
+                    result.prediction.forEach((fileContent, index) => {
+                        const filename = `output_file_${index + 1}`;
+                        const li = document.createElement('li');
+                        const downloadLink = createDownloadLink(filename, fileContent);
+                        li.appendChild(downloadLink);
+                        downloadList.appendChild(li);
+                    });
+                    document.getElementById('result').textContent = `Received ${result.prediction.length} file(s). You can download them using the links above.`;
+                } else {
+                    document.getElementById('result').textContent = "Unexpected response format. Raw response:\n" + JSON.stringify(result, null, 2);
+                }
+            } catch (error) {
+                console.error("Error during inference:", error);
+                document.getElementById('result').textContent = "Error: " + error.message;
+            }
+        }
+    </script>
+</head>
+<body>
+    <main>
+        <h1>FDClient Test with Multiple File Upload and Download</h1>
+        <div>
+            <label for="serverUrl">Server URL:</label>
+            <input type="text" id="serverUrl" value="http://localhost:8080">
+            <button onclick="initClient()">Initialize Client</button>
+        </div>
+        <div>
+            <label for="fileInput">Select Files:</label>
+            <input type="file" id="fileInput" multiple onchange="updateFileList()">
+            <ul id="fileList"></ul>
+        </div>
+        <div>
+            <button onclick="testInfer()">Test Infer</button>
+        </div>
+        <div>
+            <h3>Download Processed Files:</h3>
+            <ul id="downloadList"></ul>
+        </div>
+        <div>
+            <h3>Result:</h3>
+            <pre id="result"></pre>
+        </div>
+    </main>
+</body>
+</html>

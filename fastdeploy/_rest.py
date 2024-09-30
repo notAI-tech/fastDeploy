@@ -311,7 +311,6 @@ class Failed(object):
 
 
 app = falcon.App(
-    cors_enable=True,
     middleware=falcon.CORSMiddleware(allow_origins="*", allow_credentials="*"),
 )
 

@@ -19,6 +19,7 @@ try:
 except ImportError:
     get_prometheus_metrics = None
 
+
 class Infer(object):
     def __init__(self):
         self._infer = _infer.Infer()
@@ -35,7 +36,7 @@ class Infer(object):
             inputs=req.stream.read(),
             unique_id=unique_id,
             input_type=input_type,
-            is_compressed=is_compressed
+            is_compressed=is_compressed,
         )
 
         if is_compressed:
@@ -291,8 +292,9 @@ class Meta(object):
             resp.media = {
                 "name": _utils.recipe_name,
                 "example": __example,
-                "is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower() == "true",
-                "timeout": os.getenv("TIMEOUT")
+                "is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower()
+                == "true",
+                "timeout": os.getenv("TIMEOUT"),
             }
 
 

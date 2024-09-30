@@ -18,7 +18,7 @@ parser.add_argument(
     "--recipe",
     type=str,
     help="Path to recipe folder that contains predictor.py",
-    required=True,
+    required=False,
 )
 
 parser.add_argument(

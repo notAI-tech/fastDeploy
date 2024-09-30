@@ -48,11 +48,13 @@ class Infer:
             f"result_polling_interval: {self.result_polling_interval} timeout: {self.timeout}"
         )
 
-        _utils.logger.info(f"""fastDeploy configuration:
+        _utils.logger.info(
+            f"""fastDeploy configuration:
         result_polling_interval: {self.result_polling_interval}
         timeout: {self.timeout}
         allow_pickle: {self.allow_pickle}
-        """)
+        """
+        )
 
     @property
     def _compressor(self):
@@ -75,7 +77,9 @@ class Infer:
     def read_inputs(self, unique_id, inputs, input_type, is_compressed):
         if input_type == "pickle":
             if not self.allow_pickle:
-                _utils.logger.warning(f"{unique_id}: tried to use pickle input, but pickle is disallowed")
+                _utils.logger.warning(
+                    f"{unique_id}: tried to use pickle input, but pickle is disallowed"
+                )
                 raise Exception("pickle input disallowed, use msgpack or json")
 
             inputs = pickle.loads(
@@ -127,11 +131,7 @@ class Infer:
         return success, response
 
     def infer(
-        self,
-        inputs: bytes,
-        unique_id: str,
-        input_type: str,
-        is_compressed: bool
+        self, inputs: bytes, unique_id: str, input_type: str, is_compressed: bool
     ):
         try:
             request_received_at = time.time()
@@ -234,7 +234,9 @@ class Infer:
                             input_type,
                         )
                     elif current_results["last_predictor_success"] is False:
-                        _utils.logger.warning(f"{unique_id}: predictor failed at {current_results['last_predictor_sequence']}")
+                        _utils.logger.warning(
+                            f"{unique_id}: predictor failed at {current_results['last_predictor_sequence']}"
+                        )
                         return self.create_response(
                             unique_id,
                             {
@@ -252,7 +254,9 @@ class Infer:
                             and self.timeout
                             and time.time() - request_received_at >= self.timeout
                         ):
-                            _utils.logger.debug(f"{unique_id}: predictor timedout at {current_results['last_predictor_sequence']}")
+                            _utils.logger.debug(
+                                f"{unique_id}: predictor timedout at {current_results['last_predictor_sequence']}"
+                            )
                             return self.create_response(
                                 unique_id,
                                 {

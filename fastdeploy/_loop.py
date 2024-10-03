@@ -94,12 +94,12 @@ def update_main_index(unique_id_wise_results: Dict[str, Dict[str, Any]]):
 
 def perform_maintenance(main_index: Any):
     """Perform maintenance tasks on the main index."""
-    # Delete older than 15 min, all successful and returned predictions from main index
+    # Delete older than 7 seconds, all successful and returned predictions from main index
     main_index.delete(
         query={
             f"-1.predicted_at": {
                 "$ne": 0,
-                "$lt": time.time() - 15 * 60,
+                "$lt": time.time() - 7,
             },
             "last_predictor_success": True,
         }

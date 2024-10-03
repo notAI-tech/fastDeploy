@@ -69,6 +69,7 @@ META_INDEX = DefinedIndex(
 KV_STORE = KVIndex(os.path.join("fastdeploy_dbs", f"kv_store.db"))
 KV_STORE.clear()
 
+
 MAIN_INDEX = DefinedIndex(
     "main_index",
     schema={

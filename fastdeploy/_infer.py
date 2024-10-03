@@ -215,7 +215,18 @@ class Infer:
                         == _utils.LAST_PREDICTOR_SEQUENCE
                     ):
                         _utils.MAIN_INDEX.update(
-                            {unique_id: {"-1.predicted_at": time.time()}}
+                            {
+                                unique_id: {
+                                    **{
+                                        "-1.predicted_at": time.time(),
+                                        "-1.outputs": None,
+                                    },
+                                    **{
+                                        f"{__}.outputs": None
+                                        for __ in _utils.PREDICTOR_SEQUENCE_TO_FILES
+                                    },
+                                }
+                            }
                         )
 
                         _utils.logger.debug(f"{unique_id}: predictor finished")
@@ -257,6 +268,22 @@ class Infer:
                             _utils.logger.debug(
                                 f"{unique_id}: predictor timedout at {current_results['last_predictor_sequence']}"
                             )
+
+                            _utils.MAIN_INDEX.update(
+                                {
+                                    unique_id: {
+                                        **{
+                                            f"{_}.outputs": None
+                                            for _ in _utils.PREDICTOR_SEQUENCE_TO_FILES
+                                        },
+                                        **{
+                                            "-1.outputs": None,
+                                            "-1.predicted_at": time.time(),
+                                        },
+                                    }
+                                }
+                            )
+
                             return self.create_response(
                                 unique_id,
                                 {

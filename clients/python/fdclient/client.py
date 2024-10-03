@@ -15,8 +15,6 @@ import uuid
 import time
 import json
 
-import concurrent.futures as futures
-
 
 class FDClient:
     def __init__(self, server_url, compression=True, request_timeout=None):
@@ -66,15 +64,6 @@ class FDClient:
         ):
             self.local_storage.decompressor = zstandard.ZstdDecompressor()
         return self.local_storage.decompressor
-
-    @property
-    def _thread_pool_executor(self):
-        if (
-            not hasattr(self.local_storage, "thread_pool_executor")
-            or self.local_storage.thread_pool_executor is None
-        ):
-            self.local_storage.thread_pool_executor = futures.ThreadPoolExecutor(32)
-        return self.local_storage.thread_pool_executor
 
     @property
     def _decompressor(self):
@@ -136,21 +125,6 @@ class FDClient:
 
     def infer_async(self, data, unique_id=None):
         return self.infer(data, unique_id, is_async=True)
-
-    def infer_background(self, data, unique_id=None):
-        return self._thread_pool_executor.submit(self.infer, data, unique_id)
-
-    def infer_background_multiple(self, data_list, unique_ids=None):
-        return [
-            self.infer_background(data, unique_ids[i] if unique_ids else None)
-            for i, data in enumerate(data_list)
-        ]
-
-    def __close__(self):
-        self._thread_pool_executor.shutdown(wait=False, cancel_futures=True)
-
-    def __del__(self):
-        self.__close__()
 
 
 if __name__ == "__main__":

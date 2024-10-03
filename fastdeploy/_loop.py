@@ -149,13 +149,6 @@ def fetch_batch(
             outputs = data[f"{predictor_sequence - 1}.outputs"]
             input_count = len(outputs)
 
-            if current_batch_length + input_count > optimal_batch_size:
-                # If adding this item would exceed the optimal batch size, don't add it and stop the loop
-                main_index.update(
-                    {unique_id: {"last_predictor_sequence": predictor_sequence - 1}}
-                )  # Revert the update
-                return unique_id_wise_input_count, input_batch
-
             unique_id_wise_input_count[unique_id] = input_count
             input_batch.extend(outputs)
             current_batch_length += input_count

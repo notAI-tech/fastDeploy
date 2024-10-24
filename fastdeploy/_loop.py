@@ -147,6 +147,13 @@ def fetch_batch(
 
         for unique_id, data in results.items():
             outputs = data[f"{predictor_sequence - 1}.outputs"]
+            if not isinstance(outputs, (list, tuple)):
+                _utils.logger.error(
+                    f"Predictor {predictor_sequence} returned {outputs} for {unique_id}"
+                )
+                _utils.MAIN_INDEX.delete(unique_id)
+                continue
+
             input_count = len(outputs)
 
             unique_id_wise_input_count[unique_id] = input_count

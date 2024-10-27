@@ -39,18 +39,11 @@ class Infer:
         allow_pickle=os.getenv("ALLOW_PICKLE", "true").lower() == "true",
     ):
         self.local_storage = threading.local()
-        self.result_polling_interval = max(
-            0.0001, _utils.META_INDEX.math("time_per_example", "sum") * 0.2
-        )
         self.timeout = timeout
         self.allow_pickle = allow_pickle
-        _utils.logger.info(
-            f"result_polling_interval: {self.result_polling_interval} timeout: {self.timeout}"
-        )
 
         _utils.logger.info(
             f"""fastDeploy configuration:
-        result_polling_interval: {self.result_polling_interval}
         timeout: {self.timeout}
         allow_pickle: {self.allow_pickle}
         """
@@ -130,7 +123,7 @@ class Infer:
 
         return success, response
 
-    def infer(
+    def add_to_infer_queue(
         self, inputs: bytes, unique_id: str, input_type: str, is_compressed: bool
     ):
         try:
@@ -198,106 +191,7 @@ class Infer:
 
                 _utils.logger.debug(f"{unique_id}: added to request queue")
 
-                # in a while loop, wait for the predictor(s) to finish
-                while True:
-                    current_results = _utils.MAIN_INDEX.get(
-                        unique_id,
-                        select_keys=[
-                            f"{_utils.LAST_PREDICTOR_SEQUENCE}.outputs",
-                            "last_predictor_success",
-                            "last_predictor_sequence",
-                        ],
-                    )[unique_id]
-
-                    if (
-                        current_results["last_predictor_success"] is True
-                        and current_results["last_predictor_sequence"]
-                        == _utils.LAST_PREDICTOR_SEQUENCE
-                    ):
-                        _utils.MAIN_INDEX.update(
-                            {
-                                unique_id: {
-                                    **{
-                                        "-1.predicted_at": time.time(),
-                                        "-1.outputs": None,
-                                    },
-                                    **{
-                                        f"{__}.outputs": None
-                                        for __ in _utils.PREDICTOR_SEQUENCE_TO_FILES
-                                    },
-                                }
-                            }
-                        )
-
-                        _utils.logger.debug(f"{unique_id}: predictor finished")
-
-                        return self.create_response(
-                            unique_id,
-                            {
-                                "success": True,
-                                "unique_id": unique_id,
-                                "prediction": current_results[
-                                    f"{_utils.LAST_PREDICTOR_SEQUENCE}.outputs"
-                                ],
-                                "reason": None,
-                            },
-                            is_compressed,
-                            input_type,
-                        )
-                    elif current_results["last_predictor_success"] is False:
-                        _utils.logger.warning(
-                            f"{unique_id}: predictor failed at {current_results['last_predictor_sequence']}"
-                        )
-                        return self.create_response(
-                            unique_id,
-                            {
-                                "success": False,
-                                "reason": f"prediction failed predictor {current_results['last_predictor_sequence']}",
-                                "unique_id": unique_id,
-                                "prediction": None,
-                            },
-                            is_compressed,
-                            input_type,
-                        )
-                    else:
-                        if (
-                            self.timeout > 0
-                            and self.timeout
-                            and time.time() - request_received_at >= self.timeout
-                        ):
-                            _utils.logger.debug(
-                                f"{unique_id}: predictor timedout at {current_results['last_predictor_sequence']}"
-                            )
-
-                            _utils.MAIN_INDEX.update(
-                                {
-                                    unique_id: {
-                                        **{
-                                            f"{_}.outputs": None
-                                            for _ in _utils.PREDICTOR_SEQUENCE_TO_FILES
-                                        },
-                                        **{
-                                            "-1.outputs": None,
-                                            "-1.predicted_at": time.time(),
-                                        },
-                                    }
-                                }
-                            )
-
-                            return self.create_response(
-                                unique_id,
-                                {
-                                    "success": False,
-                                    "reason": "timeout",
-                                    "unique_id": unique_id,
-                                    "prediction": None,
-                                },
-                                is_compressed,
-                                input_type,
-                            )
-
-                    time.sleep(self.result_polling_interval)
-
+                return True, None
         except Exception as ex:
             _utils.logger.exception(ex, exc_info=True)
             return self.create_response(
@@ -311,3 +205,71 @@ class Infer:
                 is_compressed,
                 input_type,
             )
+
+    def get_responses_for_unique_ids(self, unique_ids, is_compresseds, input_types):
+        all_current_results = _utils.MAIN_INDEX.get(
+            unique_ids,
+            select_keys=[
+                f"{_utils.LAST_PREDICTOR_SEQUENCE}.outputs",
+                "last_predictor_success",
+                "last_predictor_sequence",
+            ],
+        )
+
+        all_responses = {}
+
+        for unique_id, is_compressed, input_type in zip(
+            unique_ids, is_compresseds, input_types
+        ):
+            current_results = all_current_results[unique_id]
+
+            if (
+                current_results["last_predictor_success"] is True
+                and current_results["last_predictor_sequence"]
+                == _utils.LAST_PREDICTOR_SEQUENCE
+            ):
+                _utils.MAIN_INDEX.update(
+                    {
+                        unique_id: {
+                            **{
+                                "-1.predicted_at": time.time(),
+                                "-1.outputs": None,
+                            },
+                            **{
+                                f"{__}.outputs": None
+                                for __ in _utils.PREDICTOR_SEQUENCE_TO_FILES
+                            },
+                        }
+                    }
+                )
+
+                all_responses[unique_id] = self.create_response(
+                    unique_id,
+                    {
+                        "success": True,
+                        "unique_id": unique_id,
+                        "prediction": current_results[
+                            f"{_utils.LAST_PREDICTOR_SEQUENCE}.outputs"
+                        ],
+                        "reason": None,
+                    },
+                    is_compressed,
+                    input_type,
+                )
+            elif current_results["last_predictor_success"] is False:
+                _utils.logger.warning(
+                    f"{unique_id}: predictor failed at {current_results['last_predictor_sequence']}"
+                )
+                all_responses[unique_id] = self.create_response(
+                    unique_id,
+                    {
+                        "success": False,
+                        "reason": f"prediction failed predictor {current_results['last_predictor_sequence']}",
+                        "unique_id": unique_id,
+                        "prediction": None,
+                    },
+                    is_compressed,
+                    input_type,
+                )
+
+        return all_responses

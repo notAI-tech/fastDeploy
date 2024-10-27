@@ -7,6 +7,8 @@ import time
 import uuid
 import pickle
 import falcon
+import gevent
+import threading
 import importlib
 
 from . import _utils
@@ -20,9 +22,91 @@ except ImportError:
     get_prometheus_metrics = None
 
 
+class AsyncResponseHandler:
+    def __init__(self, check_interval=0.01):
+        self.pending_requests = {}
+        self.check_interval = check_interval
+        self.lock = threading.Lock()  # For thread-safe operations on pending_requests
+        self.infer = _infer.Infer()
+
+        # Start the background checker
+        gevent.spawn(self._response_checker)
+
+    def register_request_and_wait_for_response(
+        self, unique_id, is_compressed, input_type, timeout=30
+    ):
+        """Register request and wait for response with timeout"""
+        event = gevent.event.Event()
+
+        with self.lock:
+            self.pending_requests[unique_id] = {
+                "event": event,
+                "is_compressed": is_compressed,
+                "input_type": input_type,
+                "timestamp": time.time(),
+            }
+
+        try:
+            # Wait for response
+            if event.wait(timeout=timeout):
+                with self.lock:
+                    if unique_id in self.pending_requests:
+                        response = self.pending_requests[unique_id].get("response")
+                        return response
+                    return False, "Request disappeared while waiting"
+            else:
+                return False, "Timeout waiting for response"
+        finally:
+            # Always clean up
+            with self.lock:
+                self.pending_requests.pop(unique_id, None)
+
+    def deregister_request(self, unique_id):
+        with self.lock:
+            self.pending_requests.pop(unique_id, None)
+
+    def _response_checker(self):
+        while True:
+            try:
+                unique_ids = []
+                is_compresseds = []
+                input_types = []
+                with self.lock:
+                    for uid, data in self.pending_requests.items():
+                        unique_ids.append(uid)
+                        is_compresseds.append(data["is_compressed"])
+                        input_types.append(data["input_type"])
+
+                if unique_ids:
+                    try:
+                        responses = self.infer.get_responses_for_unique_ids(
+                            unique_ids=unique_ids,
+                            is_compresseds=is_compresseds,
+                            input_types=input_types,
+                        )
+
+                        for uid, response in responses.items():
+                            if response is not None:  # Response is ready
+                                with self.lock:
+                                    if uid in self.pending_requests:
+                                        request_data = self.pending_requests[uid]
+                                        request_data["response"] = response
+                                        request_data["event"].set()
+
+                    except Exception as e:
+                        _utils.logger.error(f"Error checking responses: {e}")
+
+            except Exception as e:
+                _utils.logger.error(f"Error in response checker loop: {e}")
+
+            finally:
+                gevent.sleep(self.check_interval)
+
+
 class Infer(object):
     def __init__(self):
         self._infer = _infer.Infer()
+        self._response_handler = AsyncResponseHandler()
 
     def on_post(self, req, resp):
         request_received_at = time.time()
@@ -32,7 +116,7 @@ class Infer(object):
         is_compressed = req.params.get("compressed", "f")[0].lower() == "t"
         input_type = req.params.get("input_type", "json")
 
-        success, response = self._infer.infer(
+        success, failure_response = self._infer.add_to_infer_queue(
             inputs=req.stream.read(),
             unique_id=unique_id,
             input_type=input_type,
@@ -40,19 +124,27 @@ class Infer(object):
         )
 
         if is_compressed:
-            resp.data = response
             resp.content_type = "application/octet-stream"
-
         elif input_type == "json":
-            resp.media = response
+            resp.content_type = "application/json"
         elif input_type == "pickle":
-            resp.data = response
             resp.content_type = "application/pickle"
         elif input_type == "msgpack":
-            resp.data = response
             resp.content_type = "application/msgpack"
 
-        resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
+        if success is not True:
+            resp.status = falcon.HTTP_400
+            resp.data = failure_response
+
+        else:
+            (
+                success,
+                response,
+            ) = self._response_handler.register_request_and_wait_for_response(
+                unique_id, is_compressed, input_type
+            )
+            resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
+            resp.data = response
 
 
 class PrometheusMetrics(object):

@@ -59,11 +59,6 @@ def initialize_predictor(
     }
 
 
-def update_meta_index(predictor_sequence: int, predictor_info: Dict[str, Any]):
-    """Update the META_INDEX with predictor information."""
-    _utils.META_INDEX.update({f"{predictor_sequence}": predictor_info})
-
-
 def process_batch(
     predictor: Any, input_batch: List[Any], optimal_batch_size: int
 ) -> Tuple[List[Any], bool, float, float]:
@@ -85,37 +80,6 @@ def process_batch(
         )
 
     return results, last_predictor_success, received_at, predicted_at
-
-
-def update_main_index(unique_id_wise_results: Dict[str, Dict[str, Any]]):
-    """Update the MAIN_INDEX with processed results."""
-    _utils.MAIN_INDEX.update(unique_id_wise_results)
-
-
-def perform_maintenance(main_index: Any):
-    """Perform maintenance tasks on the main index."""
-    # Delete older than 7 seconds, all successful and returned predictions from main index
-    main_index.delete(
-        query={
-            f"-1.predicted_at": {
-                "$ne": 0,
-                "$lt": time.time() - 7,
-            },
-            "last_predictor_success": True,
-        }
-    )
-    main_index.vaccum()
-
-
-def handle_timeouts(main_index: Any, timeout_time: float):
-    """Handle timeouts for items in the main index."""
-    main_index.search(
-        query={
-            "-1.predicted_at": 0,
-            "-1.received_at": {"$lt": time.time() - timeout_time},
-        },
-        update={"timedout_in_queue": True},
-    )
 
 
 def fetch_batch(
@@ -147,12 +111,6 @@ def fetch_batch(
 
         for unique_id, data in results.items():
             outputs = data[f"{predictor_sequence - 1}.outputs"]
-            if not isinstance(outputs, (list, tuple)):
-                _utils.logger.error(
-                    f"Predictor {predictor_sequence} returned {outputs} for {unique_id}"
-                )
-                _utils.MAIN_INDEX.delete(unique_id)
-                continue
 
             input_count = len(outputs)
 
@@ -202,7 +160,7 @@ def start_loop(
     predictor_info = initialize_predictor(
         predictor, predictor_name, predictor_sequence, example, optimal_batch_size
     )
-    update_meta_index(predictor_sequence, predictor_info)
+    _utils.META_INDEX.update({f"{predictor_sequence}": predictor_info})
 
     optimal_batch_size = predictor_info["optimal_batch_size"]
     time_per_example = predictor_info["time_per_example"]
@@ -218,14 +176,28 @@ def start_loop(
     )
 
     last_batch_collection_started_at = 0
-    last_maintenance_run_at = time.time()
+    last_deletion_run_at = time.time()
 
     while True:
-        if time.time() - last_maintenance_run_at >= 60:
-            perform_maintenance(_utils.MAIN_INDEX)
-            last_maintenance_run_at = time.time()
+        if time.time() - last_deletion_run_at >= 60:
+            _utils.MAIN_INDEX.delete(
+                query={
+                    f"-1.predicted_at": {
+                        "$ne": 0,
+                        "$lt": time.time() - 7,
+                    },
+                    "last_predictor_success": True,
+                }
+            )
+            last_deletion_run_at = time.time()
 
-        handle_timeouts(_utils.MAIN_INDEX, timeout_time)
+        _utils.MAIN_INDEX.search(
+            query={
+                "-1.predicted_at": 0,
+                "-1.received_at": {"$lt": time.time() - timeout_time},
+            },
+            update={"timedout_in_queue": True},
+        )
 
         unique_id_wise_input_count, input_batch = fetch_batch(
             _utils.MAIN_INDEX, predictor_sequence, optimal_batch_size
@@ -260,7 +232,7 @@ def start_loop(
             predicted_at,
             current_batch_length,
         )
-        update_main_index(unique_id_wise_results)
+        _utils.MAIN_INDEX.update(unique_id_wise_results)
 
         last_batch_collection_started_at = time.time()
 

@@ -26,16 +26,14 @@ class AsyncResponseHandler:
     def __init__(self, check_interval=0.01):
         self.pending_requests = {}
         self.check_interval = check_interval
-        self.lock = threading.Lock()  # For thread-safe operations on pending_requests
+        self.lock = threading.Lock()
         self.infer = _infer.Infer()
 
-        # Start the background checker
         gevent.spawn(self._response_checker)
 
     def register_request_and_wait_for_response(
         self, unique_id, is_compressed, input_type, timeout=30
     ):
-        """Register request and wait for response with timeout"""
         event = gevent.event.Event()
 
         with self.lock:
@@ -47,17 +45,15 @@ class AsyncResponseHandler:
             }
 
         try:
-            # Wait for response
             if event.wait(timeout=timeout):
                 with self.lock:
-                    if unique_id in self.pending_requests:
-                        response = self.pending_requests[unique_id].get("response")
-                        return response
-                    return False, "Request disappeared while waiting"
+                    response = self.pending_requests[unique_id].get("response")
+                    return response
             else:
-                return False, "Timeout waiting for response"
+                return self.infer.get_timeout_response(
+                    unique_id, is_compressed, input_type
+                )
         finally:
-            # Always clean up
             with self.lock:
                 self.pending_requests.pop(unique_id, None)
 
@@ -86,7 +82,7 @@ class AsyncResponseHandler:
                         )
 
                         for uid, response in responses.items():
-                            if response is not None:  # Response is ready
+                            if response is not None:
                                 with self.lock:
                                     if uid in self.pending_requests:
                                         request_data = self.pending_requests[uid]

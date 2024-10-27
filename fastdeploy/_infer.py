@@ -35,19 +35,10 @@ class Infer:
 
     def __init__(
         self,
-        timeout=float(os.getenv("TIMEOUT", 0)),
         allow_pickle=os.getenv("ALLOW_PICKLE", "true").lower() == "true",
     ):
         self.local_storage = threading.local()
-        self.timeout = timeout
         self.allow_pickle = allow_pickle
-
-        _utils.logger.info(
-            f"""fastDeploy configuration:
-        timeout: {self.timeout}
-        allow_pickle: {self.allow_pickle}
-        """
-        )
 
     @property
     def _compressor(self):
@@ -122,6 +113,19 @@ class Infer:
             response = self._compressor.compress(response)
 
         return success, response
+
+    def get_timeout_response(self, unique_id, is_compressed, input_type):
+        return self.create_response(
+            unique_id,
+            {
+                "success": False,
+                "reason": "timeout",
+                "unique_id": unique_id,
+                "prediction": None,
+            },
+            is_compressed,
+            input_type,
+        )
 
     def add_to_infer_queue(
         self, inputs: bytes, unique_id: str, input_type: str, is_compressed: bool

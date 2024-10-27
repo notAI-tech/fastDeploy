@@ -217,35 +217,40 @@ class Infer:
                 f"{_utils.LAST_PREDICTOR_SEQUENCE}.outputs",
                 "last_predictor_success",
                 "last_predictor_sequence",
+                "timedout_in_queue",
             ],
         )
 
         all_responses = {}
+
+        updations = {}
 
         for unique_id, is_compressed, input_type in zip(
             unique_ids, is_compresseds, input_types
         ):
             current_results = all_current_results[unique_id]
 
-            if (
+            if current_results["timedout_in_queue"]:
+                _utils.logger.warning(f"{unique_id}: timedout in queue")
+                all_responses[unique_id] = self.get_timeout_response(
+                    unique_id, is_compressed, input_type
+                )
+
+            elif (
                 current_results["last_predictor_success"] is True
                 and current_results["last_predictor_sequence"]
                 == _utils.LAST_PREDICTOR_SEQUENCE
             ):
-                _utils.MAIN_INDEX.update(
-                    {
-                        unique_id: {
-                            **{
-                                "-1.predicted_at": time.time(),
-                                "-1.outputs": None,
-                            },
-                            **{
-                                f"{__}.outputs": None
-                                for __ in _utils.PREDICTOR_SEQUENCE_TO_FILES
-                            },
-                        }
-                    }
-                )
+                updations[unique_id] = {
+                    **{
+                        "-1.predicted_at": time.time(),
+                        "-1.outputs": None,
+                    },
+                    **{
+                        f"{__}.outputs": None
+                        for __ in _utils.PREDICTOR_SEQUENCE_TO_FILES
+                    },
+                }
 
                 all_responses[unique_id] = self.create_response(
                     unique_id,
@@ -275,5 +280,8 @@ class Infer:
                     is_compressed,
                     input_type,
                 )
+
+        if updations:
+            _utils.MAIN_INDEX.update(updations)
 
         return all_responses

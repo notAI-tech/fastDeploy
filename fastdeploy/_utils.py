@@ -90,13 +90,20 @@ MAIN_INDEX = DefinedIndex(
     db_path=os.path.join("fastdeploy_dbs", f"main_index.db"),
 )
 
+# for setting timedout_in_queue
 MAIN_INDEX.optimize_for_query(
-    ["last_predictor_success", "last_predictor_sequence", "timedout_in_queue"]
+    ["-1.predicted_at", "-1.received_at", "timedout_in_queue"]
 )
-MAIN_INDEX.optimize_for_query(["-1.received_at", "timedout_in_queue"])
-MAIN_INDEX.optimize_for_query(["-1.predicted_at", "-1.received_at"])
-MAIN_INDEX.optimize_for_query(["-1.predicted_at", "last_predictor_success"])
-MAIN_INDEX.optimize_for_query(["-1.received_at", "last_predictor_success"])
+
+# for getting next batch to process
+MAIN_INDEX.optimize_for_query(
+    [
+        "-1.predicted_at",
+        "last_predictor_success",
+        "last_predictor_sequence",
+        "timedout_in_queue",
+    ]
+)
 
 
 def warmup(predictor, example_input, n=3):

@@ -1,13 +1,11 @@
 import os
 import time
 import importlib
-from typing import Any, Dict, List, Tuple
 
 from . import _utils
 
 
-def load_predictor(predictor_name: str) -> Tuple[Any, int]:
-    """Load the predictor module and get the predictor sequence."""
+def load_predictor(predictor_name):
     predictor = importlib.import_module(os.path.splitext(predictor_name)[0]).predictor
     predictor_sequence = _utils.PREDICTOR_FILE_TO_SEQUENCE[predictor_name]
     _utils.logger.debug(
@@ -16,8 +14,7 @@ def load_predictor(predictor_name: str) -> Tuple[Any, int]:
     return predictor, predictor_sequence
 
 
-def get_example(predictor_sequence: int) -> Any:
-    """Get the example for the current predictor."""
+def get_example(predictor_sequence):
     if predictor_sequence == 0:
         return _utils.example
 
@@ -34,13 +31,12 @@ def get_example(predictor_sequence: int) -> Any:
 
 
 def initialize_predictor(
-    predictor: Any,
-    predictor_name: str,
-    predictor_sequence: int,
-    example: Any,
-    optimal_batch_size: int,
-) -> Dict[str, Any]:
-    """Initialize the predictor and calculate optimal parameters."""
+    predictor,
+    predictor_name,
+    predictor_sequence,
+    example,
+    optimal_batch_size,
+):
     example_output = _utils.warmup(predictor, example)
     _utils.logger.info(f"{predictor_name}: warmup done")
 
@@ -59,10 +55,7 @@ def initialize_predictor(
     }
 
 
-def process_batch(
-    predictor: Any, input_batch: List[Any], optimal_batch_size: int
-) -> Tuple[List[Any], bool, float, float]:
-    """Process a batch of inputs using the predictor."""
+def process_batch(predictor, input_batch, optimal_batch_size):
     last_predictor_success = False
     received_at = time.time()
     try:
@@ -82,34 +75,33 @@ def process_batch(
     return results, last_predictor_success, received_at, predicted_at
 
 
-def fetch_batch(
-    main_index: Any, predictor_sequence: int, optimal_batch_size: int
-) -> Tuple[Dict[str, int], List[Any]]:
-    """Fetch a batch of inputs to process, ensuring total input length doesn't exceed optimal_batch_size."""
+def fetch_batch(main_index, predictor_sequence, optimal_batch_size):
     unique_id_wise_input_count = {}
     input_batch = []
     current_batch_length = 0
 
     while current_batch_length < optimal_batch_size:
-        results = main_index.search(
+        to_process = main_index.search(
             query={
-                "last_predictor_success": True,
-                "last_predictor_sequence": predictor_sequence - 1,
-                "timedout_in_queue": {"$ne": True},
+                "-1.predicted_at": 0,  # prediction not yet done
+                "last_predictor_success": True,  # last predictor success
+                "last_predictor_sequence": predictor_sequence
+                - 1,  # last predictor sequence
+                "timedout_in_queue": {"$ne": True},  # not timedout in queue
             },
-            n=1,  # Fetch one item at a time
+            n=optimal_batch_size,
             select_keys=[f"{predictor_sequence - 1}.outputs"],
             update={
-                "last_predictor_sequence": predictor_sequence,
-                "last_predictor_success": None,
-                f"{predictor_sequence}.received_at": time.time(),
+                "last_predictor_sequence": predictor_sequence,  # set last predictor sequence to current predictor sequence
+                "last_predictor_success": None,  # reset last predictor success
+                f"{predictor_sequence}.received_at": time.time(),  # set received at to current time
             },
         )
 
-        if not results:  # No more items to process
+        if not to_process:  # No more items to process
             break
 
-        for unique_id, data in results.items():
+        for unique_id, data in to_process.items():
             outputs = data[f"{predictor_sequence - 1}.outputs"]
 
             input_count = len(outputs)
@@ -122,14 +114,14 @@ def fetch_batch(
 
 
 def prepare_results(
-    unique_id_wise_input_count: Dict[str, int],
-    results: List[Any],
-    predictor_sequence: int,
-    last_predictor_success: bool,
-    received_at: float,
-    predicted_at: float,
-    current_batch_length: int,
-) -> Dict[str, Dict[str, Any]]:
+    unique_id_wise_input_count,
+    results,
+    predictor_sequence,
+    last_predictor_success,
+    received_at,
+    predicted_at,
+    current_batch_length,
+):
     """Prepare results for updating the main index."""
     unique_id_wise_results = {}
     total_input_count_till_now = 0
@@ -150,8 +142,8 @@ def prepare_results(
 
 
 def start_loop(
-    predictor_name: str = os.getenv("PREDICTOR_NAME"),
-    optimal_batch_size: int = int(os.getenv("OPTIMAL_BATCH_SIZE")),
+    predictor_name=os.getenv("PREDICTOR_NAME"),
+    optimal_batch_size=int(os.getenv("OPTIMAL_BATCH_SIZE")),
 ):
     """Main loop for processing predictions."""
     timeout_time = float(os.getenv("TIMEOUT", 0))
@@ -176,48 +168,47 @@ def start_loop(
     )
 
     last_batch_collection_started_at = 0
-    last_deletion_run_at = time.time()
 
     while True:
-        if time.time() - last_deletion_run_at >= 60:
-            _utils.MAIN_INDEX.delete(
-                query={
-                    f"-1.predicted_at": {
-                        "$ne": 0,
-                        "$lt": time.time() - 7,
-                    },
-                    "last_predictor_success": True,
-                }
-            )
-            last_deletion_run_at = time.time()
+        """
+        Set timedout_in_queue to True for all the predictions that have been in the queue for more than timeout_time seconds
+        and delete older than 7 seconds predictions that have finished prediction
+        """
 
         _utils.MAIN_INDEX.search(
             query={
                 "-1.predicted_at": 0,
                 "-1.received_at": {"$lt": time.time() - timeout_time},
+                "timedout_in_queue": {"$ne": True},
             },
             update={"timedout_in_queue": True},
+        )
+
+        _utils.MAIN_INDEX.delete(
+            query={
+                "$and": [
+                    {"-1.predicted_at": {"$gt": 0}},
+                    {"-1.predicted_at": {"$lt": time.time() - 7}},
+                ]
+            },
         )
 
         unique_id_wise_input_count, input_batch = fetch_batch(
             _utils.MAIN_INDEX, predictor_sequence, optimal_batch_size
         )
+
         current_batch_length = len(input_batch)
 
         if current_batch_length == 0:
-            time.sleep(max_wait_time_for_batch_collection)
+            time.sleep(max_wait_time_for_batch_collection // 2)
             continue
-
-        _utils.logger.info(
-            f"{predictor_name}: current_batch_length: {current_batch_length}"
-        )
 
         if (
             time.time() - last_batch_collection_started_at
             < max_wait_time_for_batch_collection
-            and current_batch_length / optimal_batch_size < 0.5
+            and current_batch_length / optimal_batch_size < 0.9
         ):
-            time.sleep(max_wait_time_for_batch_collection / 2)
+            time.sleep(max_wait_time_for_batch_collection // 2)
             continue
 
         results, last_predictor_success, received_at, predicted_at = process_batch(

@@ -3,6 +3,7 @@ from gevent import monkey
 monkey.patch_all()
 
 import os
+import json
 import time
 import uuid
 import pickle
@@ -32,7 +33,7 @@ class AsyncResponseHandler:
         gevent.spawn(self._response_checker)
 
     def register_request_and_wait_for_response(
-        self, unique_id, is_compressed, input_type, timeout=30
+        self, unique_id, is_compressed, input_type, timeout
     ):
         event = gevent.event.Event()
 
@@ -90,6 +91,7 @@ class AsyncResponseHandler:
                                         request_data["event"].set()
 
                     except Exception as e:
+                        _utils.logger.exception(e, exc_info=True)
                         _utils.logger.error(f"Error checking responses: {e}")
 
             except Exception as e:
@@ -103,6 +105,7 @@ class Infer(object):
     def __init__(self):
         self._infer = _infer.Infer()
         self._response_handler = AsyncResponseHandler()
+        self.timeout = int(os.getenv("TIMEOUT"))
 
     def on_post(self, req, resp):
         request_received_at = time.time()
@@ -137,7 +140,7 @@ class Infer(object):
                 success,
                 response,
             ) = self._response_handler.register_request_and_wait_for_response(
-                unique_id, is_compressed, input_type
+                unique_id, is_compressed, input_type, self.timeout
             )
             resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
             resp.data = response
@@ -382,7 +385,7 @@ class Meta(object):
                 "example": __example,
                 "is_pickle_allowed": os.getenv("ALLOW_PICKLE", "true").lower()
                 == "true",
-                "timeout": os.getenv("TIMEOUT"),
+                "timeout": int(os.getenv("TIMEOUT")),
             }
 
 

@@ -178,9 +178,7 @@ def main():
         return
 
     # Sample input - modify as needed
-    sample_input = [{
-        "data": "your_input_here"
-    }]
+    sample_input = ["Some example sentence quick brown fox jumps over the lazy dog and the quick brown fox", "Another example sentence tiger is the fastest animal on earth"]
 
     runner = BenchmarkRunner(
         target_rps=args.rps,

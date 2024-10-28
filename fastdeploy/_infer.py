@@ -109,8 +109,8 @@ class Infer:
             pass
 
         if is_compressed:
-            _utils.logger.debug(f"{unique_id}: compressing response")
             response = self._compressor.compress(response)
+            _utils.logger.debug(f"{unique_id}: response compressed")
 
         return success, response
 
@@ -224,6 +224,7 @@ class Infer:
         all_responses = {}
 
         updations = {}
+        still_processing = []
 
         for unique_id, is_compressed, input_type in zip(
             unique_ids, is_compresseds, input_types
@@ -232,9 +233,13 @@ class Infer:
 
             if current_results["timedout_in_queue"]:
                 _utils.logger.warning(f"{unique_id}: timedout in queue")
+                updations[unique_id] = {
+                    "-1.predicted_at": time.time(),
+                }
                 all_responses[unique_id] = self.get_timeout_response(
                     unique_id, is_compressed, input_type
                 )
+                _utils.logger.debug(f"{unique_id}: timedout in queue response created")
 
             elif (
                 current_results["last_predictor_success"] is True
@@ -242,14 +247,7 @@ class Infer:
                 == _utils.LAST_PREDICTOR_SEQUENCE
             ):
                 updations[unique_id] = {
-                    **{
-                        "-1.predicted_at": time.time(),
-                        "-1.outputs": None,
-                    },
-                    **{
-                        f"{__}.outputs": None
-                        for __ in _utils.PREDICTOR_SEQUENCE_TO_FILES
-                    },
+                    "-1.predicted_at": time.time(),
                 }
 
                 all_responses[unique_id] = self.create_response(
@@ -265,10 +263,14 @@ class Infer:
                     is_compressed,
                     input_type,
                 )
+                _utils.logger.debug(f"{unique_id}: response created")
             elif current_results["last_predictor_success"] is False:
                 _utils.logger.warning(
                     f"{unique_id}: predictor failed at {current_results['last_predictor_sequence']}"
                 )
+                updations[unique_id] = {
+                    "-1.predicted_at": time.time(),
+                }
                 all_responses[unique_id] = self.create_response(
                     unique_id,
                     {
@@ -280,8 +282,15 @@ class Infer:
                     is_compressed,
                     input_type,
                 )
+                _utils.logger.debug(f"{unique_id}: failed response created")
+
+            else:
+                still_processing.append(unique_id)
 
         if updations:
             _utils.MAIN_INDEX.update(updations)
+
+        if still_processing:
+            _utils.logger.debug(f"Still processing: {still_processing}")
 
         return all_responses

@@ -75,10 +75,16 @@ def process_batch(predictor, input_batch, optimal_batch_size):
     return results, last_predictor_success, received_at, predicted_at
 
 
-def fetch_batch(main_index, predictor_sequence, optimal_batch_size):
+def fetch_batch(
+    main_index,
+    predictor_sequence,
+    optimal_batch_size,
+    max_wait_time_for_batch_collection,
+):
     unique_id_wise_input_count = {}
     input_batch = []
     current_batch_length = 0
+    batch_collection_started_at = time.time()
 
     while current_batch_length < optimal_batch_size:
         to_process = main_index.search(
@@ -98,9 +104,6 @@ def fetch_batch(main_index, predictor_sequence, optimal_batch_size):
             },
         )
 
-        if not to_process:  # No more items to process
-            break
-
         for unique_id, data in to_process.items():
             outputs = data[f"{predictor_sequence - 1}.outputs"]
 
@@ -109,6 +112,22 @@ def fetch_batch(main_index, predictor_sequence, optimal_batch_size):
             unique_id_wise_input_count[unique_id] = input_count
             input_batch.extend(outputs)
             current_batch_length += input_count
+
+        if current_batch_length == 0:
+            time.sleep(max_wait_time_for_batch_collection / 2)
+            continue
+
+        elif (
+            time.time() - batch_collection_started_at
+            < max_wait_time_for_batch_collection
+            and current_batch_length / optimal_batch_size < 0.9
+        ):
+            time.sleep(max_wait_time_for_batch_collection / 2)
+            continue
+
+        else:
+            # finished collecting batch
+            break
 
     return unique_id_wise_input_count, input_batch
 
@@ -156,7 +175,7 @@ def start_loop(
 
     optimal_batch_size = predictor_info["optimal_batch_size"]
     time_per_example = predictor_info["time_per_example"]
-    max_wait_time_for_batch_collection = max(0.003, time_per_example * 0.25)
+    max_wait_time_for_batch_collection = max(0.003, time_per_example * 0.51)
 
     _utils.logger.info(
         f"""{predictor_name}
@@ -167,22 +186,26 @@ def start_loop(
     """
     )
 
-    last_batch_collection_started_at = 0
-
     while True:
         """
         Set timedout_in_queue to True for all the predictions that have been in the queue for more than timeout_time seconds
         and delete older than 7 seconds predictions that have finished prediction
         """
 
-        _utils.MAIN_INDEX.search(
+        timedout_in_queue_unique_ids = _utils.MAIN_INDEX.search(
             query={
                 "-1.predicted_at": 0,
                 "-1.received_at": {"$lt": time.time() - timeout_time},
                 "timedout_in_queue": {"$ne": True},
             },
             update={"timedout_in_queue": True},
+            select_keys=[],
         )
+
+        if timedout_in_queue_unique_ids:
+            _utils.logger.warning(
+                f"{_utils.MAIN_INDEX.count()} in queue, set timedout_in_queue to True for {list(timedout_in_queue_unique_ids)} unique_ids"
+            )
 
         _utils.MAIN_INDEX.delete(
             query={
@@ -194,22 +217,11 @@ def start_loop(
         )
 
         unique_id_wise_input_count, input_batch = fetch_batch(
-            _utils.MAIN_INDEX, predictor_sequence, optimal_batch_size
+            _utils.MAIN_INDEX,
+            predictor_sequence,
+            optimal_batch_size,
+            max_wait_time_for_batch_collection,
         )
-
-        current_batch_length = len(input_batch)
-
-        if current_batch_length == 0:
-            time.sleep(max_wait_time_for_batch_collection)
-            continue
-
-        if (
-            time.time() - last_batch_collection_started_at
-            < max_wait_time_for_batch_collection
-            and current_batch_length / optimal_batch_size < 0.9
-        ):
-            time.sleep(max_wait_time_for_batch_collection / 2)
-            continue
 
         _utils.logger.debug(f"Processing batch {unique_id_wise_input_count}")
 
@@ -223,11 +235,12 @@ def start_loop(
             last_predictor_success,
             received_at,
             predicted_at,
-            current_batch_length,
+            len(input_batch),
         )
         _utils.MAIN_INDEX.update(unique_id_wise_results)
+
         _utils.logger.debug(
-            f"Updated results predictor {predictor_sequence}: list({unique_id_wise_results})"
+            f"Updated results predictor {predictor_sequence}: {list(unique_id_wise_results)}"
         )
 
         last_batch_collection_started_at = time.time()

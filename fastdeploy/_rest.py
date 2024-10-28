@@ -24,7 +24,7 @@ except ImportError:
 
 
 class AsyncResponseHandler:
-    def __init__(self, check_interval=0.01):
+    def __init__(self, check_interval=0.003):
         self.pending_requests = {}
         self.check_interval = check_interval
         self.lock = threading.Lock()
@@ -75,6 +75,9 @@ class AsyncResponseHandler:
                         input_types.append(data["input_type"])
 
                 if unique_ids:
+                    _utils.logger.debug(
+                        f"Checking responses for unique_ids: {unique_ids}"
+                    )
                     try:
                         responses = self.infer.get_responses_for_unique_ids(
                             unique_ids=unique_ids,

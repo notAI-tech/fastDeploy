@@ -200,7 +200,7 @@ def start_loop(
         current_batch_length = len(input_batch)
 
         if current_batch_length == 0:
-            time.sleep(max_wait_time_for_batch_collection // 2)
+            time.sleep(max_wait_time_for_batch_collection)
             continue
 
         if (
@@ -208,8 +208,10 @@ def start_loop(
             < max_wait_time_for_batch_collection
             and current_batch_length / optimal_batch_size < 0.9
         ):
-            time.sleep(max_wait_time_for_batch_collection // 2)
+            time.sleep(max_wait_time_for_batch_collection / 2)
             continue
+
+        _utils.logger.debug(f"Processing batch {unique_id_wise_input_count}")
 
         results, last_predictor_success, received_at, predicted_at = process_batch(
             predictor, input_batch, optimal_batch_size
@@ -224,6 +226,9 @@ def start_loop(
             current_batch_length,
         )
         _utils.MAIN_INDEX.update(unique_id_wise_results)
+        _utils.logger.debug(
+            f"Updated results predictor {predictor_sequence}: list({unique_id_wise_results})"
+        )
 
         last_batch_collection_started_at = time.time()
 

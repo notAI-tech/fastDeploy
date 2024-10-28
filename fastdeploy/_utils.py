@@ -91,11 +91,13 @@ MAIN_INDEX = DefinedIndex(
 )
 
 # for setting timedout_in_queue
+# used in _loop.py start_loop to set timedout_in_queue to True for all the predictions that have been in the queue for more than timeout_time seconds
 MAIN_INDEX.optimize_for_query(
     ["-1.predicted_at", "-1.received_at", "timedout_in_queue"]
 )
 
 # for getting next batch to process
+# used in _loop.py fetch_batch function
 MAIN_INDEX.optimize_for_query(
     [
         "-1.predicted_at",
@@ -104,6 +106,12 @@ MAIN_INDEX.optimize_for_query(
         "timedout_in_queue",
     ]
 )
+
+# in general queries
+MAIN_INDEX.optimize_for_query(["-1.received_at"])
+MAIN_INDEX.optimize_for_query(["last_predictor_success"])
+MAIN_INDEX.optimize_for_query(["last_predictor_sequence"])
+MAIN_INDEX.optimize_for_query(["timedout_in_queue"])
 
 
 def warmup(predictor, example_input, n=3):

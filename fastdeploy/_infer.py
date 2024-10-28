@@ -189,6 +189,7 @@ class Infer:
                             "-1.predicted_at": 0,
                             "last_predictor_sequence": -1,
                             "last_predictor_success": True,
+                            "timedout_in_queue": None,
                         }
                     }
                 )

@@ -197,6 +197,7 @@ def start_loop(
                 "-1.predicted_at": 0,
                 "-1.received_at": {"$lt": time.time() - timeout_time},
                 "timedout_in_queue": {"$ne": True},
+                "last_predictor_sequence": {"$ne": _utils.LAST_PREDICTOR_SEQUENCE},
             },
             update={"timedout_in_queue": True},
             select_keys=[],
@@ -242,8 +243,6 @@ def start_loop(
         _utils.logger.debug(
             f"Updated results predictor {predictor_sequence}: {list(unique_id_wise_results)}"
         )
-
-        last_batch_collection_started_at = time.time()
 
 
 if __name__ == "__main__":

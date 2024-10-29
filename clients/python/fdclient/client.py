@@ -96,10 +96,11 @@ class FDClient:
                 "async": is_async,
                 "input_type": self.input_type,
                 "compressed": True if zstandard is not None else False,
+                "timeout": self.request_timeout,
             },
             data=self._compressor.compress(data) if zstandard is not None else data,
             headers={"Content-Type": "application/octet-stream"},
-            timeout=self.request_timeout,
+            timeout=self.request_timeout * 1.1,
         )
 
         if self.input_type == "pickle":

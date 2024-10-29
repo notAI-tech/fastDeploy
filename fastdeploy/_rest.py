@@ -52,7 +52,7 @@ class AsyncResponseHandler:
                     return response
             else:
                 return self.infer.get_timeout_response(
-                    unique_id, is_compressed, input_type
+                    unique_id, is_compressed, input_type, is_client_timeout=True
                 )
         finally:
             with self.lock:
@@ -108,12 +108,12 @@ class Infer(object):
     def __init__(self):
         self._infer = _infer.Infer()
         self._response_handler = AsyncResponseHandler()
-        self.timeout = int(os.getenv("TIMEOUT"))
 
     def on_post(self, req, resp):
         request_received_at = time.time()
 
         unique_id = str(req.params.get("unique_id", uuid.uuid4()))
+        client_timeout = float(req.params.get("timeout", os.getenv("TIMEOUT", 480)))
 
         is_compressed = req.params.get("compressed", "f")[0].lower() == "t"
         input_type = req.params.get("input_type", "json")
@@ -143,7 +143,7 @@ class Infer(object):
                 success,
                 response,
             ) = self._response_handler.register_request_and_wait_for_response(
-                unique_id, is_compressed, input_type, self.timeout
+                unique_id, is_compressed, input_type, client_timeout
             )
             resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
             resp.data = response
@@ -284,10 +284,6 @@ avg_total_time_per_req_for_reqs_in_last_x_seconds {avg_total_time_per_req_for_re
 # HELP avg_actual_total_time_per_req_for_reqs_in_last_x_seconds The average actual total time per request for requests in last {_LAST_X_SECONDS} seconds.
 # TYPE avg_actual_total_time_per_req_for_reqs_in_last_x_seconds gauge
 avg_actual_total_time_per_req_for_reqs_in_last_x_seconds {avg_actual_total_time_per_req_for_reqs_in_last_x_seconds}
-
-# HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.
-# TYPE requests_received_in_last_x_seconds gauge
-requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
         """.strip()
 
         if get_prometheus_metrics is not None:

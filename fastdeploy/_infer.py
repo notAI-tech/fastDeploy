@@ -114,12 +114,25 @@ class Infer:
 
         return success, response
 
-    def get_timeout_response(self, unique_id, is_compressed, input_type):
+    def get_timeout_response(
+        self, unique_id, is_compressed, input_type, is_client_timeout=False
+    ):
+        if is_client_timeout:
+            _utils.MAIN_INDEX.update(
+                {
+                    unique_id: {
+                        "-1.predicted_at": time.time(),
+                        "-1.timedout_in_queue": True,
+                    }
+                }
+            )
+            _utils.logger.warning(f"{unique_id}: client timeout")
+
         return self.create_response(
             unique_id,
             {
                 "success": False,
-                "reason": "timeout",
+                "reason": "timeout" if not is_client_timeout else "client_timeout",
                 "unique_id": unique_id,
                 "prediction": None,
             },

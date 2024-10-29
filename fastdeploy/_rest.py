@@ -136,7 +136,10 @@ class Infer(object):
 
         if success is not True:
             resp.status = falcon.HTTP_400
-            resp.data = failure_response
+            if input_type == "json":
+                resp.media = failure_response
+            else:
+                resp.data = failure_response
 
         else:
             (
@@ -146,7 +149,10 @@ class Infer(object):
                 unique_id, is_compressed, input_type, client_timeout
             )
             resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
-            resp.data = response
+            if input_type == "json":
+                resp.media = response
+            else:
+                resp.data = response
 
 
 class PrometheusMetrics(object):

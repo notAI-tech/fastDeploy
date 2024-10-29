@@ -11,20 +11,57 @@ import requests
 from datetime import datetime
 import os
 import uuid
+import importlib.util
 from fdclient import FDClient
+
 # Configure logging
 logging.basicConfig(format='%(asctime)s [%(threadName)s] - %(message)s')
 logger = logging.getLogger(__name__)
 
+def load_input_source(sample_path):
+    """Load either JSON file or import example_function from Python file"""
+    if sample_path.endswith('.json'):
+        with open(sample_path, 'r') as f:
+            return {'type': 'json', 'data': json.load(f)}
+    elif sample_path.endswith('.py'):
+        # Convert to absolute path and split directory and filename
+        abs_path = os.path.abspath(sample_path)
+        directory = os.path.dirname(abs_path)
+        filename = os.path.basename(abs_path)
+        
+        # Store current directory
+        original_dir = os.getcwd()
+        
+        try:
+            # Change to the script's directory
+            os.chdir(directory)
+            
+            # Import the module
+            module_name = os.path.splitext(filename)[0]
+            spec = importlib.util.spec_from_file_location(module_name, filename)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            
+            if not hasattr(module, 'example_function'):
+                raise ValueError("Python file must contain example_function()")
+            
+            # Return the function while still in the correct directory
+            return {'type': 'function', 'data': module.example_function}
+        finally:
+            # Always restore original directory
+            os.chdir(original_dir)
+    else:
+        raise ValueError("Input file must be .json or .py")
+
 class BenchmarkRunner:
     def __init__(self, target_rps, duration_seconds, server_url, 
-                 warmup_seconds=5, sample_input=None, concurrent_users=50, 
+                 warmup_seconds=5, input_source=None, concurrent_users=50, 
                  request_batch_size=1, log_dir=None, debug=False):
         self.target_rps = target_rps
         self.duration_seconds = duration_seconds
         self.warmup_seconds = warmup_seconds
         self.server_url = server_url
-        self.sample_input = sample_input
+        self.input_source = input_source
         self.concurrent_users = concurrent_users
         self.request_batch_size = request_batch_size
         self.log_dir = log_dir
@@ -40,18 +77,24 @@ class BenchmarkRunner:
         if self.log_dir:
             os.makedirs(self.log_dir, exist_ok=True)
         
-        self.client = FDClient(server_url=self.server_url)
+        self.client = FDClient(server_url=self.server_url, request_timeout=10)
 
         # Per-user metrics
         self.user_metrics = {}
         self.metrics_lock = threading.Lock()
 
+    def generate_payload(self):
+        """Generate payload based on input source type"""
+        if self.input_source['type'] == 'json':
+            return [self.input_source['data'][random.randint(0, len(self.input_source['data']) - 1)] for _ in range(self.request_batch_size)]
+        else:  # function
+            return self.input_source['data']()
+
     def make_request(self, user_id, request_id, is_warmup=False):
         start_time = time.time()
         
         try:
-            inps = [self.sample_input[random.randint(0, len(self.sample_input) - 1)] 
-                   for _ in range(self.request_batch_size)]
+            inps = self.generate_payload()
             
             if self.debug:
                 logger.debug(f"User {user_id} - Request {request_id} - Sending input: {inps}...")
@@ -154,7 +197,7 @@ class BenchmarkRunner:
         warmup_start = time.time()
         warmup_requests = 0
         while time.time() - warmup_start < self.warmup_seconds:
-            self.make_request(user_id, request_id=f"{user_id}-warm-{warmup_requests}", is_warmup=True)
+            self.make_request(user_id, request_id=f"r{user_id}-warm-{warmup_requests}", is_warmup=True)
             warmup_requests += 1
         
         if self.debug:
@@ -169,7 +212,7 @@ class BenchmarkRunner:
         
         while time.time() - start_time < self.duration_seconds:
             request_start = time.time()
-            self.make_request(user_id, request_id=f"{user_id}-{requests_made}")
+            self.make_request(user_id, request_id=f"r{user_id}-{requests_made}")
             requests_made += 1
             pbar.update(1)
             
@@ -266,16 +309,15 @@ def validate_url(url):
         return False
 
 def main():
-    import json
     parser = argparse.ArgumentParser(description='API Benchmark Tool')
     parser.add_argument('--host', type=str, required=True, help='Server hostname or IP')
-    parser.add_argument('--port', type=int, required=True, help='Server port')
+    parser.add_argument('--port', type=int, required=False, help='Server port')
     parser.add_argument('--rps_per_user', type=int, default=None, help='Target requests per second per user')
     parser.add_argument('--duration', type=int, default=60, help='Test duration in seconds')
     parser.add_argument('--warmup', type=int, default=5, help='Warmup period in seconds')
     parser.add_argument('--users', type=int, default=2, help='Number of concurrent users')
     parser.add_argument('--debug', action='store_true', help='Enable debug logging')
-    parser.add_argument('--sample_json', type=str, default=None, help='Input json file path', required=True)
+    parser.add_argument('--sample_json', type=str, default=None, help='Input .json or .py file path', required=True)
     parser.add_argument('--request_batch_size', type=int, default=1, help='Request batch size')
     parser.add_argument('--log_dir', type=str, default=None, help='Directory to log request inputs and outputs')
     args = parser.parse_args()
@@ -284,10 +326,13 @@ def main():
         logger.setLevel(logging.DEBUG)
 
     # Construct and validate server URL
-    server_url = f"http://{args.host}:{args.port}"
+    if not args.host.startswith("http"):
+        server_url = f"http://{args.host}:{args.port}"
+    else:
+        server_url = args.host
 
-    with open(args.sample_json, 'r') as f:
-        sample_input = json.load(f)
+    # Load input source (either JSON data or example_function)
+    input_source = load_input_source(args.sample_json)
 
     # Initialize and run benchmark
     runner = BenchmarkRunner(
@@ -295,7 +340,7 @@ def main():
         duration_seconds=args.duration,
         server_url=server_url,
         warmup_seconds=args.warmup,
-        sample_input=sample_input,
+        input_source=input_source,
         concurrent_users=args.users,
         request_batch_size=args.request_batch_size,
         log_dir=args.log_dir,
@@ -305,7 +350,8 @@ def main():
     print(f"\nStarting benchmark with {args.users} concurrent users...")
     print(f"Target RPS per user: {args.rps_per_user or 'unlimited'}")
     print(f"Duration: {args.duration} seconds (+ {args.warmup} seconds warmup)")
-    print(f"Request batch size: {args.request_batch_size}\n")
+    print(f"Request batch size: {args.request_batch_size}")
+    print(f"Input source: {args.sample_json} ({input_source['type']})\n")
     
     results = runner.run_benchmark()
     

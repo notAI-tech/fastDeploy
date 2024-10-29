@@ -2,7 +2,7 @@ from sentence_transformers import SentenceTransformer
 
 sentences = ['That is a happy person', 'That is a very happy person']
 
-model = SentenceTransformer('Alibaba-NLP/gte-base-en-v1.5', trust_remote_code=True)
+model = SentenceTransformer('Alibaba-NLP/gte-base-en-v1.5', trust_remote_code=True, backend="onnx", model_kwargs={"file_name": "model.onnx", "provider": "CPUExecutionProvider"})
 
 from time import time
 

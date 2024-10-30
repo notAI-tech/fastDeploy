@@ -424,6 +424,7 @@ def print_results(results):
 
     print("\n" + "="*80)
 
+
 def main():
     parser = argparse.ArgumentParser(description='API Benchmark Tool')
     parser.add_argument('--server_url', type=str, required=True, help='Server URL')

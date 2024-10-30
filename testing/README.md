@@ -1,0 +1,1 @@
+python benchmark.py --target_rps_per_connection 100 --parallel_connections 10 --duration 60  --warmup 1 --server_url http://10.18.9.60:8080 --input_file /Users/praneeth.bedapudi/RINGCENTRAL/marauders-map/ml_serving/nlu/semantic_score_serving/example.py --results_file a.json --request_timeout 0.6

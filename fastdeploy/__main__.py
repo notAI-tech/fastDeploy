@@ -50,7 +50,7 @@ parser.add_argument(
 
         REST
             max_request_batch_size: integer max number of inputs in a batch, default=0 (None)
-            workers: integer number of workers, default=1
+            workers: integer number of workers, default=3
             timeout: seconds after which request will fail, default=480
             host: host for the REST server, default=0.0.0.0
             port: port for the REST server, default=8080
@@ -66,7 +66,7 @@ parser.add_argument(
             base: base image for docker, default=python:3.8-slim
     """,
     required=False,
-    default="max_request_batch_size=0,workers=1,timeout=480,host=0.0.0.0,port=8080,allow_pickle=true,predictor_name=predictor.py,optimal_batch_size=0,keep_alive=60,base=python:3.8-slim",
+    default="max_request_batch_size=0,workers=3,timeout=480,host=0.0.0.0,port=8080,allow_pickle=true,predictor_name=predictor.py,optimal_batch_size=0,keep_alive=60,base=python:3.8-slim",
 )
 
 args = parser.parse_args()
@@ -74,7 +74,7 @@ args = parser.parse_args()
 CONFIG = {
     # rest config
     "max_request_batch_size": int(os.getenv("MAX_REQUEST_BATCH_SIZE", "0")),
-    "workers": int(os.getenv("WORKERS", "1")),
+    "workers": int(os.getenv("WORKERS", "3")),
     "timeout": int(os.getenv("TIMEOUT", "480")),
     "host": os.getenv("HOST", "0.0.0.0"),
     "port": int(os.getenv("PORT", "8080")),

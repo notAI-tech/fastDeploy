@@ -122,7 +122,7 @@ class Infer:
                 {
                     unique_id: {
                         "-1.predicted_at": time.time(),
-                        "-1.timedout_in_queue": True,
+                        "timedout_in_queue": True,
                     }
                 }
             )

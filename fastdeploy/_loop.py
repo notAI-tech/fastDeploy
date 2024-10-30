@@ -191,7 +191,7 @@ def start_loop(
     while True:
         """
         Set timedout_in_queue to True for all the predictions that have been in the queue for more than timeout_time seconds
-        and delete older than 7 seconds predictions that have finished prediction
+        and delete older than 30 seconds predictions that have finished prediction
         """
 
         timedout_in_queue_unique_ids = _utils.MAIN_INDEX.search(
@@ -214,7 +214,7 @@ def start_loop(
             query={
                 "$and": [
                     {"-1.predicted_at": {"$gt": 0}},
-                    {"-1.predicted_at": {"$lt": time.time() - 7}},
+                    {"-1.predicted_at": {"$lt": time.time() - 30}},
                 ]
             },
         )

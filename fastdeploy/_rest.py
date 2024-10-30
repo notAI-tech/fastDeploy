@@ -148,7 +148,14 @@ class Infer(object):
             ) = self._response_handler.register_request_and_wait_for_response(
                 unique_id, is_compressed, input_type, client_timeout
             )
-            resp.status = falcon.HTTP_200 if success else falcon.HTTP_400
+            if success:
+                resp.status = falcon.HTTP_200
+            else:
+                if response["reason"] == "timeout":
+                    resp.status = falcon.HTTP_408
+                else:
+                    resp.status = falcon.HTTP_500
+
             if input_type == "json":
                 resp.media = response
             else:

@@ -251,17 +251,13 @@ class PrometheusMetrics(object):
                 ) / requests_received_in_last_x_seconds_that_are_successful
 
         prometheus_text = f"""
-# HELP pending_requests The number of pending requests.
-# TYPE pending_requests gauge
-pending_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": 0, "last_predictor_success": True})}
+# HELP total_predictor_run_for_hours Total hours the predictor has been actively running predictions since start.
+# TYPE total_predictor_run_for_hours counter
+total_predictor_run_for_hours {_utils.GLOBAL_METRICS_INDEX["total_predictor_run_for_hours"]}
 
-# HELP failed_requests The number of failed requests.
-# TYPE failed_requests gauge
-failed_requests {_utils.MAIN_INDEX.count(query={"last_predictor_success": False})}
-
-# HELP successful_requests The number of failed requests.
-# TYPE successful_requests gauge
-successful_requests {_utils.MAIN_INDEX.count(query={"-1.predicted_at": {"$ne": 0}, "last_predictor_success": True})}
+# HELP total_predictor_up_for_hours Total hours the predictor has been up since start.
+# TYPE total_predictor_up_for_hours counter 
+total_predictor_up_for_hours {_utils.GLOBAL_METRICS_INDEX["total_predictor_up_for_hours"]}
 
 # HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.
 # TYPE requests_received_in_last_x_seconds gauge
@@ -392,18 +388,6 @@ class Meta(object):
                 == "true",
                 "timeout": int(os.getenv("TIMEOUT")),
             }
-
-
-class Failed(object):
-    def on_get(self, req, resp):
-        last_n_failed = int(req.params.get("last_n_failed", 10))
-        failed_inputs = _utils.MAIN_INDEX.search(
-            query={"last_predictor_success": False},
-            n=last_n_failed,
-            select_keys=["-1.inputs"],
-        )
-
-        resp.media = failed_inputs
 
 
 app = falcon.App(

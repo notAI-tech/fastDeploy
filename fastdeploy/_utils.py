@@ -114,6 +114,11 @@ MAIN_INDEX.optimize_for_query(["last_predictor_sequence"])
 MAIN_INDEX.optimize_for_query(["timedout_in_queue"])
 
 
+GLOBAL_METRICS_INDEX = KVIndex(os.path.join("fastdeploy_dbs", f"global_metrics_index.db"))
+GLOBAL_METRICS_INDEX["total_predictor_run_for_hours"] = 0
+GLOBAL_METRICS_INDEX["total_predictor_up_for_hours"] = 0
+
+
 def warmup(predictor, example_input, n=3):
     """
     Run warmup prediction on the model.

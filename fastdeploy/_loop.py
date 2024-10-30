@@ -186,6 +186,8 @@ def start_loop(
     """
     )
 
+    prediction_loop_started_at = time.time()
+
     while True:
         """
         Set timedout_in_queue to True for all the predictions that have been in the queue for more than timeout_time seconds
@@ -226,9 +228,12 @@ def start_loop(
 
         _utils.logger.debug(f"Processing batch {unique_id_wise_input_count}")
 
+        process_batch_started_at = time.time()
         results, last_predictor_success, received_at, predicted_at = process_batch(
             predictor, input_batch, optimal_batch_size
         )
+        process_batch_ended_at = time.time()
+
         unique_id_wise_results = prepare_results(
             unique_id_wise_input_count,
             results,
@@ -243,6 +248,16 @@ def start_loop(
         _utils.logger.debug(
             f"Updated results predictor {predictor_sequence}: {list(unique_id_wise_results)}"
         )
+
+        _utils.GLOBAL_METRICS_INDEX.math(
+            "total_predictor_run_for_hours",
+            (process_batch_ended_at - process_batch_started_at) / 3600,
+            "+=",
+        )
+
+        _utils.GLOBAL_METRICS_INDEX["total_predictor_up_for_hours"] = (
+            time.time() - prediction_loop_started_at
+        ) / 3600
 
 
 if __name__ == "__main__":

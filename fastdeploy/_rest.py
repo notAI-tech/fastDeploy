@@ -151,10 +151,7 @@ class Infer(object):
             if success:
                 resp.status = falcon.HTTP_200
             else:
-                if response["reason"] == "timeout":
-                    resp.status = falcon.HTTP_408
-                else:
-                    resp.status = falcon.HTTP_500
+                resp.status = falcon.HTTP_500
 
             if input_type == "json":
                 resp.media = response

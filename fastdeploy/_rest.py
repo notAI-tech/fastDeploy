@@ -260,7 +260,7 @@ class PrometheusMetrics(object):
 total_predictor_run_for_hours {_utils.GLOBAL_METRICS_INDEX["total_predictor_run_for_hours"]}
 
 # HELP total_predictor_up_for_hours Total hours the predictor has been up since start.
-# TYPE total_predictor_up_for_hours counter 
+# TYPE total_predictor_up_for_hours counter
 total_predictor_up_for_hours {_utils.GLOBAL_METRICS_INDEX["total_predictor_up_for_hours"]}
 
 # HELP requests_received_in_last_x_seconds The number of requests received in last {_LAST_X_SECONDS} seconds.

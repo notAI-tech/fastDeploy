@@ -85,6 +85,7 @@ def fetch_batch(
     input_batch = []
     current_batch_length = 0
     batch_collection_started_at = time.time()
+    last_input_received_at = time.time()
 
     while current_batch_length < optimal_batch_size:
         to_process = main_index.search(
@@ -106,15 +107,17 @@ def fetch_batch(
 
         for unique_id, data in to_process.items():
             outputs = data[f"{predictor_sequence - 1}.outputs"]
-
             input_count = len(outputs)
-
             unique_id_wise_input_count[unique_id] = input_count
             input_batch.extend(outputs)
             current_batch_length += input_count
+            last_input_received_at = time.time()
 
         if current_batch_length == 0:
-            time.sleep(max_wait_time_for_batch_collection / 2)
+            if time.time() - last_input_received_at > 5:
+                time.sleep(0.05)
+            else:
+                time.sleep(max_wait_time_for_batch_collection / 2)
             continue
 
         elif (

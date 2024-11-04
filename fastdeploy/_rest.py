@@ -63,6 +63,7 @@ class AsyncResponseHandler:
             self.pending_requests.pop(unique_id, None)
 
     def _response_checker(self):
+        last_input_received_at = time.time()
         while True:
             try:
                 unique_ids = []
@@ -73,6 +74,11 @@ class AsyncResponseHandler:
                         unique_ids.append(uid)
                         is_compresseds.append(data["is_compressed"])
                         input_types.append(data["input_type"])
+                        last_input_received_at = data["timestamp"]
+
+                if not unique_ids and (time.time() - last_input_received_at) > 5:
+                    time.sleep(0.05)
+                    continue
 
                 if unique_ids:
                     _utils.logger.debug(

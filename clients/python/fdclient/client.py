@@ -26,15 +26,19 @@ class FDClient:
         self.local_storage = threading.local()
         self.requests_session = requests.Session()
         self.compression = compression if zstandard is not None else False
-        self.input_type = (
-            "pickle"
-            if self.requests_session.get(
-                f"{self.server_url}/meta", params={"is_pickle_allowed": ""}
-            ).json()["is_pickle_allowed"]
-            else "msgpack"
-            if msgpack is not None
-            else "json"
-        )
+        try:
+            self.input_type = (
+                "pickle"
+                if self.requests_session.get(
+                    f"{self.server_url}/meta", params={"is_pickle_allowed": ""}
+                ).json()["is_pickle_allowed"]
+                else "msgpack"
+                if msgpack is not None
+                else "json"
+            )
+        except Exception as e:
+            self.input_type = None
+            
         self.request_timeout = request_timeout
 
     @property
@@ -74,6 +78,9 @@ class FDClient:
         return self.local_storage.decompressor
 
     def infer(self, data, unique_id=None, is_async=False):
+        if self.input_type is None:
+            raise ValueError("Could not connect to server")
+        
         assert isinstance(data, (list, tuple)), "Data must be of type list or tuple"
 
         unique_id = str(uuid.uuid4()) if not unique_id else unique_id

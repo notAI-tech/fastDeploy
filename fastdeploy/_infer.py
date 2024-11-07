@@ -30,6 +30,8 @@ for predictor_file, predictor_sequence in _utils.PREDICTOR_FILE_TO_SEQUENCE.item
             time.sleep(1)
 
 
+_utils.logger.info(f"pids: {_utils.get_fd_pids()}")
+
 class Infer:
     started_at_time = started_at_time
 

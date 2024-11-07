@@ -193,7 +193,7 @@ RUN cd /recipe && python3 -c "from predictor import predictor; from example impo
 
 ENTRYPOINT ["/bin/sh", "-c"]
 
-CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --loop & python3 -m fastdeploy --recipe /recipe --rest"]
+CMD ["ulimit -n 1000000 && python3 -m fastdeploy --recipe /recipe --rest & python3 -m fastdeploy --recipe /recipe --loop"]
 """
     )
     f.flush()

@@ -175,7 +175,7 @@ class PrometheusMetrics(object):
 
         number_of_requests_timedout_in_last_x_seconds = _utils.MAIN_INDEX.count(
             query={
-                "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                "-1.predicted_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
                 "timedout_in_queue": True,
             }
         )
@@ -184,9 +184,20 @@ class PrometheusMetrics(object):
             query={"-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME}}
         )
 
+        requests_processed_in_last_x_seconds = _utils.MAIN_INDEX.count(
+            query={"-1.predicted_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME}}
+        )
+
         requests_received_in_last_x_seconds_that_failed = _utils.MAIN_INDEX.count(
             query={
                 "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                "last_predictor_success": False,
+            }
+        )
+
+        requests_processed_in_last_x_seconds_that_failed = _utils.MAIN_INDEX.count(
+            query={
+                "-1.predicted_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
                 "last_predictor_success": False,
             }
         )
@@ -205,6 +216,17 @@ class PrometheusMetrics(object):
                     "-1.predicted_at": {"$ne": 0},
                     "last_predictor_success": True,
                     "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                    "timedout_in_queue": {"$ne": True},
+                }
+            )
+        )
+
+        requests_processed_in_last_x_seconds_that_are_successful = (
+            _utils.MAIN_INDEX.count(
+                query={
+                    "-1.predicted_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
+                    "last_predictor_success": True,
+                    "timedout_in_queue": {"$ne": True},
                 }
             )
         )
@@ -217,6 +239,7 @@ class PrometheusMetrics(object):
             query={
                 "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
                 "-1.predicted_at": {"$ne": 0},
+                "timedout_in_queue": {"$ne": True},
             },
         )
 
@@ -226,6 +249,7 @@ class PrometheusMetrics(object):
             query={
                 "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
                 "-1.predicted_at": {"$ne": 0},
+                "timedout_in_queue": {"$ne": True},
             },
         )
 
@@ -243,6 +267,7 @@ class PrometheusMetrics(object):
                 query={
                     "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
                     "-1.predicted_at": {"$ne": 0},
+                    "timedout_in_queue": {"$ne": True},
                 },
             )
 
@@ -252,6 +277,7 @@ class PrometheusMetrics(object):
                 query={
                     "-1.received_at": {"$gt": LAST_X_SECONDS, "$lt": CURRENT_TIME},
                     "-1.predicted_at": {"$ne": 0},
+                    "timedout_in_queue": {"$ne": True},
                 },
             )
 
@@ -265,6 +291,10 @@ class PrometheusMetrics(object):
 # TYPE requests_received_in_last_x_seconds gauge
 requests_received_in_last_x_seconds {requests_received_in_last_x_seconds}
 
+# HELP requests_processed_in_last_x_seconds The number of requests processed in last {_LAST_X_SECONDS} seconds.
+# TYPE requests_processed_in_last_x_seconds gauge
+requests_processed_in_last_x_seconds {requests_processed_in_last_x_seconds}
+
 # HELP number_of_requests_timedout_in_last_x_seconds The number of requests timedout at predictor(s) in last {_LAST_X_SECONDS} seconds.
 # TYPE number_of_requests_timedout_in_last_x_seconds gauge
 number_of_requests_timedout_in_last_x_seconds {number_of_requests_timedout_in_last_x_seconds}
@@ -273,6 +303,10 @@ number_of_requests_timedout_in_last_x_seconds {number_of_requests_timedout_in_la
 # TYPE requests_received_in_last_x_seconds_that_failed gauge
 requests_received_in_last_x_seconds_that_failed {requests_received_in_last_x_seconds_that_failed}
 
+# HELP requests_processed_in_last_x_seconds_that_failed The number of requests processed in last {_LAST_X_SECONDS} seconds that failed.
+# TYPE requests_processed_in_last_x_seconds_that_failed gauge
+requests_processed_in_last_x_seconds_that_failed {requests_processed_in_last_x_seconds_that_failed}
+
 # HELP requests_received_in_last_x_seconds_that_are_pending The number of requests received in last {_LAST_X_SECONDS} seconds that are pending.
 # TYPE requests_received_in_last_x_seconds_that_are_pending gauge
 requests_received_in_last_x_seconds_that_are_pending {requests_received_in_last_x_seconds_that_are_pending}
@@ -280,6 +314,10 @@ requests_received_in_last_x_seconds_that_are_pending {requests_received_in_last_
 # HELP requests_received_in_last_x_seconds_that_are_successful The number of requests received in last {_LAST_X_SECONDS} seconds that are successful.
 # TYPE requests_received_in_last_x_seconds_that_are_successful gauge
 requests_received_in_last_x_seconds_that_are_successful {requests_received_in_last_x_seconds_that_are_successful}
+
+# HELP requests_processed_in_last_x_seconds_that_are_successful The number of requests processed in last {_LAST_X_SECONDS} seconds that are successful.
+# TYPE requests_processed_in_last_x_seconds_that_are_successful gauge
+requests_processed_in_last_x_seconds_that_are_successful {requests_processed_in_last_x_seconds_that_are_successful}
 
 # HELP avg_total_time_per_req_for_reqs_in_last_x_seconds The average total time per request for requests in last {_LAST_X_SECONDS} seconds.
 # TYPE avg_total_time_per_req_for_reqs_in_last_x_seconds gauge
@@ -411,6 +449,14 @@ class Meta(object):
             }
 
 
+class Die(object):
+    def on_get(self, req, resp):
+        if req.params.get("die", "false").lower()[0] == "t":
+            resp.status = falcon.HTTP_200
+            resp.media = {"status": "killed"}
+            _utils.kill_fd(loop=True, rest=True)
+
+
 app = falcon.App(
     middleware=falcon.CORSMiddleware(allow_origins="*", allow_credentials="*"),
 )
@@ -418,9 +464,11 @@ app = falcon.App(
 infer_api = Infer()
 prometheus_metrics = PrometheusMetrics()
 health_api = Health()
+die_api = Die()
 
 app.add_route("/infer", infer_api)
 app.add_route("/sync", infer_api)
 app.add_route("/prometheus_metrics", prometheus_metrics)
 app.add_route("/health", health_api)
 app.add_route("/meta", Meta())
+app.add_route("/die", die_api)

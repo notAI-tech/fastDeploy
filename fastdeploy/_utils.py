@@ -13,6 +13,7 @@ import os
 import glob
 import json
 import time
+import psutil
 from datetime import datetime
 from liteindex import DefinedIndex, KVIndex
 
@@ -122,6 +123,34 @@ GLOBAL_METRICS_INDEX["total_predictor_run_for_hours"] = 0
 GLOBAL_METRICS_INDEX["total_predictor_up_for_hours"] = 0
 
 
+def get_fd_pids():
+    # get pids of processes with fastdeploy and rest or loop in their full cmdline
+    pids = {
+        "rest": [],
+        "loop": []
+    }
+
+    for proc in psutil.process_iter():
+        try:
+            full_cmdline = " ".join(proc.cmdline())
+            if "fastdeploy" in full_cmdline and "--rest" in full_cmdline:
+                pids["rest"].append(proc.pid)
+            elif "fastdeploy" in full_cmdline and "--loop" in full_cmdline:
+                pids["loop"].append(proc.pid)
+        except Exception as e:
+            pass
+
+    return pids
+
+
+def kill_fd(loop=True, rest=True):
+    pids = get_fd_pids()
+    if loop and pids["loop"]:
+        os.system(f"kill -9 {' '.join([str(pid) for pid in pids['loop']])}")
+    if rest and pids["rest"]:
+        os.system(f"kill -9 {' '.join([str(pid) for pid in pids['rest']])}")
+
+
 def warmup(predictor, example_input, n=3):
     """
     Run warmup prediction on the model.
@@ -182,12 +211,12 @@ def check_if_requests_timedout_in_last_x_seconds_is_more_than_y(
 ):
     time_before_x_seconds = time.time() - last_x_seconds
     requests_received_in_last_x_seconds = MAIN_INDEX.count(
-        query={"-1.received_at": {"$gte": time_before_x_seconds}}
+        query={"-1.predicted_at": {"$gte": time_before_x_seconds}}
     )
 
     requests_timedout_in_last_x_seconds = MAIN_INDEX.count(
         query={
-            "-1.received_at": {"$gte": time_before_x_seconds},
+            "-1.predicted_at": {"$gte": time_before_x_seconds},
             "timedout_in_queue": True,
         }
     )
@@ -211,7 +240,7 @@ def check_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y(
 ):
     time_before_x_seconds = time.time() - last_x_seconds
     requests_received_in_last_x_seconds = MAIN_INDEX.count(
-        query={"-1.received_at": {"$gte": time_before_x_seconds}}
+        query={"-1.predicted_at": {"$gte": time_before_x_seconds}}
     )
 
     if requests_received_in_last_x_seconds == 0:
@@ -219,7 +248,7 @@ def check_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y(
 
     requests_received_in_last_x_seconds_that_failed = MAIN_INDEX.count(
         query={
-            "-1.received_at": {"$gte": time_before_x_seconds},
+            "-1.predicted_at": {"$gte": time_before_x_seconds},
             "last_predictor_success": False,
         }
     )

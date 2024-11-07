@@ -101,7 +101,8 @@ def fetch_batch(
                     query={
                         "-1.predicted_at": 0,  # prediction not yet done
                         "last_predictor_success": True,  # last predictor success
-                        "last_predictor_sequence": predictor_sequence - 1,  # last predictor sequence
+                        "last_predictor_sequence": predictor_sequence
+                        - 1,  # last predictor sequence
                         "timedout_in_queue": {"$ne": True},  # not timedout in queue
                     },
                     n=optimal_batch_size,

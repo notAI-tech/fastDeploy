@@ -168,7 +168,7 @@ class Infer(object):
 class PrometheusMetrics(object):
     def on_get(self, req, resp):
         _LAST_X_SECONDS = int(
-            req.params.get("last_x_seconds", int(os.getenv("LAST_X_SECONDS", 5)))
+            req.params.get("last_x_seconds", int(os.getenv("LAST_X_SECONDS", 30)))
         )
         CURRENT_TIME = time.time()
         LAST_X_SECONDS = time.time() - _LAST_X_SECONDS
@@ -325,6 +325,12 @@ class Health(object):
             "fail_if_up_time_more_than_x_seconds", None
         )
 
+        fail_if_requests_timedout_in_last_x_seconds_is_more_than_y_param = (
+            req.params.get(
+                "fail_if_requests_timedout_in_last_x_seconds_is_more_than_y", None
+            )
+        )
+
         is_predictor_is_up_param = req.params.get("is_predictor_is_up", None)
 
         if fail_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y_param:
@@ -342,7 +348,7 @@ class Health(object):
                 resp.media = {
                     "reason": f"More than {y}% requests failed in last {x} seconds"
                 }
-            return
+                return
 
         elif fail_if_requests_older_than_x_seconds_pending_param:
             if _utils.check_if_requests_older_than_x_seconds_pending(
@@ -352,7 +358,7 @@ class Health(object):
                 resp.media = {
                     "reason": f"Requests older than {fail_if_requests_older_than_x_seconds_pending_param} seconds are pending"
                 }
-            return
+                return
 
         elif fail_if_up_time_more_than_x_seconds_param:
             if time.time() - Infer.started_at_time > int(
@@ -362,6 +368,19 @@ class Health(object):
                 resp.media = {
                     "reason": f"Up time more than {fail_if_up_time_more_than_x_seconds_param} seconds"
                 }
+                return
+
+        elif fail_if_requests_timedout_in_last_x_seconds_is_more_than_y_param:
+            (
+                x,
+                y,
+            ) = fail_if_requests_timedout_in_last_x_seconds_is_more_than_y_param.split(
+                ","
+            )
+            x, y = int(x), int(y)
+            if _utils.check_if_requests_timedout_in_last_x_seconds_is_more_than_y(x, y):
+                resp.status = falcon.HTTP_503
+                return
 
         resp.status = falcon.HTTP_200
         resp.media = {"status": "ok"}

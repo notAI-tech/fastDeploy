@@ -88,6 +88,7 @@ MAIN_INDEX = DefinedIndex(
         **{f"{_}.predicted_in_batch_of": "number" for _ in PREDICTOR_SEQUENCE_TO_FILES},
     },
     db_path=os.path.join("fastdeploy_dbs", f"main_index.db"),
+    auto_vacuum=False,
 )
 
 # for setting timedout_in_queue
@@ -174,6 +175,35 @@ def calculate_optimum_batch_sizes(
     )
 
     return max_batch_size, time_per_example
+
+
+def check_if_requests_timedout_in_last_x_seconds_is_more_than_y(
+    last_x_seconds, max_percentage_of_timedout_requests
+):
+    time_before_x_seconds = time.time() - last_x_seconds
+    requests_received_in_last_x_seconds = MAIN_INDEX.count(
+        query={"-1.received_at": {"$gte": time_before_x_seconds}}
+    )
+
+    requests_timedout_in_last_x_seconds = MAIN_INDEX.count(
+        query={
+            "-1.received_at": {"$gte": time_before_x_seconds},
+            "timedout_in_queue": True,
+        }
+    )
+
+    if requests_received_in_last_x_seconds == 0:
+        return False
+
+    logger.warning(
+        f"Requests timedout in last {last_x_seconds} seconds: {requests_timedout_in_last_x_seconds}/{requests_received_in_last_x_seconds}"
+    )
+
+    if (
+        requests_timedout_in_last_x_seconds / requests_received_in_last_x_seconds
+    ) * 100 >= max_percentage_of_timedout_requests:
+        return True
+    return False
 
 
 def check_if_percentage_of_requests_failed_in_last_x_seconds_is_more_than_y(

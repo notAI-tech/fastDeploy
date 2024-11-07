@@ -132,6 +132,9 @@ def fetch_batch(
             # finished collecting batch
             break
 
+    _utils.logger.info(
+        f"Fetched batch {[v for v in unique_id_wise_input_count.values()]}"
+    )
     return unique_id_wise_input_count, input_batch
 
 
@@ -217,7 +220,7 @@ def start_loop(
             query={
                 "$and": [
                     {"-1.predicted_at": {"$gt": 0}},
-                    {"-1.predicted_at": {"$lt": time.time() - 30}},
+                    {"-1.predicted_at": {"$lt": time.time() - 40}},
                 ]
             },
         )

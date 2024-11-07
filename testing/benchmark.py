@@ -75,7 +75,7 @@ class BenchmarkProcess(mp.Process):
         else:  # function
             if self._loaded_function is None:
                 self._load_function()
-            return self._loaded_function()
+            return self._loaded_function()[:self.request_batch_size]
 
     def run(self):
         # Handle Ctrl+C gracefully

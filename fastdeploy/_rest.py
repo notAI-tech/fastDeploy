@@ -54,6 +54,12 @@ class AsyncResponseHandler:
                 return self.infer.get_timeout_response(
                     unique_id, is_compressed, input_type, is_client_timeout=True
                 )
+        except Exception as e:
+            _utils.logger.exception(e, exc_info=True)
+            _utils.logger.error(f"Error registering request and waiting for response: {e}")
+            return self.infer.get_timeout_response(
+                unique_id, is_compressed, input_type, is_client_timeout=True
+            )
         finally:
             with self.lock:
                 self.pending_requests.pop(unique_id, None)
@@ -388,7 +394,7 @@ class Health(object):
                 }
                 return
 
-        elif fail_if_requests_older_than_x_seconds_pending_param:
+        if fail_if_requests_older_than_x_seconds_pending_param:
             if _utils.check_if_requests_older_than_x_seconds_pending(
                 int(fail_if_requests_older_than_x_seconds_pending_param)
             ):
@@ -398,7 +404,7 @@ class Health(object):
                 }
                 return
 
-        elif fail_if_up_time_more_than_x_seconds_param:
+        if fail_if_up_time_more_than_x_seconds_param:
             if time.time() - Infer.started_at_time > int(
                 fail_if_up_time_more_than_x_seconds_param
             ):
@@ -408,7 +414,7 @@ class Health(object):
                 }
                 return
 
-        elif fail_if_requests_timedout_in_last_x_seconds_is_more_than_y_param:
+        if fail_if_requests_timedout_in_last_x_seconds_is_more_than_y_param:
             (
                 x,
                 y,

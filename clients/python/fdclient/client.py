@@ -26,6 +26,7 @@ class FDClient:
         self.local_storage = threading.local()
         self.requests_session = requests.Session()
         self.compression = compression if zstandard is not None else False
+        self.input_type = None
         self._set_input_type()
             
         self.request_timeout = request_timeout

@@ -17,14 +17,14 @@ import json
 
 
 class FDClient:
-    def __init__(self, server_url, request_timeout, compression=True):
+    def __init__(self, server_url, request_timeout, compression=True, use_requests_session=False):
         assert server_url.startswith("http://") or server_url.startswith(
             "https://"
         ), "Server URL must start with http:// or https://"
 
         self.server_url = server_url
         self.local_storage = threading.local()
-        self.requests_session = requests.Session()
+        self.requests_session = requests.Session() if use_requests_session else requests
         self.compression = compression if zstandard is not None else False
         self.input_type = None
         self._set_input_type()

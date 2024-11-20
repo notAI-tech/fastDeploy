@@ -48,7 +48,7 @@ class BenchmarkProcess(mp.Process):
     def _load_function(self):
         """Load the Python function inside the process"""
         if self.input_source['type'] == 'function':
-            path = self.input_source['path']
+            path = os.path.abspath(self.input_source['path'])
             directory = os.path.dirname(path)
             filename = os.path.basename(path)
             

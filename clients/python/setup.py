@@ -18,10 +18,10 @@ URL = "https://github.com/notAI-tech/fastDeploy"
 EMAIL = "praneeth@bpraneeth.com"
 AUTHOR = "BEDAPUDI PRANEETH"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "3.1.1"
+VERSION = "3.1.2"
 
 # What packages are required for this module to be executed?
-REQUIRED = ["zstandard", "requests", "msgpack"]
+REQUIRED = ["zstandard", "requests", "msgpack", "httpx"]
 
 # What packages are optional?
 EXTRAS = {
